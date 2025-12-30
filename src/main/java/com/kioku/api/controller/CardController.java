@@ -4,6 +4,7 @@ import com.kioku.api.dto.CardResponse;
 import com.kioku.api.dto.CreateCardRequest;
 import com.kioku.api.dto.ErrorResponse;
 import com.kioku.api.entity.Card;
+import com.kioku.api.security.CurrentUser;
 import com.kioku.api.service.CardService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/users/{userId}/decks/{deckId}/cards")
+@RequestMapping("/api/decks/{deckId}/cards")
 public class CardController {
 
     private final CardService cardService;
@@ -25,11 +26,11 @@ public class CardController {
 
     /**
      * Create a new card
-     * POST /api/users/{userId}/decks/{deckId}/cards
+     * POST /api/decks/{deckId}/cards
      */
     @PostMapping
     public ResponseEntity<?> createCard(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @Valid @RequestBody CreateCardRequest request) {
         try {
@@ -42,11 +43,11 @@ public class CardController {
 
     /**
      * Get all cards in a deck
-     * GET /api/users/{userId}/decks/{deckId}/cards
+     * GET /api/decks/{deckId}/cards
      */
     @GetMapping
     public ResponseEntity<?> getDeckCards(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long tagId) {
@@ -72,11 +73,11 @@ public class CardController {
 
     /**
      * Get a specific card
-     * GET /api/users/{userId}/decks/{deckId}/cards/{cardId}
+     * GET /api/decks/{deckId}/cards/{cardId}
      */
     @GetMapping("/{cardId}")
     public ResponseEntity<?> getCard(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @PathVariable Long cardId) {
         return cardService.getCard(userId, deckId, cardId)
@@ -87,11 +88,11 @@ public class CardController {
 
     /**
      * Update a card
-     * PUT /api/users/{userId}/decks/{deckId}/cards/{cardId}
+     * PUT /api/decks/{deckId}/cards/{cardId}
      */
     @PutMapping("/{cardId}")
     public ResponseEntity<?> updateCard(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @PathVariable Long cardId,
             @Valid @RequestBody CreateCardRequest request) {
@@ -105,11 +106,11 @@ public class CardController {
 
     /**
      * Delete a card
-     * DELETE /api/users/{userId}/decks/{deckId}/cards/{cardId}
+     * DELETE /api/decks/{deckId}/cards/{cardId}
      */
     @DeleteMapping("/{cardId}")
     public ResponseEntity<?> deleteCard(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @PathVariable Long cardId) {
         try {
@@ -122,11 +123,11 @@ public class CardController {
 
     /**
      * Add tag to card
-     * POST /api/users/{userId}/decks/{deckId}/cards/{cardId}/tags/{tagId}
+     * POST /api/decks/{deckId}/cards/{cardId}/tags/{tagId}
      */
     @PostMapping("/{cardId}/tags/{tagId}")
     public ResponseEntity<?> addTagToCard(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @PathVariable Long cardId,
             @PathVariable Long tagId) {
@@ -140,11 +141,11 @@ public class CardController {
 
     /**
      * Remove tag from card
-     * DELETE /api/users/{userId}/decks/{deckId}/cards/{cardId}/tags/{tagId}
+     * DELETE /api/decks/{deckId}/cards/{cardId}/tags/{tagId}
      */
     @DeleteMapping("/{cardId}/tags/{tagId}")
     public ResponseEntity<?> removeTagFromCard(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @PathVariable Long cardId,
             @PathVariable Long tagId) {

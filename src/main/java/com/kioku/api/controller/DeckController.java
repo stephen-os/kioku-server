@@ -4,6 +4,7 @@ import com.kioku.api.dto.CreateDeckRequest;
 import com.kioku.api.dto.DeckResponse;
 import com.kioku.api.dto.ErrorResponse;
 import com.kioku.api.entity.Deck;
+import com.kioku.api.security.CurrentUser;
 import com.kioku.api.service.DeckService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/users/{userId}/decks")
+@RequestMapping("/api/decks")
 public class DeckController {
 
     private final DeckService deckService;
@@ -25,11 +26,11 @@ public class DeckController {
 
     /**
      * Create a new deck
-     * POST /api/users/{userId}/decks
+     * POST /api/decks
      */
     @PostMapping
     public ResponseEntity<?> createDeck(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody CreateDeckRequest request) {
         try {
             Deck deck = deckService.createDeck(userId, request.getName(), request.getDescription());
@@ -40,11 +41,11 @@ public class DeckController {
     }
 
     /**
-     * Get all decks for a user
-     * GET /api/users/{userId}/decks
+     * Get all decks for current user
+     * GET /api/decks
      */
     @GetMapping
-    public ResponseEntity<List<DeckResponse>> getUserDecks(@PathVariable Long userId) {
+    public ResponseEntity<List<DeckResponse>> getUserDecks(@CurrentUser Long userId) {
         List<Deck> decks = deckService.getUserDecks(userId);
         List<DeckResponse> response = decks.stream()
                 .map(DeckResponse::new)
@@ -54,11 +55,11 @@ public class DeckController {
 
     /**
      * Get a specific deck
-     * GET /api/users/{userId}/decks/{deckId}
+     * GET /api/decks/{deckId}
      */
     @GetMapping("/{deckId}")
     public ResponseEntity<?> getDeck(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId) {
         return deckService.getDeck(deckId, userId)
                 .map(deck -> ResponseEntity.ok((Object) new DeckResponse(deck)))
@@ -68,11 +69,11 @@ public class DeckController {
 
     /**
      * Update a deck
-     * PUT /api/users/{userId}/decks/{deckId}
+     * PUT /api/decks/{deckId}
      */
     @PutMapping("/{deckId}")
     public ResponseEntity<?> updateDeck(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId,
             @Valid @RequestBody CreateDeckRequest request) {
         try {
@@ -85,11 +86,11 @@ public class DeckController {
 
     /**
      * Delete a deck
-     * DELETE /api/users/{userId}/decks/{deckId}
+     * DELETE /api/decks/{deckId}
      */
     @DeleteMapping("/{deckId}")
     public ResponseEntity<?> deleteDeck(
-            @PathVariable Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long deckId) {
         try {
             deckService.deleteDeck(deckId, userId);
