@@ -1,18 +1,29 @@
-FROM eclipse-temurin:25-jdk
+# Build stage
+FROM eclipse-temurin:25-jdk AS build
 
 WORKDIR /app
 
-# Copy gradle wrapper and build files
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
-
-# Copy source code
 COPY src src
 
-# Build the application
+# Build with native access enabled
+ENV JAVA_TOOL_OPTIONS="--enable-native-access=ALL-UNNAMED"
 RUN ./gradlew build -x test
 
-# Run the application
-CMD ["./gradlew", "bootRun"]
+# Runtime stage
+FROM eclipse-temurin:25-jre
+
+WORKDIR /app
+
+# Copy the built JAR
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Enable native access for runtime
+ENV JAVA_TOOL_OPTIONS="--enable-native-access=ALL-UNNAMED"
+
+EXPOSE 8080
+
+CMD ["java", "-jar", "app.jar"]

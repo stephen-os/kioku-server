@@ -44,45 +44,126 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-// Docker Compose Tasks
+// Development Tasks
 tasks.register('dockerDevClean', Exec) {
     group = 'docker'
-    description = 'Start development environment with clean slate'
-    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'up', '--build', '--force-recreate', '--renew-anon-volumes'
+    description = 'Start development environment with clean slate (removes volumes for fresh database)'
+    workingDir projectDir
+    commandLine 'bash', '-c',
+            'docker-compose -f docker-compose.dev.yml down -v && ' +
+                    'docker-compose -f docker-compose.dev.yml up --build --force-recreate'
 }
 
 tasks.register('dockerDevQuick', Exec) {
     group = 'docker'
-    description = 'Start development environment (preserves data)'
+    description = 'Start development environment (preserves database)'
+    workingDir projectDir
     commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'up', '--build'
 }
 
+tasks.register('dockerDevDetached', Exec) {
+    group = 'docker'
+    description = 'Start development environment in background'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'up', '--build', '-d'
+}
+
+// Production Tasks
 tasks.register('dockerProdClean', Exec) {
     group = 'docker'
-    description = 'Start production environment with clean slate'
-    commandLine 'docker-compose', '-f', 'docker-compose.yml', 'up', '--build', '--force-recreate', '--renew-anon-volumes'
+    description = 'Start production environment with clean slate (removes volumes for fresh database)'
+    workingDir projectDir
+    commandLine 'bash', '-c',
+            'docker-compose -f docker-compose.yml down -v && ' +
+                    'docker-compose -f docker-compose.yml up --build --force-recreate'
 }
 
 tasks.register('dockerProdQuick', Exec) {
     group = 'docker'
-    description = 'Start production environment (preserves data)'
+    description = 'Start production environment (preserves database)'
+    workingDir projectDir
     commandLine 'docker-compose', '-f', 'docker-compose.yml', 'up', '--build'
 }
 
+tasks.register('dockerProdDetached', Exec) {
+    group = 'docker'
+    description = 'Start production environment in background'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.yml', 'up', '--build', '-d'
+}
+
+// Control Tasks
 tasks.register('dockerDown', Exec) {
     group = 'docker'
-    description = 'Stop all Docker containers'
+    description = 'Stop all development containers'
+    workingDir projectDir
     commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'down'
+}
+
+tasks.register('dockerDownProd', Exec) {
+    group = 'docker'
+    description = 'Stop all production containers'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.yml', 'down'
+}
+
+tasks.register('dockerDownAll', Exec) {
+    group = 'docker'
+    description = 'Stop all containers (dev and prod)'
+    workingDir projectDir
+    commandLine 'bash', '-c',
+            'docker-compose -f docker-compose.dev.yml down; ' +
+                    'docker-compose -f docker-compose.yml down'
 }
 
 tasks.register('dockerDownVolumes', Exec) {
     group = 'docker'
-    description = 'Stop all Docker containers and remove volumes'
+    description = 'Stop development containers and remove volumes'
+    workingDir projectDir
     commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'down', '-v'
 }
 
+tasks.register('dockerDownAllVolumes', Exec) {
+    group = 'docker'
+    description = 'Stop all containers and remove all volumes'
+    workingDir projectDir
+    commandLine 'bash', '-c',
+            'docker-compose -f docker-compose.dev.yml down -v; ' +
+                    'docker-compose -f docker-compose.yml down -v'
+}
+
+// Utility Tasks
 tasks.register('dockerLogs', Exec) {
     group = 'docker'
-    description = 'Show Docker container logs'
+    description = 'Show development container logs (follow mode)'
+    workingDir projectDir
     commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'logs', '-f'
+}
+
+tasks.register('dockerLogsProd', Exec) {
+    group = 'docker'
+    description = 'Show production container logs (follow mode)'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.yml', 'logs', '-f'
+}
+
+tasks.register('dockerPs', Exec) {
+    group = 'docker'
+    description = 'Show running containers'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'ps'
+}
+
+tasks.register('dockerRestart', Exec) {
+    group = 'docker'
+    description = 'Restart development containers'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'restart'
+}
+
+tasks.register('dockerRebuild', Exec) {
+    group = 'docker'
+    description = 'Rebuild development images without cache'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'build', '--no-cache'
 }
