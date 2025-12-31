@@ -43,3 +43,46 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// Docker Compose Tasks
+tasks.register('dockerDevClean', Exec) {
+    group = 'docker'
+    description = 'Start development environment with clean slate'
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'up', '--build', '--force-recreate', '--renew-anon-volumes'
+}
+
+tasks.register('dockerDevQuick', Exec) {
+    group = 'docker'
+    description = 'Start development environment (preserves data)'
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'up', '--build'
+}
+
+tasks.register('dockerProdClean', Exec) {
+    group = 'docker'
+    description = 'Start production environment with clean slate'
+    commandLine 'docker-compose', '-f', 'docker-compose.yml', 'up', '--build', '--force-recreate', '--renew-anon-volumes'
+}
+
+tasks.register('dockerProdQuick', Exec) {
+    group = 'docker'
+    description = 'Start production environment (preserves data)'
+    commandLine 'docker-compose', '-f', 'docker-compose.yml', 'up', '--build'
+}
+
+tasks.register('dockerDown', Exec) {
+    group = 'docker'
+    description = 'Stop all Docker containers'
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'down'
+}
+
+tasks.register('dockerDownVolumes', Exec) {
+    group = 'docker'
+    description = 'Stop all Docker containers and remove volumes'
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'down', '-v'
+}
+
+tasks.register('dockerLogs', Exec) {
+    group = 'docker'
+    description = 'Show Docker container logs'
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'logs', '-f'
+}
