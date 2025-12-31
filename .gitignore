@@ -49,3 +49,8 @@ application-*.properties
 
 ### Intellij ### 
 .idea/
+
+# Environment files
+.env
+.env.*
+!.env.example
