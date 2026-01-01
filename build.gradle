@@ -46,6 +46,19 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    jvmArgs(
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '-XX:+EnableDynamicAgentLoading',
+            '-Xshare:off'
+    )
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = false
+    }
 }
 
 // Development Tasks
