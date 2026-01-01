@@ -29,7 +29,7 @@ import java.util.Objects;
  * Sensitive information (emails, passwords, tokens) is never logged.
  *
  * @author Stephen Watson
- * @version 1.0
+ * @version 2.0
  * @since 1.0
  */
 @Entity
@@ -487,13 +487,18 @@ public class User {
     /**
      * Gets the bcrypt password hash for this user.
      *
-     * <p><strong>Security Note:</strong> This method has package-private visibility
-     * to prevent accidental exposure of password hashes. Only the repository and
-     * service layers should access this.
+     * <p><strong>Security Warning:</strong> This method must only be used by
+     * the service layer for password verification. The password hash must
+     * NEVER be exposed in:
+     * <ul>
+     *   <li>API responses or DTOs (use @JsonIgnore)</li>
+     *   <li>Logs or toString() methods</li>
+     *   <li>Error messages</li>
+     * </ul>
      *
-     * @return the bcrypt password hash
+     * @return the bcrypt password hash (60 characters)
      */
-    String getPasswordHash() {
+    public String getPasswordHash() {
         logger.debug("Accessing password hash for user id={}", id);
         return passwordHash;
     }
@@ -501,13 +506,13 @@ public class User {
     /**
      * Sets the bcrypt password hash for this user.
      *
-     * <p><strong>Security Note:</strong> This method has package-private visibility.
-     * Passwords should only be set through the UserService layer which handles
-     * proper bcrypt encoding.
+     * <p><strong>Security Warning:</strong> Passwords should only be set
+     * through UserService which handles proper bcrypt encoding. Direct
+     * use of this setter bypasses security measures.
      *
      * @param passwordHash the bcrypt password hash (60 characters)
      */
-    void setPasswordHash(String passwordHash) {
+    public void setPasswordHash(String passwordHash) {
         logger.debug("Setting password hash for user id={}", id);
         this.passwordHash = passwordHash;
     }
