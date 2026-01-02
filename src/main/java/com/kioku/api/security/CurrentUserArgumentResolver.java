@@ -2,6 +2,7 @@ package com.kioku.api.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.annotation.Nullable;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -72,9 +73,9 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
      * @return the authenticated user's ID, or {@code null} if not authenticated
      */
     @Override
-    public Object resolveArgument(MethodParameter parameter,
+    public Object resolveArgument(@Nullable MethodParameter parameter,
                                   ModelAndViewContainer mavContainer,
-                                  NativeWebRequest webRequest,
+                                  @Nullable NativeWebRequest webRequest,
                                   WebDataBinderFactory binderFactory) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
