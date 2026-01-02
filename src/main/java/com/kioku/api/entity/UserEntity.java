@@ -677,8 +677,8 @@ public class UserEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        UserEntity userEntity = (UserEntity) o;
-        return Objects.equals(id, userEntity.id);
+        UserEntity user = (UserEntity) o;
+        return Objects.equals(id, user.id);
     }
 
     /**

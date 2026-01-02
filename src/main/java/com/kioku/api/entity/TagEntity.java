@@ -53,7 +53,7 @@ public class TagEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity userEntity;
+    private UserEntity user;
 
     /**
      * The deck this tag belongs to.
@@ -61,7 +61,7 @@ public class TagEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deck_id", nullable = false)
-    private DeckEntity deckEntity;
+    private DeckEntity deck;
 
     /**
      * The tag name (e.g., "verbs", "N5", "important").
@@ -86,19 +86,19 @@ public class TagEntity {
     /**
      * Creates a new tag within a deck.
      *
-     * @param deckEntity the deck this tag belongs to
+     * @param deck the deck this tag belongs to
      * @param name the tag name
      * @throws IllegalArgumentException if deck or name is null/empty
      */
-    public TagEntity(DeckEntity deckEntity, String name) {
-        if (deckEntity == null) {
+    public TagEntity(DeckEntity deck, String name) {
+        if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Tag name cannot be null or empty");
         }
-        this.deckEntity = deckEntity;
-        this.userEntity = deckEntity.getUser(); // Inherit user from deck
+        this.deck = deck;
+        this.user = deck.getUser(); // Inherit user from deck
         this.name = name.trim();
     }
 
@@ -129,7 +129,7 @@ public class TagEntity {
      * @return the owner user
      */
     public UserEntity getUser() {
-        return userEntity;
+        return user;
     }
 
     /**
@@ -138,14 +138,14 @@ public class TagEntity {
      * <p><strong>Warning:</strong> This should match the deck's user.
      * Use the constructor to ensure consistency.
      *
-     * @param userEntity the owner user
+     * @param user the owner user
      * @throws IllegalArgumentException if user is null
      */
-    public void setUser(UserEntity userEntity) {
-        if (userEntity == null) {
+    public void setUser(UserEntity user) {
+        if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
-        this.userEntity = userEntity;
+        this.user = user;
     }
 
     /**
@@ -154,7 +154,7 @@ public class TagEntity {
      * @return the parent deck
      */
     public DeckEntity getDeck() {
-        return deckEntity;
+        return deck;
     }
 
     /**
@@ -163,14 +163,14 @@ public class TagEntity {
      * <p><strong>Warning:</strong> Changing the deck will not automatically
      * update the user or remove the tag from cards in the old deck.
      *
-     * @param deckEntity the parent deck
+     * @param deck the parent deck
      * @throws IllegalArgumentException if deck is null
      */
-    public void setDeck(DeckEntity deckEntity) {
-        if (deckEntity == null) {
+    public void setDeck(DeckEntity deck) {
+        if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
-        this.deckEntity = deckEntity;
+        this.deck = deck;
     }
 
     /**
@@ -258,7 +258,7 @@ public class TagEntity {
         return "Tag{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", deckId=" + (deckEntity != null ? deckEntity.getId() : null) +
+                ", deckId=" + (deck != null ? deck.getId() : null) +
                 ", cardCount=" + (cards != null ? cards.size() : 0) +
                 '}';
     }

@@ -62,7 +62,7 @@ public class CardEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deck_id", nullable = false)
-    private DeckEntity deckEntity;
+    private DeckEntity deck;
 
     /**
      * Front of the card (question/prompt).
@@ -137,13 +137,13 @@ public class CardEntity {
     /**
      * Creates a new card with required fields.
      *
-     * @param deckEntity the deck this card belongs to
+     * @param deck the deck this card belongs to
      * @param front the front text (question/prompt)
      * @param back the back text (answer/translation)
      * @throws IllegalArgumentException if deck, front, or back is null
      */
-    public CardEntity(DeckEntity deckEntity, String front, String back) {
-        if (deckEntity == null) {
+    public CardEntity(DeckEntity deck, String front, String back) {
+        if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
         if (front == null || front.trim().isEmpty()) {
@@ -152,7 +152,7 @@ public class CardEntity {
         if (back == null || back.trim().isEmpty()) {
             throw new IllegalArgumentException("Back text cannot be null or empty");
         }
-        this.deckEntity = deckEntity;
+        this.deck = deck;
         this.front = front;
         this.back = back;
     }
@@ -160,14 +160,14 @@ public class CardEntity {
     /**
      * Creates a new card with optional notes.
      *
-     * @param deckEntity the deck this card belongs to
+     * @param deck the deck this card belongs to
      * @param front the front text (question/prompt)
      * @param back the back text (answer/translation)
      * @param notes optional notes for additional context
      * @throws IllegalArgumentException if deck, front, or back is null
      */
-    public CardEntity(DeckEntity deckEntity, String front, String back, String notes) {
-        this(deckEntity, front, back);
+    public CardEntity(DeckEntity deck, String front, String back, String notes) {
+        this(deck, front, back);
         this.notes = notes;
     }
 
@@ -217,7 +217,7 @@ public class CardEntity {
      * @return the parent deck
      */
     public DeckEntity getDeck() {
-        return deckEntity;
+        return deck;
     }
 
     /**
@@ -227,14 +227,14 @@ public class CardEntity {
      * update the old deck's card collection. Manage both sides of the
      * relationship manually.
      *
-     * @param deckEntity the parent deck
+     * @param deck the parent deck
      * @throws IllegalArgumentException if deck is null
      */
-    public void setDeck(DeckEntity deckEntity) {
-        if (deckEntity == null) {
+    public void setDeck(DeckEntity deck) {
+        if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
-        this.deckEntity = deckEntity;
+        this.deck = deck;
     }
 
     /**
@@ -327,15 +327,15 @@ public class CardEntity {
      * <p>Maintains bidirectional relationship by also adding this card
      * to the tag's card collection.
      *
-     * @param tagEntity the tag to add
+     * @param tag the tag to add
      * @throws IllegalArgumentException if tag is null
      */
-    public void addTag(TagEntity tagEntity) {
-        if (tagEntity == null) {
+    public void addTag(TagEntity tag) {
+        if (tag == null) {
             throw new IllegalArgumentException("Tag cannot be null");
         }
-        this.tags.add(tagEntity);
-        tagEntity.getCards().add(this);
+        this.tags.add(tag);
+        tag.getCards().add(this);
     }
 
     /**
@@ -344,15 +344,15 @@ public class CardEntity {
      * <p>Maintains bidirectional relationship by also removing this card
      * from the tag's card collection.
      *
-     * @param tagEntity the tag to remove
+     * @param tag the tag to remove
      * @throws IllegalArgumentException if tag is null
      */
-    public void removeTag(TagEntity tagEntity) {
-        if (tagEntity == null) {
+    public void removeTag(TagEntity tag) {
+        if (tag == null) {
             throw new IllegalArgumentException("Tag cannot be null");
         }
-        this.tags.remove(tagEntity);
-        tagEntity.getCards().remove(this);
+        this.tags.remove(tag);
+        tag.getCards().remove(this);
     }
 
     /**
@@ -362,8 +362,8 @@ public class CardEntity {
      * from all tag collections.
      */
     public void clearTags() {
-        for (TagEntity tagEntity : new HashSet<>(tags)) {
-            removeTag(tagEntity);
+        for (TagEntity tag : new HashSet<>(tags)) {
+            removeTag(tag);
         }
     }
 

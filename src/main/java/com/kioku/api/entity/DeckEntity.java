@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * Entity representing a flashcard deck.
  *
- * <p>A deck is a collection of flashcards ({@link Card}) that:
+ * <p>A deck is a collection of flashcards ({@link CardEntity}) that:
  * <ul>
  *   <li>Belongs to a single user</li>
  *   <li>Has a unique name per user</li>
@@ -21,7 +21,7 @@ import java.util.Objects;
  * <p><strong>Relationships:</strong>
  * <ul>
  *   <li>Many-to-One with {@link UserEntity} (each deck belongs to one user)</li>
- *   <li>One-to-Many with {@link Card} (deck contains multiple cards)</li>
+ *   <li>One-to-Many with {@link CardEntity} (deck contains multiple cards)</li>
  *   <li>One-to-Many with {@link TagEntity} (deck can have multiple tags)</li>
  * </ul>
  *
@@ -68,7 +68,7 @@ public class DeckEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity userEntity;
+    private UserEntity user;
 
     /**
      * The deck name.
@@ -124,19 +124,19 @@ public class DeckEntity {
     /**
      * Creates a new deck with required fields.
      *
-     * @param userEntity the user who owns this deck
+     * @param user the user who owns this deck
      * @param name the deck name
      * @param description optional description
      * @throws IllegalArgumentException if user or name is null/empty
      */
-    public DeckEntity(UserEntity userEntity, String name, String description) {
-        if (userEntity == null) {
+    public DeckEntity(UserEntity user, String name, String description) {
+        if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Deck name cannot be null or empty");
         }
-        this.userEntity = userEntity;
+        this.user = user;
         this.name = name.trim();
 
         if (description != null) {
@@ -193,7 +193,7 @@ public class DeckEntity {
      * @return the owner user
      */
     public UserEntity getUser() {
-        return userEntity;
+        return user;
     }
 
     /**
@@ -202,14 +202,14 @@ public class DeckEntity {
      * <p><strong>Warning:</strong> Changing deck ownership can have
      * security implications. Ensure proper authorization before changing.
      *
-     * @param userEntity the owner user
+     * @param user the owner user
      * @throws IllegalArgumentException if user is null
      */
-    public void setUser(UserEntity userEntity) {
-        if (userEntity == null) {
+    public void setUser(UserEntity user) {
+        if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
-        this.userEntity = userEntity;
+        this.user = user;
     }
 
     /**
@@ -291,8 +291,8 @@ public class DeckEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DeckEntity deckEntity = (DeckEntity) o;
-        return id != null && Objects.equals(id, deckEntity.id) && Objects.equals(name, deckEntity.name);
+        DeckEntity deck = (DeckEntity) o;
+        return id != null && Objects.equals(id, deck.id) && Objects.equals(name, deck.name);
     }
 
     /**
@@ -320,7 +320,7 @@ public class DeckEntity {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
-                ", userId=" + (userEntity != null ? userEntity.getId() : null) +
+                ", userId=" + (user != null ? user.getId() : null) +
                 ", version=" + version +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
