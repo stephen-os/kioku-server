@@ -1,6 +1,6 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.User;
+import com.kioku.api.entity.UserEntity;
 import com.kioku.api.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,9 +63,9 @@ public class UserService {
      * @return an Optional containing the user if found, empty otherwise
      */
     @Transactional(readOnly = true)
-    public Optional<User> findById(Long id) {
+    public Optional<UserEntity> findById(Long id) {
         logger.debug("Finding user by id={}", id);
-        Optional<User> user = userRepository.findById(id);
+        Optional<UserEntity> user = userRepository.findById(id);
         logger.debug("User found: {}", user.isPresent());
         return user;
     }
@@ -79,9 +79,9 @@ public class UserService {
      * @return an Optional containing the user if found, empty otherwise
      */
     @Transactional(readOnly = true)
-    public Optional<User> findByEmail(String email) {
+    public Optional<UserEntity> findByEmail(String email) {
         logger.debug("Finding user by email");
-        Optional<User> user = userRepository.findByEmail(email);
+        Optional<UserEntity> user = userRepository.findByEmail(email);
         logger.debug("User found: {}", user.isPresent());
         return user;
     }
@@ -109,11 +109,11 @@ public class UserService {
      * @return a list of users with the given status
      */
     @Transactional(readOnly = true)
-    public List<User> findByStatus(User.UserStatus status) {
+    public List<UserEntity> findByStatus(UserEntity.UserStatus status) {
         logger.debug("Finding users by status={}", status);
-        List<User> users = userRepository.findByStatus(status);
-        logger.debug("Found {} users with status={}", users.size(), status);
-        return users;
+        List<UserEntity> userEntities = userRepository.findByStatus(status);
+        logger.debug("Found {} users with status={}", userEntities.size(), status);
+        return userEntities;
     }
 
     /**
@@ -122,11 +122,11 @@ public class UserService {
      * @return a list of active users
      */
     @Transactional(readOnly = true)
-    public List<User> findActiveAccounts() {
+    public List<UserEntity> findActiveAccounts() {
         logger.debug("Finding all active accounts");
-        List<User> users = userRepository.findActiveAccounts(LocalDateTime.now());
-        logger.debug("Found {} active accounts", users.size());
-        return users;
+        List<UserEntity> userEntities = userRepository.findActiveAccounts(LocalDateTime.now());
+        logger.debug("Found {} active accounts", userEntities.size());
+        return userEntities;
     }
 
     /**
@@ -135,11 +135,11 @@ public class UserService {
      * @return a list of locked users
      */
     @Transactional(readOnly = true)
-    public List<User> findLockedAccounts() {
+    public List<UserEntity> findLockedAccounts() {
         logger.debug("Finding all locked accounts");
-        List<User> users = userRepository.findLockedAccounts(LocalDateTime.now());
-        logger.debug("Found {} locked accounts", users.size());
-        return users;
+        List<UserEntity> userEntities = userRepository.findLockedAccounts(LocalDateTime.now());
+        logger.debug("Found {} locked accounts", userEntities.size());
+        return userEntities;
     }
 
     // User Registration and Authentication
@@ -160,7 +160,7 @@ public class UserService {
      * @return the newly created user
      * @throws IllegalArgumentException if email already exists
      */
-    public User registerUser(String email, String password) {
+    public UserEntity registerUser(String email, String password) {
         logger.debug("Registering new user");
 
         if (existsByEmail(email)) {
@@ -169,13 +169,13 @@ public class UserService {
         }
 
         String hashedPassword = passwordEncoder.encode(password);
-        User user = new User(email, hashedPassword);
-        user.setStatus(User.UserStatus.PENDING_VERIFICATION);
+        UserEntity userEntity = new UserEntity(email, hashedPassword);
+        userEntity.setStatus(UserEntity.UserStatus.PENDING_VERIFICATION);
 
-        User savedUser = userRepository.save(user);
-        logger.debug("User registered successfully with id={}", savedUser.getId());
+        UserEntity savedUserEntity = userRepository.save(userEntity);
+        logger.debug("User registered successfully with id={}", savedUserEntity.getId());
 
-        return savedUser;
+        return savedUserEntity;
     }
 
     /**
@@ -193,43 +193,43 @@ public class UserService {
      * @param password the user's plain text password
      * @return an Optional containing the authenticated user, or empty if authentication fails
      */
-    public Optional<User> authenticateUser(String email, String password) {
+    public Optional<UserEntity> authenticateUser(String email, String password) {
         logger.debug("Authenticating user");
 
-        Optional<User> userOpt = findByEmail(email);
+        Optional<UserEntity> userOpt = findByEmail(email);
 
         if (userOpt.isEmpty()) {
             logger.debug("Authentication failed: user not found");
             return Optional.empty();
         }
 
-        User user = userOpt.get();
+        UserEntity userEntity = userOpt.get();
 
         // Check if account is locked
-        if (user.isLocked()) {
+        if (userEntity.isLocked()) {
             logger.warn("Authentication failed: user id={} account is locked until {}",
-                    user.getId(), user.getLockedUntil());
-            user.recordFailedLoginAttempt();
-            userRepository.save(user);
+                    userEntity.getId(), userEntity.getLockedUntil());
+            userEntity.recordFailedLoginAttempt();
+            userRepository.save(userEntity);
             return Optional.empty();
         }
 
         // Check if account is deleted
-        if (user.isDeleted()) {
-            logger.warn("Authentication failed: user id={} account is deleted", user.getId());
+        if (userEntity.isDeleted()) {
+            logger.warn("Authentication failed: user id={} account is deleted", userEntity.getId());
             return Optional.empty();
         }
 
         // Verify password
-        if (passwordEncoder.matches(password, user.getPasswordHash())) {
-            logger.debug("Authentication successful for user id={}", user.getId());
-            user.recordSuccessfulLogin();
-            userRepository.save(user);
-            return Optional.of(user);
+        if (passwordEncoder.matches(password, userEntity.getPasswordHash())) {
+            logger.debug("Authentication successful for user id={}", userEntity.getId());
+            userEntity.recordSuccessfulLogin();
+            userRepository.save(userEntity);
+            return Optional.of(userEntity);
         } else {
-            logger.debug("Authentication failed: invalid password for user id={}", user.getId());
-            user.recordFailedLoginAttempt();
-            userRepository.save(user);
+            logger.debug("Authentication failed: invalid password for user id={}", userEntity.getId());
+            userEntity.recordFailedLoginAttempt();
+            userRepository.save(userEntity);
             return Optional.empty();
         }
     }
@@ -248,12 +248,12 @@ public class UserService {
     public String initiateEmailVerification(Long userId) {
         logger.debug("Initiating email verification for user id={}", userId);
 
-        User user = userRepository.findById(userId)
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         String token = UUID.randomUUID().toString();
-        user.setEmailVerificationToken(token);
-        userRepository.save(user);
+        userEntity.setEmailVerificationToken(token);
+        userRepository.save(userEntity);
 
         logger.debug("Email verification token generated for user id={}", userId);
         return token;
@@ -268,25 +268,25 @@ public class UserService {
     public boolean verifyEmail(String token) {
         logger.debug("Verifying email with token");
 
-        Optional<User> userOpt = userRepository.findByEmailVerificationToken(token);
+        Optional<UserEntity> userOpt = userRepository.findByEmailVerificationToken(token);
 
         if (userOpt.isEmpty()) {
             logger.debug("Email verification failed: invalid token");
             return false;
         }
 
-        User user = userOpt.get();
+        UserEntity userEntity = userOpt.get();
 
-        if (user.isEmailVerificationTokenExpired()) {
-            logger.debug("Email verification failed: token expired for user id={}", user.getId());
+        if (userEntity.isEmailVerificationTokenExpired()) {
+            logger.debug("Email verification failed: token expired for user id={}", userEntity.getId());
             return false;
         }
 
-        user.verifyEmail();
-        user.setStatus(User.UserStatus.ACTIVE);
-        userRepository.save(user);
+        userEntity.verifyEmail();
+        userEntity.setStatus(UserEntity.UserStatus.ACTIVE);
+        userRepository.save(userEntity);
 
-        logger.debug("Email verified successfully for user id={}", user.getId());
+        logger.debug("Email verified successfully for user id={}", userEntity.getId());
         return true;
     }
 
@@ -303,19 +303,19 @@ public class UserService {
     public Optional<String> initiatePasswordReset(String email) {
         logger.debug("Initiating password reset");
 
-        Optional<User> userOpt = findByEmail(email);
+        Optional<UserEntity> userOpt = findByEmail(email);
 
         if (userOpt.isEmpty()) {
             logger.debug("Password reset failed: user not found");
             return Optional.empty();
         }
 
-        User user = userOpt.get();
+        UserEntity userEntity = userOpt.get();
         String token = UUID.randomUUID().toString();
-        user.setPasswordResetToken(token);
-        userRepository.save(user);
+        userEntity.setPasswordResetToken(token);
+        userRepository.save(userEntity);
 
-        logger.debug("Password reset token generated for user id={}", user.getId());
+        logger.debug("Password reset token generated for user id={}", userEntity.getId());
         return Optional.of(token);
     }
 
@@ -329,26 +329,26 @@ public class UserService {
     public boolean resetPassword(String token, String newPassword) {
         logger.debug("Resetting password with token");
 
-        Optional<User> userOpt = userRepository.findByPasswordResetToken(token);
+        Optional<UserEntity> userOpt = userRepository.findByPasswordResetToken(token);
 
         if (userOpt.isEmpty()) {
             logger.debug("Password reset failed: invalid token");
             return false;
         }
 
-        User user = userOpt.get();
+        UserEntity userEntity = userOpt.get();
 
-        if (user.isPasswordResetTokenExpired()) {
-            logger.debug("Password reset failed: token expired for user id={}", user.getId());
+        if (userEntity.isPasswordResetTokenExpired()) {
+            logger.debug("Password reset failed: token expired for user id={}", userEntity.getId());
             return false;
         }
 
         String hashedPassword = passwordEncoder.encode(newPassword);
-        user.setPasswordHash(hashedPassword);
-        user.clearPasswordResetToken();
-        userRepository.save(user);
+        userEntity.setPasswordHash(hashedPassword);
+        userEntity.clearPasswordResetToken();
+        userRepository.save(userEntity);
 
-        logger.debug("Password reset successfully for user id={}", user.getId());
+        logger.debug("Password reset successfully for user id={}", userEntity.getId());
         return true;
     }
 
@@ -366,17 +366,17 @@ public class UserService {
     public boolean updatePassword(Long userId, String currentPassword, String newPassword) {
         logger.debug("Updating password for user id={}", userId);
 
-        User user = userRepository.findById(userId)
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+        if (!passwordEncoder.matches(currentPassword, userEntity.getPasswordHash())) {
             logger.debug("Password update failed: current password incorrect for user id={}", userId);
             return false;
         }
 
         String hashedPassword = passwordEncoder.encode(newPassword);
-        user.setPasswordHash(hashedPassword);
-        userRepository.save(user);
+        userEntity.setPasswordHash(hashedPassword);
+        userRepository.save(userEntity);
 
         logger.debug("Password updated successfully for user id={}", userId);
         return true;
@@ -391,11 +391,11 @@ public class UserService {
     public void deleteUser(Long userId) {
         logger.debug("Soft deleting user id={}", userId);
 
-        User user = userRepository.findById(userId)
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.softDelete();
-        userRepository.save(user);
+        userEntity.softDelete();
+        userRepository.save(userEntity);
 
         logger.debug("User id={} soft deleted successfully", userId);
     }
@@ -409,11 +409,11 @@ public class UserService {
     public void restoreUser(Long userId) {
         logger.debug("Restoring user id={}", userId);
 
-        User user = userRepository.findById(userId)
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.restore();
-        userRepository.save(user);
+        userEntity.restore();
+        userRepository.save(userEntity);
 
         logger.debug("User id={} restored successfully", userId);
     }
@@ -427,11 +427,11 @@ public class UserService {
     public void suspendUser(Long userId) {
         logger.debug("Suspending user id={}", userId);
 
-        User user = userRepository.findById(userId)
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.setStatus(User.UserStatus.SUSPENDED);
-        userRepository.save(user);
+        userEntity.setStatus(UserEntity.UserStatus.SUSPENDED);
+        userRepository.save(userEntity);
 
         logger.debug("User id={} suspended successfully", userId);
     }
@@ -445,11 +445,11 @@ public class UserService {
     public void activateUser(Long userId) {
         logger.debug("Activating user id={}", userId);
 
-        User user = userRepository.findById(userId)
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.setStatus(User.UserStatus.ACTIVE);
-        userRepository.save(user);
+        userEntity.setStatus(UserEntity.UserStatus.ACTIVE);
+        userRepository.save(userEntity);
 
         logger.debug("User id={} activated successfully", userId);
     }
@@ -463,12 +463,12 @@ public class UserService {
     public void unlockUser(Long userId) {
         logger.debug("Unlocking user id={}", userId);
 
-        User user = userRepository.findById(userId)
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.setLockedUntil(null);
-        user.setFailedLoginAttempts(0);
-        userRepository.save(user);
+        userEntity.setLockedUntil(null);
+        userEntity.setFailedLoginAttempts(0);
+        userRepository.save(userEntity);
 
         logger.debug("User id={} unlocked successfully", userId);
     }
@@ -486,7 +486,7 @@ public class UserService {
      * @return the created user
      * @throws IllegalArgumentException if email already exists
      */
-    public User createUser(String email, String passwordHash) {
+    public UserEntity createUser(String email, String passwordHash) {
         logger.debug("Creating user with pre-hashed password (testing mode)");
 
         if (existsByEmail(email)) {
@@ -494,10 +494,10 @@ public class UserService {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        User user = new User(email, passwordHash);
-        User savedUser = userRepository.save(user);
+        UserEntity userEntity = new UserEntity(email, passwordHash);
+        UserEntity savedUserEntity = userRepository.save(userEntity);
 
-        logger.debug("User created with id={}", savedUser.getId());
-        return savedUser;
+        logger.debug("User created with id={}", savedUserEntity.getId());
+        return savedUserEntity;
     }
 }
