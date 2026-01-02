@@ -20,8 +20,8 @@ import java.util.Set;
  *
  * <p><strong>Bidirectional Relationships:</strong>
  * <ul>
- *   <li>Many-to-One with {@link Deck} (each card belongs to one deck)</li>
- *   <li>Many-to-Many with {@link Tag} (cards can have multiple tags)</li>
+ *   <li>Many-to-One with {@link DeckEntity} (each card belongs to one deck)</li>
+ *   <li>Many-to-Many with {@link TagEntity} (cards can have multiple tags)</li>
  * </ul>
  *
  * <p><strong>Edit Support:</strong>
@@ -43,7 +43,7 @@ import java.util.Set;
         @Index(name = "idx_card_deck_id", columnList = "deck_id"),
         @Index(name = "idx_card_created_at", columnList = "created_at")
 })
-public class Card {
+public class CardEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,7 +62,7 @@ public class Card {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deck_id", nullable = false)
-    private Deck deck;
+    private DeckEntity deckEntity;
 
     /**
      * Front of the card (question/prompt).
@@ -95,7 +95,7 @@ public class Card {
             joinColumns = @JoinColumn(name = "card_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
-    private Set<Tag> tags = new HashSet<>();
+    private Set<TagEntity> tags = new HashSet<>();
 
     /**
      * Timestamp when the card was created.
@@ -131,19 +131,19 @@ public class Card {
     /**
      * Default constructor for JPA.
      */
-    public Card() {
+    public CardEntity() {
     }
 
     /**
      * Creates a new card with required fields.
      *
-     * @param deck the deck this card belongs to
+     * @param deckEntity the deck this card belongs to
      * @param front the front text (question/prompt)
      * @param back the back text (answer/translation)
      * @throws IllegalArgumentException if deck, front, or back is null
      */
-    public Card(Deck deck, String front, String back) {
-        if (deck == null) {
+    public CardEntity(DeckEntity deckEntity, String front, String back) {
+        if (deckEntity == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
         if (front == null || front.trim().isEmpty()) {
@@ -152,7 +152,7 @@ public class Card {
         if (back == null || back.trim().isEmpty()) {
             throw new IllegalArgumentException("Back text cannot be null or empty");
         }
-        this.deck = deck;
+        this.deckEntity = deckEntity;
         this.front = front;
         this.back = back;
     }
@@ -160,14 +160,14 @@ public class Card {
     /**
      * Creates a new card with optional notes.
      *
-     * @param deck the deck this card belongs to
+     * @param deckEntity the deck this card belongs to
      * @param front the front text (question/prompt)
      * @param back the back text (answer/translation)
      * @param notes optional notes for additional context
      * @throws IllegalArgumentException if deck, front, or back is null
      */
-    public Card(Deck deck, String front, String back, String notes) {
-        this(deck, front, back);
+    public CardEntity(DeckEntity deckEntity, String front, String back, String notes) {
+        this(deckEntity, front, back);
         this.notes = notes;
     }
 
@@ -216,8 +216,8 @@ public class Card {
      *
      * @return the parent deck
      */
-    public Deck getDeck() {
-        return deck;
+    public DeckEntity getDeck() {
+        return deckEntity;
     }
 
     /**
@@ -227,14 +227,14 @@ public class Card {
      * update the old deck's card collection. Manage both sides of the
      * relationship manually.
      *
-     * @param deck the parent deck
+     * @param deckEntity the parent deck
      * @throws IllegalArgumentException if deck is null
      */
-    public void setDeck(Deck deck) {
-        if (deck == null) {
+    public void setDeck(DeckEntity deckEntity) {
+        if (deckEntity == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
-        this.deck = deck;
+        this.deckEntity = deckEntity;
     }
 
     /**
@@ -304,7 +304,7 @@ public class Card {
      *
      * @return an unmodifiable set of tags
      */
-    public Set<Tag> getTags() {
+    public Set<TagEntity> getTags() {
         return tags;
     }
 
@@ -312,12 +312,12 @@ public class Card {
      * Sets the tags for this card.
      *
      * <p><strong>Warning:</strong> This replaces all existing tags.
-     * Use {@link #addTag(Tag)} or {@link #removeTag(Tag)} to modify
+     * Use {@link #addTag(TagEntity)} or {@link #removeTag(TagEntity)} to modify
      * individual tags while maintaining bidirectional consistency.
      *
      * @param tags the new set of tags
      */
-    public void setTags(Set<Tag> tags) {
+    public void setTags(Set<TagEntity> tags) {
         this.tags = tags != null ? tags : new HashSet<>();
     }
 
@@ -327,15 +327,15 @@ public class Card {
      * <p>Maintains bidirectional relationship by also adding this card
      * to the tag's card collection.
      *
-     * @param tag the tag to add
+     * @param tagEntity the tag to add
      * @throws IllegalArgumentException if tag is null
      */
-    public void addTag(Tag tag) {
-        if (tag == null) {
+    public void addTag(TagEntity tagEntity) {
+        if (tagEntity == null) {
             throw new IllegalArgumentException("Tag cannot be null");
         }
-        this.tags.add(tag);
-        tag.getCards().add(this);
+        this.tags.add(tagEntity);
+        tagEntity.getCards().add(this);
     }
 
     /**
@@ -344,15 +344,15 @@ public class Card {
      * <p>Maintains bidirectional relationship by also removing this card
      * from the tag's card collection.
      *
-     * @param tag the tag to remove
+     * @param tagEntity the tag to remove
      * @throws IllegalArgumentException if tag is null
      */
-    public void removeTag(Tag tag) {
-        if (tag == null) {
+    public void removeTag(TagEntity tagEntity) {
+        if (tagEntity == null) {
             throw new IllegalArgumentException("Tag cannot be null");
         }
-        this.tags.remove(tag);
-        tag.getCards().remove(this);
+        this.tags.remove(tagEntity);
+        tagEntity.getCards().remove(this);
     }
 
     /**
@@ -362,8 +362,8 @@ public class Card {
      * from all tag collections.
      */
     public void clearTags() {
-        for (Tag tag : new HashSet<>(tags)) {
-            removeTag(tag);
+        for (TagEntity tagEntity : new HashSet<>(tags)) {
+            removeTag(tagEntity);
         }
     }
 
@@ -398,7 +398,7 @@ public class Card {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Card card = (Card) o;
+        CardEntity card = (CardEntity) o;
         return id != null && Objects.equals(id, card.id);
     }
 
