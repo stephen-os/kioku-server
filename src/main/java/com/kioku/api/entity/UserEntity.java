@@ -41,9 +41,9 @@ import java.util.Objects;
                 @Index(name = "idx_user_created_at", columnList = "created_at")
         }
 )
-public class User {
+public class UserEntity {
 
-    private static final Logger logger = LoggerFactory.getLogger(User.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserEntity.class);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,13 +51,13 @@ public class User {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
-    @Column(unique = true, nullable = false, length = 255)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
-    @Column(name = "email_verification_token", length = 255)
+    @Column(name = "email_verification_token")
     private String emailVerificationToken;
 
     @Column(name = "email_verification_sent_at")
@@ -67,7 +67,7 @@ public class User {
     @Column(name = "password_hash", nullable = false, length = 60)
     private String passwordHash;
 
-    @Column(name = "password_reset_token", length = 255)
+    @Column(name = "password_reset_token")
     private String passwordResetToken;
 
     @Column(name = "password_reset_sent_at")
@@ -95,6 +95,7 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @SuppressWarnings("unused")
     @Version
     private Long version;
 
@@ -143,23 +144,23 @@ public class User {
     /**
      * Default constructor required by JPA.
      */
-    public User() {
-        logger.debug("Creating new User instance (no-args constructor)");
+    public UserEntity() {
+        logger.debug("Creating new UserEntity instance (no-args constructor)");
     }
 
     /**
-     * Constructs a new User with the specified email and password hash.
+     * Constructs a new UserEntity with the specified email and password hash.
      *
      * <p>The email is automatically normalized to lowercase and trimmed.
      *
      * @param email the user's email address (will be normalized)
      * @param passwordHash the bcrypt hashed password (should be 60 characters)
      */
-    public User(String email, String passwordHash) {
+    public UserEntity(String email, String passwordHash) {
         this.email = email != null ? email.toLowerCase().trim() : null;
         this.passwordHash = passwordHash;
 
-        logger.debug("Creating new User with constructor");
+        logger.debug("Creating new UserEntity with constructor");
     }
 
     /**
@@ -172,7 +173,7 @@ public class User {
      */
     public boolean isLocked() {
         boolean locked = lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
-        logger.debug("User id={} lock status checked: locked={}, lockedUntil={}",
+        logger.debug("UserEntity id={} lock status checked: locked={}, lockedUntil={}",
                 id, locked, lockedUntil);
         return locked;
     }
@@ -187,7 +188,7 @@ public class User {
      */
     public boolean isDeleted() {
         boolean deleted = deletedAt != null;
-        logger.debug("User id={} deletion status checked: deleted={}, deletedAt={}",
+        logger.debug("UserEntity id={} deletion status checked: deleted={}, deletedAt={}",
                 id, deleted, deletedAt);
         return deleted;
     }
@@ -206,7 +207,7 @@ public class User {
      */
     public boolean isActive() {
         boolean active = status == UserStatus.ACTIVE && !isLocked() && !isDeleted();
-        logger.debug("User id={} active status checked: active={}, status={}",
+        logger.debug("UserEntity id={} active status checked: active={}, status={}",
                 id, active, status);
         return active;
     }
@@ -226,10 +227,10 @@ public class User {
 
         if (failedLoginAttempts >= 5) {
             lockedUntil = LocalDateTime.now().plusMinutes(15);
-            logger.debug("User id={} account locked after {} failed login attempts, lockedUntil={}",
+            logger.debug("UserEntity id={} account locked after {} failed login attempts, lockedUntil={}",
                     id, failedLoginAttempts, lockedUntil);
         } else {
-            logger.debug("User id={} failed login attempt recorded: {} -> {}",
+            logger.debug("UserEntity id={} failed login attempt recorded: {} -> {}",
                     id, previousAttempts, failedLoginAttempts);
         }
     }
@@ -250,7 +251,7 @@ public class User {
         lockedUntil = null;
         lastLoginAt = LocalDateTime.now();
 
-        logger.debug("User id={} successful login recorded: failedAttempts {} -> 0, lastLoginAt={}",
+        logger.debug("UserEntity id={} successful login recorded: failedAttempts {} -> 0, lastLoginAt={}",
                 id, previousAttempts, lastLoginAt);
     }
 
@@ -268,7 +269,7 @@ public class User {
         deletedAt = LocalDateTime.now();
         status = UserStatus.DELETED;
 
-        logger.debug("User id={} soft deleted: status {} -> {}, deletedAt={}",
+        logger.debug("UserEntity id={} soft deleted: status {} -> {}, deletedAt={}",
                 id, previousStatus, status, deletedAt);
     }
 
@@ -285,7 +286,7 @@ public class User {
         deletedAt = null;
         status = UserStatus.ACTIVE;
 
-        logger.debug("User id={} restored: status {} -> {}, deletedAt cleared",
+        logger.debug("UserEntity id={} restored: status {} -> {}, deletedAt cleared",
                 id, previousStatus, status);
     }
 
@@ -301,7 +302,7 @@ public class User {
         this.emailVerificationToken = token;
         this.emailVerificationSentAt = LocalDateTime.now();
 
-        logger.debug("User id={} email verification token set, sentAt={}",
+        logger.debug("UserEntity id={} email verification token set, sentAt={}",
                 id, emailVerificationSentAt);
     }
 
@@ -321,7 +322,7 @@ public class User {
         this.emailVerificationToken = null;
         this.emailVerificationSentAt = null;
 
-        logger.debug("User id={} email verified: emailVerified {} -> true, token cleared",
+        logger.debug("UserEntity id={} email verified: emailVerified {} -> true, token cleared",
                 id, previouslyVerified);
     }
 
@@ -337,7 +338,7 @@ public class User {
         this.passwordResetToken = token;
         this.passwordResetSentAt = LocalDateTime.now();
 
-        logger.debug("User id={} password reset token set, sentAt={}",
+        logger.debug("UserEntity id={} password reset token set, sentAt={}",
                 id, passwordResetSentAt);
     }
 
@@ -351,7 +352,7 @@ public class User {
         this.passwordResetToken = null;
         this.passwordResetSentAt = null;
 
-        logger.debug("User id={} password reset token cleared", id);
+        logger.debug("UserEntity id={} password reset token cleared", id);
     }
 
     /**
@@ -363,12 +364,12 @@ public class User {
      */
     public boolean isPasswordResetTokenExpired() {
         if (passwordResetSentAt == null) {
-            logger.debug("User id={} password reset token check: no token sent", id);
+            logger.debug("UserEntity id={} password reset token check: no token sent", id);
             return true;
         }
 
         boolean expired = passwordResetSentAt.plusHours(24).isBefore(LocalDateTime.now());
-        logger.debug("User id={} password reset token expired: {}, sentAt={}, expiresAt={}",
+        logger.debug("UserEntity id={} password reset token expired: {}, sentAt={}, expiresAt={}",
                 id, expired, passwordResetSentAt, passwordResetSentAt.plusHours(24));
 
         return expired;
@@ -383,12 +384,12 @@ public class User {
      */
     public boolean isEmailVerificationTokenExpired() {
         if (emailVerificationSentAt == null) {
-            logger.debug("User id={} email verification token check: no token sent", id);
+            logger.debug("UserEntity id={} email verification token check: no token sent", id);
             return true;
         }
 
         boolean expired = emailVerificationSentAt.plusHours(24).isBefore(LocalDateTime.now());
-        logger.debug("User id={} email verification token expired: {}, sentAt={}, expiresAt={}",
+        logger.debug("UserEntity id={} email verification token expired: {}, sentAt={}, expiresAt={}",
                 id, expired, emailVerificationSentAt, emailVerificationSentAt.plusHours(24));
 
         return expired;
@@ -437,7 +438,7 @@ public class User {
      */
     public void setEmail(String email) {
         this.email = email != null ? email.toLowerCase().trim() : null;
-        logger.debug("User id={} email updated", id);
+        logger.debug("UserEntity id={} email updated", id);
     }
 
     /**
@@ -460,7 +461,7 @@ public class User {
     public void setEmailVerified(boolean emailVerified) {
         boolean previous = this.emailVerified;
         this.emailVerified = emailVerified;
-        logger.debug("User id={} emailVerified changed: {} -> {}", id, previous, emailVerified);
+        logger.debug("UserEntity id={} emailVerified changed: {} -> {}", id, previous, emailVerified);
     }
 
     /**
@@ -555,7 +556,7 @@ public class User {
     public void setStatus(UserStatus status) {
         UserStatus previous = this.status;
         this.status = status;
-        logger.debug("User id={} status changed: {} -> {}", id, previous, status);
+        logger.debug("UserEntity id={} status changed: {} -> {}", id, previous, status);
     }
 
     /**
@@ -578,7 +579,7 @@ public class User {
     public void setFailedLoginAttempts(int failedLoginAttempts) {
         int previous = this.failedLoginAttempts;
         this.failedLoginAttempts = failedLoginAttempts;
-        logger.debug("User id={} failedLoginAttempts changed: {} -> {}",
+        logger.debug("UserEntity id={} failedLoginAttempts changed: {} -> {}",
                 id, previous, failedLoginAttempts);
     }
 
@@ -599,7 +600,7 @@ public class User {
     public void setLockedUntil(LocalDateTime lockedUntil) {
         LocalDateTime previous = this.lockedUntil;
         this.lockedUntil = lockedUntil;
-        logger.debug("User id={} lockedUntil changed: {} -> {}", id, previous, lockedUntil);
+        logger.debug("UserEntity id={} lockedUntil changed: {} -> {}", id, previous, lockedUntil);
     }
 
     /**
@@ -622,7 +623,7 @@ public class User {
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         LocalDateTime previous = this.lastLoginAt;
         this.lastLoginAt = lastLoginAt;
-        logger.debug("User id={} lastLoginAt changed: {} -> {}", id, previous, lastLoginAt);
+        logger.debug("UserEntity id={} lastLoginAt changed: {} -> {}", id, previous, lastLoginAt);
     }
 
     /**
@@ -676,8 +677,8 @@ public class User {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id);
+        UserEntity userEntity = (UserEntity) o;
+        return Objects.equals(id, userEntity.id);
     }
 
     /**
