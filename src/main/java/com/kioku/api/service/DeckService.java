@@ -1,7 +1,7 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.Deck;
-import com.kioku.api.entity.User;
+import com.kioku.api.entity.DeckEntity;
+import com.kioku.api.entity.UserEntity;
 import com.kioku.api.repository.DeckRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,41 +24,41 @@ public class DeckService {
     /**
      * Create a new deck for a user
      */
-    public Deck createDeck(Long userId, String name, String description) {
-        User user = userService.findById(userId)
+    public DeckEntity createDeck(Long userId, String name, String description) {
+        UserEntity userEntity = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
         // Check for duplicate name
-        List<Deck> existingDecks = deckRepository.findByUserId(userId);
-        boolean nameExists = existingDecks.stream()
+        List<DeckEntity> existingDeckEntities = deckRepository.findByUserId(userId);
+        boolean nameExists = existingDeckEntities.stream()
                 .anyMatch(d -> d.getName().equals(name));
 
         if (nameExists) {
             throw new IllegalArgumentException("Deck with name '" + name + "' already exists");
         }
 
-        Deck deck = new Deck(user, name, description);
-        return deckRepository.save(deck);
+        DeckEntity deckEntity = new DeckEntity(userEntity, name, description);
+        return deckRepository.save(deckEntity);
     }
 
     /**
      * Get all decks for a user
      */
-    public List<Deck> getUserDecks(Long userId) {
+    public List<DeckEntity> getUserDecks(Long userId) {
         return deckRepository.findByUserId(userId);
     }
 
     /**
      * Get a specific deck (with ownership check)
      */
-    public Optional<Deck> getDeck(Long deckId, Long userId) {
+    public Optional<DeckEntity> getDeck(Long deckId, Long userId) {
         return deckRepository.findByIdAndUserId(deckId, userId);
     }
 
     /**
      * Get a deck or throw exception if not found or not owned
      */
-    public Deck getDeckOrThrow(Long deckId, Long userId) {
+    public DeckEntity getDeckOrThrow(Long deckId, Long userId) {
         return getDeck(deckId, userId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Deck not found or access denied: " + deckId));
@@ -67,13 +67,13 @@ public class DeckService {
     /**
      * Update a deck (with ownership check)
      */
-    public Deck updateDeck(Long deckId, Long userId, String name, String description) {
-        Deck deck = getDeckOrThrow(deckId, userId);
+    public DeckEntity updateDeck(Long deckId, Long userId, String name, String description) {
+        DeckEntity deckEntity = getDeckOrThrow(deckId, userId);
 
         // Check if new name conflicts with another deck
-        if (!deck.getName().equals(name)) {
-            List<Deck> userDecks = deckRepository.findByUserId(userId);
-            boolean nameExists = userDecks.stream()
+        if (!deckEntity.getName().equals(name)) {
+            List<DeckEntity> userDeckEntities = deckRepository.findByUserId(userId);
+            boolean nameExists = userDeckEntities.stream()
                     .anyMatch(d -> !d.getId().equals(deckId) && d.getName().equals(name));
 
             if (nameExists) {
@@ -81,17 +81,17 @@ public class DeckService {
             }
         }
 
-        deck.setName(name);
-        deck.setDescription(description);
-        return deckRepository.save(deck);
+        deckEntity.setName(name);
+        deckEntity.setDescription(description);
+        return deckRepository.save(deckEntity);
     }
 
     /**
      * Delete a deck (with ownership check)
      */
     public void deleteDeck(Long deckId, Long userId) {
-        Deck deck = getDeckOrThrow(deckId, userId);
-        deckRepository.delete(deck);
+        DeckEntity deckEntity = getDeckOrThrow(deckId, userId);
+        deckRepository.delete(deckEntity);
     }
 
     /**

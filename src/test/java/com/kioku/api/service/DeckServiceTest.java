@@ -1,8 +1,8 @@
 package com.kioku.api.service;
 
 import com.kioku.api.TestContainersConfiguration;
-import com.kioku.api.entity.Deck;
-import com.kioku.api.entity.User;
+import com.kioku.api.entity.DeckEntity;
+import com.kioku.api.entity.UserEntity;
 import com.kioku.api.repository.DeckRepository;
 import com.kioku.api.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,38 +36,38 @@ class DeckServiceTest {
     @Autowired
     private UserRepository userRepository;
 
-    private User testUser;
-    private User otherUser;
+    private UserEntity testUserEntity;
+    private UserEntity otherUserEntity;
 
     @BeforeEach
     void setUp() {
         deckRepository.deleteAll();
         userRepository.deleteAll();
 
-        testUser = userService.createUser("test@example.com", "hashedPassword");
-        otherUser = userService.createUser("other@example.com", "hashedPassword");
+        testUserEntity = userService.createUser("test@example.com", "hashedPassword");
+        otherUserEntity = userService.createUser("other@example.com", "hashedPassword");
     }
 
     @Test
     void testCreateDeck() {
         // When
-        Deck deck = deckService.createDeck(testUser.getId(), "Japanese Verbs", "JLPT N5");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "Japanese Verbs", "JLPT N5");
 
         // Then
-        assertNotNull(deck.getId());
-        assertEquals("Japanese Verbs", deck.getName());
-        assertEquals("JLPT N5", deck.getDescription());
-        assertEquals(testUser.getId(), deck.getUser().getId());
+        assertNotNull(deckEntity.getId());
+        assertEquals("Japanese Verbs", deckEntity.getName());
+        assertEquals("JLPT N5", deckEntity.getDescription());
+        assertEquals(testUserEntity.getId(), deckEntity.getUser().getId());
     }
 
     @Test
     void testCreateDeckWithDuplicateNameThrowsException() {
         // Given
-        deckService.createDeck(testUser.getId(), "Japanese Verbs", "Description 1");
+        deckService.createDeck(testUserEntity.getId(), "Japanese Verbs", "Description 1");
 
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> {
-            deckService.createDeck(testUser.getId(), "Japanese Verbs", "Description 2");
+            deckService.createDeck(testUserEntity.getId(), "Japanese Verbs", "Description 2");
         });
     }
 
@@ -82,25 +82,25 @@ class DeckServiceTest {
     @Test
     void testGetUserDecks() {
         // Given
-        deckService.createDeck(testUser.getId(), "Deck 1", "Description 1");
-        deckService.createDeck(testUser.getId(), "Deck 2", "Description 2");
-        deckService.createDeck(otherUser.getId(), "Other Deck", "Other description");
+        deckService.createDeck(testUserEntity.getId(), "Deck 1", "Description 1");
+        deckService.createDeck(testUserEntity.getId(), "Deck 2", "Description 2");
+        deckService.createDeck(otherUserEntity.getId(), "Other Deck", "Other description");
 
         // When
-        List<Deck> userDecks = deckService.getUserDecks(testUser.getId());
+        List<DeckEntity> userDeckEntities = deckService.getUserDecks(testUserEntity.getId());
 
         // Then
-        assertEquals(2, userDecks.size());
-        assertTrue(userDecks.stream().allMatch(d -> d.getUser().getId().equals(testUser.getId())));
+        assertEquals(2, userDeckEntities.size());
+        assertTrue(userDeckEntities.stream().allMatch(d -> d.getUser().getId().equals(testUserEntity.getId())));
     }
 
     @Test
     void testGetDeck() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Description");
 
         // When
-        Optional<Deck> found = deckService.getDeck(deck.getId(), testUser.getId());
+        Optional<DeckEntity> found = deckService.getDeck(deckEntity.getId(), testUserEntity.getId());
 
         // Then
         assertTrue(found.isPresent());
@@ -110,10 +110,10 @@ class DeckServiceTest {
     @Test
     void testGetDeckWithWrongUserReturnsEmpty() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Description");
 
         // When
-        Optional<Deck> found = deckService.getDeck(deck.getId(), otherUser.getId());
+        Optional<DeckEntity> found = deckService.getDeck(deckEntity.getId(), otherUserEntity.getId());
 
         // Then
         assertFalse(found.isPresent());
@@ -122,10 +122,10 @@ class DeckServiceTest {
     @Test
     void testGetDeckOrThrow() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Description");
 
         // When
-        Deck found = deckService.getDeckOrThrow(deck.getId(), testUser.getId());
+        DeckEntity found = deckService.getDeckOrThrow(deckEntity.getId(), testUserEntity.getId());
 
         // Then
         assertNotNull(found);
@@ -135,29 +135,29 @@ class DeckServiceTest {
     @Test
     void testGetDeckOrThrowWithWrongUserThrowsException() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Description");
 
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> {
-            deckService.getDeckOrThrow(deck.getId(), otherUser.getId());
+            deckService.getDeckOrThrow(deckEntity.getId(), otherUserEntity.getId());
         });
     }
 
     @Test
     void testUpdateDeck() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "Original Name", "Original Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "Original Name", "Original Description");
 
         // When
-        Deck updated = deckService.updateDeck(
-                deck.getId(),
-                testUser.getId(),
+        DeckEntity updated = deckService.updateDeck(
+                deckEntity.getId(),
+                testUserEntity.getId(),
                 "New Name",
                 "New Description"
         );
 
         // Then
-        assertEquals(deck.getId(), updated.getId());
+        assertEquals(deckEntity.getId(), updated.getId());
         assertEquals("New Name", updated.getName());
         assertEquals("New Description", updated.getDescription());
     }
@@ -165,35 +165,35 @@ class DeckServiceTest {
     @Test
     void testUpdateDeckWithWrongUserThrowsException() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Description");
 
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> {
-            deckService.updateDeck(deck.getId(), otherUser.getId(), "New Name", "New Description");
+            deckService.updateDeck(deckEntity.getId(), otherUserEntity.getId(), "New Name", "New Description");
         });
     }
 
     @Test
     void testUpdateDeckToExistingNameThrowsException() {
         // Given
-        deckService.createDeck(testUser.getId(), "Deck A", "Description A");
-        Deck deckB = deckService.createDeck(testUser.getId(), "Deck B", "Description B");
+        deckService.createDeck(testUserEntity.getId(), "Deck A", "Description A");
+        DeckEntity deckEntityB = deckService.createDeck(testUserEntity.getId(), "Deck B", "Description B");
 
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> {
-            deckService.updateDeck(deckB.getId(), testUser.getId(), "Deck A", "New Description");
+            deckService.updateDeck(deckEntityB.getId(), testUserEntity.getId(), "Deck A", "New Description");
         });
     }
 
     @Test
     void testUpdateDeckKeepingSameNameSucceeds() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Original Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Original Description");
 
         // When - Update description but keep same name
-        Deck updated = deckService.updateDeck(
-                deck.getId(),
-                testUser.getId(),
+        DeckEntity updated = deckService.updateDeck(
+                deckEntity.getId(),
+                testUserEntity.getId(),
                 "My Deck", // Same name
                 "New Description"
         );
@@ -206,11 +206,11 @@ class DeckServiceTest {
     @Test
     void testDeleteDeck() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "To Delete", "Description");
-        Long deckId = deck.getId();
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "To Delete", "Description");
+        Long deckId = deckEntity.getId();
 
         // When
-        deckService.deleteDeck(deckId, testUser.getId());
+        deckService.deleteDeck(deckId, testUserEntity.getId());
 
         // Then
         assertFalse(deckRepository.existsById(deckId));
@@ -219,22 +219,22 @@ class DeckServiceTest {
     @Test
     void testDeleteDeckWithWrongUserThrowsException() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Description");
 
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> {
-            deckService.deleteDeck(deck.getId(), otherUser.getId());
+            deckService.deleteDeck(deckEntity.getId(), otherUserEntity.getId());
         });
     }
 
     @Test
     void testUserOwnsDeck() {
         // Given
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        DeckEntity deckEntity = deckService.createDeck(testUserEntity.getId(), "My Deck", "Description");
 
         // When & Then
-        assertTrue(deckService.userOwnsDeck(deck.getId(), testUser.getId()));
-        assertFalse(deckService.userOwnsDeck(deck.getId(), otherUser.getId()));
-        assertFalse(deckService.userOwnsDeck(999L, testUser.getId()));
+        assertTrue(deckService.userOwnsDeck(deckEntity.getId(), testUserEntity.getId()));
+        assertFalse(deckService.userOwnsDeck(deckEntity.getId(), otherUserEntity.getId()));
+        assertFalse(deckService.userOwnsDeck(999L, testUserEntity.getId()));
     }
 }

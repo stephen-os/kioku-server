@@ -228,7 +228,7 @@ public class TagService {
         // Verify user owns the deck
         deckService.getDeckOrThrow(deckId, userId);
 
-        Optional<TagEntity> existingTag = tagRepository.findByIdAndDeckId(deckId, deckId);
+        Optional<TagEntity> existingTag = findTagByName(userId, deckId, name);
 
         if (existingTag.isPresent()) {
             logger.debug("Tag '{}' already exists with id={}", name, existingTag.get().getId());
