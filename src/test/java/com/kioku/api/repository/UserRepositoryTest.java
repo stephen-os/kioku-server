@@ -1,7 +1,7 @@
 package com.kioku.api.repository;
 
 import com.kioku.api.BaseIntegrationTest;
-import com.kioku.api.entity.User;
+import com.kioku.api.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -70,16 +70,16 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testSaveUser() {
         logger.debug("Test: Saving user with email={}", TEST_EMAIL);
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        User savedUser = userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity savedUserEntity = userRepository.save(userEntity);
 
-        assertNotNull(savedUser.getId());
-        assertEquals(TEST_EMAIL, savedUser.getEmail());
-        assertEquals(PASSWORD_HASH, savedUser.getPasswordHash());
-        assertNotNull(savedUser.getCreatedAt());
-        assertNotNull(savedUser.getUpdatedAt());
+        assertNotNull(savedUserEntity.getId());
+        assertEquals(TEST_EMAIL, savedUserEntity.getEmail());
+        assertEquals(PASSWORD_HASH, savedUserEntity.getPasswordHash());
+        assertNotNull(savedUserEntity.getCreatedAt());
+        assertNotNull(savedUserEntity.getUpdatedAt());
 
-        logger.debug("Test passed: User saved with id={}", savedUser.getId());
+        logger.debug("Test passed: User saved with id={}", savedUserEntity.getId());
     }
 
     /**
@@ -90,15 +90,15 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindById() {
         logger.debug("Test: Finding user by ID");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        User savedUser = userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity savedUserEntity = userRepository.save(userEntity);
 
-        Optional<User> found = userRepository.findById(savedUser.getId());
+        Optional<UserEntity> found = userRepository.findById(savedUserEntity.getId());
 
         assertTrue(found.isPresent());
         assertEquals(TEST_EMAIL, found.get().getEmail());
 
-        logger.debug("Test passed: User found by id={}", savedUser.getId());
+        logger.debug("Test passed: User found by id={}", savedUserEntity.getId());
     }
 
     /**
@@ -109,7 +109,7 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByIdNotFound() {
         logger.debug("Test: Finding non-existent user by ID");
 
-        Optional<User> found = userRepository.findById(999L);
+        Optional<UserEntity> found = userRepository.findById(999L);
 
         assertFalse(found.isPresent());
 
@@ -124,11 +124,11 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testDeleteUser() {
         logger.debug("Test: Deleting user");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        User savedUser = userRepository.save(user);
-        Long userId = savedUser.getId();
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity savedUserEntity = userRepository.save(userEntity);
+        Long userId = savedUserEntity.getId();
 
-        userRepository.delete(savedUser);
+        userRepository.delete(savedUserEntity);
 
         assertFalse(userRepository.existsById(userId));
 
@@ -145,10 +145,10 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByEmail() {
         logger.debug("Test: Finding user by email={}", TEST_EMAIL);
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userRepository.save(userEntity);
 
-        Optional<User> found = userRepository.findByEmail(TEST_EMAIL);
+        Optional<UserEntity> found = userRepository.findByEmail(TEST_EMAIL);
 
         assertTrue(found.isPresent());
         assertEquals(TEST_EMAIL, found.get().getEmail());
@@ -164,10 +164,10 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByEmailCaseInsensitive() {
         logger.debug("Test: Finding user by email (case-insensitive)");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userRepository.save(userEntity);
 
-        Optional<User> found = userRepository.findByEmail("TEST@EXAMPLE.COM");
+        Optional<UserEntity> found = userRepository.findByEmail("TEST@EXAMPLE.COM");
 
         assertTrue(found.isPresent());
         assertEquals(TEST_EMAIL, found.get().getEmail());
@@ -183,7 +183,7 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByEmailNotFound() {
         logger.debug("Test: Finding non-existent email");
 
-        Optional<User> found = userRepository.findByEmail("nonexistent@example.com");
+        Optional<UserEntity> found = userRepository.findByEmail("nonexistent@example.com");
 
         assertFalse(found.isPresent());
 
@@ -198,8 +198,8 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testExistsByEmail() {
         logger.debug("Test: Checking email existence");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userRepository.save(userEntity);
 
         assertTrue(userRepository.existsByEmail(TEST_EMAIL));
         assertFalse(userRepository.existsByEmail("nonexistent@example.com"));
@@ -215,8 +215,8 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testExistsByEmailCaseInsensitive() {
         logger.debug("Test: Checking email existence (case-insensitive)");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userRepository.save(userEntity);
 
         assertTrue(userRepository.existsByEmail("TEST@EXAMPLE.COM"));
 
@@ -233,11 +233,11 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByEmailVerificationToken() {
         logger.debug("Test: Finding user by email verification token");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        user.setEmailVerificationToken(VERIFICATION_TOKEN);
-        userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userEntity.setEmailVerificationToken(VERIFICATION_TOKEN);
+        userRepository.save(userEntity);
 
-        Optional<User> found = userRepository.findByEmailVerificationToken(VERIFICATION_TOKEN);
+        Optional<UserEntity> found = userRepository.findByEmailVerificationToken(VERIFICATION_TOKEN);
 
         assertTrue(found.isPresent());
         assertEquals(TEST_EMAIL, found.get().getEmail());
@@ -254,7 +254,7 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByEmailVerificationTokenNotFound() {
         logger.debug("Test: Finding user with invalid verification token");
 
-        Optional<User> found = userRepository.findByEmailVerificationToken("invalid-token");
+        Optional<UserEntity> found = userRepository.findByEmailVerificationToken("invalid-token");
 
         assertFalse(found.isPresent());
 
@@ -269,11 +269,11 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByPasswordResetToken() {
         logger.debug("Test: Finding user by password reset token");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        user.setPasswordResetToken(RESET_TOKEN);
-        userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userEntity.setPasswordResetToken(RESET_TOKEN);
+        userRepository.save(userEntity);
 
-        Optional<User> found = userRepository.findByPasswordResetToken(RESET_TOKEN);
+        Optional<UserEntity> found = userRepository.findByPasswordResetToken(RESET_TOKEN);
 
         assertTrue(found.isPresent());
         assertEquals(TEST_EMAIL, found.get().getEmail());
@@ -290,7 +290,7 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByPasswordResetTokenNotFound() {
         logger.debug("Test: Finding user with invalid reset token");
 
-        Optional<User> found = userRepository.findByPasswordResetToken("invalid-token");
+        Optional<UserEntity> found = userRepository.findByPasswordResetToken("invalid-token");
 
         assertFalse(found.isPresent());
 
@@ -307,22 +307,22 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByStatus() {
         logger.debug("Test: Finding users by status");
 
-        User activeUser = new User(TEST_EMAIL, PASSWORD_HASH);
-        activeUser.setStatus(User.UserStatus.ACTIVE);
-        userRepository.save(activeUser);
+        UserEntity activeUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        activeUserEntity.setStatus(UserEntity.UserStatus.ACTIVE);
+        userRepository.save(activeUserEntity);
 
-        User suspendedUser = new User(OTHER_EMAIL, PASSWORD_HASH);
-        suspendedUser.setStatus(User.UserStatus.SUSPENDED);
-        userRepository.save(suspendedUser);
+        UserEntity suspendedUserEntity = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
+        suspendedUserEntity.setStatus(UserEntity.UserStatus.SUSPENDED);
+        userRepository.save(suspendedUserEntity);
 
-        List<User> activeUsers = userRepository.findByStatus(User.UserStatus.ACTIVE);
-        List<User> suspendedUsers = userRepository.findByStatus(User.UserStatus.SUSPENDED);
+        List<UserEntity> activeUserEntities = userRepository.findByStatus(UserEntity.UserStatus.ACTIVE);
+        List<UserEntity> suspendedUserEntities = userRepository.findByStatus(UserEntity.UserStatus.SUSPENDED);
 
-        assertEquals(1, activeUsers.size());
-        assertEquals(TEST_EMAIL, activeUsers.get(0).getEmail());
+        assertEquals(1, activeUserEntities.size());
+        assertEquals(TEST_EMAIL, activeUserEntities.get(0).getEmail());
 
-        assertEquals(1, suspendedUsers.size());
-        assertEquals(OTHER_EMAIL, suspendedUsers.get(0).getEmail());
+        assertEquals(1, suspendedUserEntities.size());
+        assertEquals(OTHER_EMAIL, suspendedUserEntities.get(0).getEmail());
 
         logger.debug("Test passed: Users found by status");
     }
@@ -335,16 +335,16 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindByEmailVerified() {
         logger.debug("Test: Finding users by email verification status");
 
-        User verifiedUser = new User(TEST_EMAIL, PASSWORD_HASH);
-        verifiedUser.setEmailVerified(true);
-        userRepository.save(verifiedUser);
+        UserEntity verifiedUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        verifiedUserEntity.setEmailVerified(true);
+        userRepository.save(verifiedUserEntity);
 
-        User unverifiedUser = new User(OTHER_EMAIL, PASSWORD_HASH);
-        unverifiedUser.setEmailVerified(false);
-        userRepository.save(unverifiedUser);
+        UserEntity unverifiedUserEntity = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
+        unverifiedUserEntity.setEmailVerified(false);
+        userRepository.save(unverifiedUserEntity);
 
-        List<User> verified = userRepository.findByEmailVerified(true);
-        List<User> unverified = userRepository.findByEmailVerified(false);
+        List<UserEntity> verified = userRepository.findByEmailVerified(true);
+        List<UserEntity> unverified = userRepository.findByEmailVerified(false);
 
         assertEquals(1, verified.size());
         assertEquals(TEST_EMAIL, verified.get(0).getEmail());
@@ -365,18 +365,18 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindLockedAccounts() {
         logger.debug("Test: Finding locked accounts");
 
-        User lockedUser = new User(TEST_EMAIL, PASSWORD_HASH);
-        lockedUser.setLockedUntil(LocalDateTime.now().plusHours(1));
-        userRepository.save(lockedUser);
+        UserEntity lockedUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        lockedUserEntity.setLockedUntil(LocalDateTime.now().plusHours(1));
+        userRepository.save(lockedUserEntity);
 
-        User unlockedUser = new User(OTHER_EMAIL, PASSWORD_HASH);
-        userRepository.save(unlockedUser);
+        UserEntity unlockedUserEntity = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
+        userRepository.save(unlockedUserEntity);
 
-        User expiredLockUser = new User(THIRD_EMAIL, PASSWORD_HASH);
-        expiredLockUser.setLockedUntil(LocalDateTime.now().minusHours(1));
-        userRepository.save(expiredLockUser);
+        UserEntity expiredLockUserEntity = new UserEntity(THIRD_EMAIL, PASSWORD_HASH);
+        expiredLockUserEntity.setLockedUntil(LocalDateTime.now().minusHours(1));
+        userRepository.save(expiredLockUserEntity);
 
-        List<User> lockedAccounts = userRepository.findLockedAccounts(LocalDateTime.now());
+        List<UserEntity> lockedAccounts = userRepository.findLockedAccounts(LocalDateTime.now());
 
         assertEquals(1, lockedAccounts.size());
         assertEquals(TEST_EMAIL, lockedAccounts.get(0).getEmail());
@@ -392,14 +392,14 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindDeletedAccounts() {
         logger.debug("Test: Finding deleted accounts");
 
-        User deletedUser = new User(TEST_EMAIL, PASSWORD_HASH);
-        deletedUser.softDelete();
-        userRepository.save(deletedUser);
+        UserEntity deletedUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        deletedUserEntity.softDelete();
+        userRepository.save(deletedUserEntity);
 
-        User activeUser = new User(OTHER_EMAIL, PASSWORD_HASH);
-        userRepository.save(activeUser);
+        UserEntity activeUserEntity = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
+        userRepository.save(activeUserEntity);
 
-        List<User> deletedAccounts = userRepository.findDeletedAccounts();
+        List<UserEntity> deletedAccounts = userRepository.findDeletedAccounts();
 
         assertEquals(1, deletedAccounts.size());
         assertEquals(TEST_EMAIL, deletedAccounts.get(0).getEmail());
@@ -415,20 +415,20 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindActiveAccounts() {
         logger.debug("Test: Finding active accounts");
 
-        User activeUser = new User(TEST_EMAIL, PASSWORD_HASH);
-        activeUser.setStatus(User.UserStatus.ACTIVE);
-        userRepository.save(activeUser);
+        UserEntity activeUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        activeUserEntity.setStatus(UserEntity.UserStatus.ACTIVE);
+        userRepository.save(activeUserEntity);
 
-        User suspendedUser = new User(OTHER_EMAIL, PASSWORD_HASH);
-        suspendedUser.setStatus(User.UserStatus.SUSPENDED);
-        userRepository.save(suspendedUser);
+        UserEntity suspendedUserEntity = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
+        suspendedUserEntity.setStatus(UserEntity.UserStatus.SUSPENDED);
+        userRepository.save(suspendedUserEntity);
 
-        User lockedUser = new User(THIRD_EMAIL, PASSWORD_HASH);
-        lockedUser.setStatus(User.UserStatus.ACTIVE);
-        lockedUser.setLockedUntil(LocalDateTime.now().plusHours(1));
-        userRepository.save(lockedUser);
+        UserEntity lockedUserEntity = new UserEntity(THIRD_EMAIL, PASSWORD_HASH);
+        lockedUserEntity.setStatus(UserEntity.UserStatus.ACTIVE);
+        lockedUserEntity.setLockedUntil(LocalDateTime.now().plusHours(1));
+        userRepository.save(lockedUserEntity);
 
-        List<User> activeAccounts = userRepository.findActiveAccounts(LocalDateTime.now());
+        List<UserEntity> activeAccounts = userRepository.findActiveAccounts(LocalDateTime.now());
 
         assertEquals(1, activeAccounts.size());
         assertEquals(TEST_EMAIL, activeAccounts.get(0).getEmail());
@@ -446,11 +446,11 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testCountUsersCreatedAfter() {
         logger.debug("Test: Counting users created after date");
 
-        User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
-        userRepository.save(user1);
+        UserEntity userEntity1 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userRepository.save(userEntity1);
 
-        User user2 = new User(OTHER_EMAIL, PASSWORD_HASH);
-        userRepository.save(user2);
+        UserEntity userEntity2 = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
+        userRepository.save(userEntity2);
 
         LocalDateTime cutoffDate = LocalDateTime.now().minusHours(1);
         long count = userRepository.countUsersCreatedAfter(cutoffDate);
@@ -468,8 +468,8 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testCountUsersCreatedAfterFuture() {
         logger.debug("Test: Counting users with future cutoff date");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        userRepository.save(userEntity);
 
         LocalDateTime futureCutoff = LocalDateTime.now().plusHours(1);
         long count = userRepository.countUsersCreatedAfter(futureCutoff);
@@ -489,13 +489,13 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testUpdateUserEmail() {
         logger.debug("Test: Updating user email");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        User savedUser = userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity savedUserEntity = userRepository.save(userEntity);
 
-        savedUser.setEmail(OTHER_EMAIL);
-        User updatedUser = userRepository.save(savedUser);
+        savedUserEntity.setEmail(OTHER_EMAIL);
+        UserEntity updatedUserEntity = userRepository.save(savedUserEntity);
 
-        assertEquals(OTHER_EMAIL, updatedUser.getEmail());
+        assertEquals(OTHER_EMAIL, updatedUserEntity.getEmail());
 
         logger.debug("Test passed: User email updated to {}", OTHER_EMAIL);
     }
@@ -508,21 +508,21 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testUpdatedAtTimestamp() {
         logger.debug("Test: Checking updated_at timestamp changes");
 
-        User user = new User(TEST_EMAIL, PASSWORD_HASH);
-        User savedUser = userRepository.save(user);
+        UserEntity userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity savedUserEntity = userRepository.save(userEntity);
         userRepository.flush();
-        Long userId = savedUser.getId();
-        LocalDateTime originalUpdatedAt = savedUser.getUpdatedAt();
+        Long userId = savedUserEntity.getId();
+        LocalDateTime originalUpdatedAt = savedUserEntity.getUpdatedAt();
 
         await().pollDelay(100, MILLISECONDS).until(() -> true);
 
-        User userToUpdate = userRepository.findById(userId).orElseThrow();
-        userToUpdate.setEmail(OTHER_EMAIL);
-        User updatedUser = userRepository.saveAndFlush(userToUpdate);
+        UserEntity userEntityToUpdate = userRepository.findById(userId).orElseThrow();
+        userEntityToUpdate.setEmail(OTHER_EMAIL);
+        UserEntity updatedUserEntity = userRepository.saveAndFlush(userEntityToUpdate);
 
-        assertTrue(updatedUser.getUpdatedAt().isAfter(originalUpdatedAt),
+        assertTrue(updatedUserEntity.getUpdatedAt().isAfter(originalUpdatedAt),
                 () -> String.format("Expected updated_at (%s) to be after original (%s)",
-                        updatedUser.getUpdatedAt(), originalUpdatedAt));
+                        updatedUserEntity.getUpdatedAt(), originalUpdatedAt));
 
         logger.debug("Test passed: updated_at timestamp changed");
     }
@@ -537,19 +537,19 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testFindAll() {
         logger.debug("Test: Finding all users");
 
-        User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
-        User user2 = new User(OTHER_EMAIL, PASSWORD_HASH);
-        User user3 = new User(THIRD_EMAIL, PASSWORD_HASH);
+        UserEntity userEntity1 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity userEntity2 = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
+        UserEntity userEntity3 = new UserEntity(THIRD_EMAIL, PASSWORD_HASH);
 
-        userRepository.save(user1);
-        userRepository.save(user2);
-        userRepository.save(user3);
+        userRepository.save(userEntity1);
+        userRepository.save(userEntity2);
+        userRepository.save(userEntity3);
 
-        List<User> allUsers = userRepository.findAll();
+        List<UserEntity> allUserEntities = userRepository.findAll();
 
-        assertEquals(3, allUsers.size());
+        assertEquals(3, allUserEntities.size());
 
-        logger.debug("Test passed: Found {} users", allUsers.size());
+        logger.debug("Test passed: Found {} users", allUserEntities.size());
     }
 
     /**
@@ -560,11 +560,11 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testCount() {
         logger.debug("Test: Counting all users");
 
-        User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
-        User user2 = new User(OTHER_EMAIL, PASSWORD_HASH);
+        UserEntity userEntity1 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity userEntity2 = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
 
-        userRepository.save(user1);
-        userRepository.save(user2);
+        userRepository.save(userEntity1);
+        userRepository.save(userEntity2);
 
         long count = userRepository.count();
 
@@ -581,11 +581,11 @@ class UserRepositoryTest extends BaseIntegrationTest {
     void testDeleteAll() {
         logger.debug("Test: Deleting all users");
 
-        User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
-        User user2 = new User(OTHER_EMAIL, PASSWORD_HASH);
+        UserEntity userEntity1 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        UserEntity userEntity2 = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
 
-        userRepository.save(user1);
-        userRepository.save(user2);
+        userRepository.save(userEntity1);
+        userRepository.save(userEntity2);
 
         userRepository.deleteAll();
 

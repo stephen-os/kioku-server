@@ -1,6 +1,6 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.User;
+import com.kioku.api.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository interface for User entity database operations.
+ * Repository interface for UserEntity entity database operations.
  *
  * <p>This repository provides methods for:
  * <ul>
@@ -29,7 +29,7 @@ import java.util.Optional;
  * @since 1.0
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     /**
      * Finds a user by email address.
@@ -40,8 +40,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param email the email address to search for
      * @return an Optional containing the user if found, empty otherwise
      */
-    @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)")
-    Optional<User> findByEmail(@Param("email") String email);
+    @Query("SELECT u FROM UserEntity u WHERE LOWER(u.email) = LOWER(:email)")
+    Optional<UserEntity> findByEmail(@Param("email") String email);
 
     /**
      * Checks if a user with the given email exists.
@@ -52,7 +52,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param email the email address to check
      * @return {@code true} if a user with this email exists, {@code false} otherwise
      */
-    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE LOWER(u.email) = LOWER(:email)")
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserEntity u WHERE LOWER(u.email) = LOWER(:email)")
     boolean existsByEmail(@Param("email") String email);
 
     /**
@@ -64,7 +64,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param token the email verification token
      * @return an Optional containing the user if found, empty otherwise
      */
-    Optional<User> findByEmailVerificationToken(String token);
+    Optional<UserEntity> findByEmailVerificationToken(String token);
 
     /**
      * Finds a user by password reset token.
@@ -75,7 +75,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param token the password reset token
      * @return an Optional containing the user if found, empty otherwise
      */
-    Optional<User> findByPasswordResetToken(String token);
+    Optional<UserEntity> findByPasswordResetToken(String token);
 
     /**
      * Finds all users with a specific status.
@@ -83,7 +83,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param status the user status to filter by
      * @return a list of users with the given status
      */
-    List<User> findByStatus(User.UserStatus status);
+    List<UserEntity> findByStatus(UserEntity.UserStatus status);
 
     /**
      * Finds all currently locked accounts.
@@ -93,8 +93,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param now the current timestamp
      * @return a list of locked users
      */
-    @Query("SELECT u FROM User u WHERE u.lockedUntil > :now")
-    List<User> findLockedAccounts(@Param("now") LocalDateTime now);
+    @Query("SELECT u FROM UserEntity u WHERE u.lockedUntil > :now")
+    List<UserEntity> findLockedAccounts(@Param("now") LocalDateTime now);
 
     /**
      * Finds all soft-deleted accounts.
@@ -103,8 +103,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
      *
      * @return a list of soft-deleted users
      */
-    @Query("SELECT u FROM User u WHERE u.deletedAt IS NOT NULL")
-    List<User> findDeletedAccounts();
+    @Query("SELECT u FROM UserEntity u WHERE u.deletedAt IS NOT NULL")
+    List<UserEntity> findDeletedAccounts();
 
     /**
      * Finds all active, non-deleted, non-locked users.
@@ -119,10 +119,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param now the current timestamp
      * @return a list of active users
      */
-    @Query("SELECT u FROM User u WHERE u.status = 'ACTIVE' " +
+    @Query("SELECT u FROM UserEntity u WHERE u.status = 'ACTIVE' " +
             "AND u.deletedAt IS NULL " +
             "AND (u.lockedUntil IS NULL OR u.lockedUntil < :now)")
-    List<User> findActiveAccounts(@Param("now") LocalDateTime now);
+    List<UserEntity> findActiveAccounts(@Param("now") LocalDateTime now);
 
     /**
      * Finds users by email verification status.
@@ -130,7 +130,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param emailVerified {@code true} to find verified users, {@code false} for unverified
      * @return a list of users with the specified verification status
      */
-    List<User> findByEmailVerified(boolean emailVerified);
+    List<UserEntity> findByEmailVerified(boolean emailVerified);
 
     /**
      * Counts the number of users created after a specific date.
@@ -140,6 +140,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param date the date to count from
      * @return the number of users created after the given date
      */
-    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt > :date")
+    @Query("SELECT COUNT(u) FROM UserEntity u WHERE u.createdAt > :date")
     long countUsersCreatedAfter(@Param("date") LocalDateTime date);
 }
