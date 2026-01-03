@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>These tests verify:
  * <ul>
- *   <li>Field validation (required fields, max lengths)</li>
+ *   <li>Field validation for card creation (required fields, max lengths)</li>
  *   <li>Constructor initialization</li>
  *   <li>Getter and setter methods</li>
  *   <li>Edge cases (null, empty, max length strings)</li>
