@@ -1,11 +1,15 @@
 package com.kioku.api.controller;
 
 import com.kioku.api.dto.request.CreateDeckRequest;
+import com.kioku.api.dto.request.DeckImportRequest;
 import com.kioku.api.dto.request.UpdateDeckRequest;
+import com.kioku.api.dto.response.DeckExportResponse;
 import com.kioku.api.dto.response.DeckResponse;
 import com.kioku.api.dto.response.ErrorResponse;
 import com.kioku.api.entity.DeckEntity;
 import com.kioku.api.security.CurrentUser;
+import com.kioku.api.service.DeckExportService;
+import com.kioku.api.service.DeckImportService;
 import com.kioku.api.service.DeckService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -67,14 +71,18 @@ public class DeckController {
     private static final Logger logger = LoggerFactory.getLogger(DeckController.class);
 
     private final DeckService deckService;
+    private final DeckImportService deckImportService;
+    private final DeckExportService deckExportService;
 
     /**
      * Constructs a DeckController with required dependencies.
      *
      * @param deckService the deck service for business logic
      */
-    public DeckController(DeckService deckService) {
+    public DeckController(DeckService deckService, DeckImportService deckImportService, DeckExportService deckExportService) {
         this.deckService = deckService;
+        this.deckImportService = deckImportService;
+        this.deckExportService = deckExportService;
     }
 
     /**
@@ -252,5 +260,94 @@ public class DeckController {
 
         logger.info("Deck {} deleted successfully", deckId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Imports a complete deck with cards and tags.
+     *
+     * <p>This endpoint accepts a JSON payload containing a deck with all its cards
+     * and tags, and creates them in a single atomic transaction.
+     *
+     * <p><strong>Request Body Example:</strong>
+     * <pre>
+     * {
+     *   "name": "Japanese N5 Vocabulary",
+     *   "description": "Essential JLPT N5 vocabulary",
+     *   "cards": [
+     *     {
+     *       "front": "食べる",
+     *       "back": "to eat",
+     *       "notes": "ru-verb",
+     *       "tags": ["verbs", "food"]
+     *     }
+     *   ],
+     *   "tags": [
+     *     {"name": "verbs"},
+     *     {"name": "food"}
+     *   ]
+     * }
+     * </pre>
+     *
+     * @param userId the ID of the authenticated user
+     * @param request the deck import request
+     * @return the created deck response
+     */
+    @PostMapping("/import")
+    public ResponseEntity<DeckResponse> importDeck(
+            @CurrentUser Long userId,
+            @Valid @RequestBody DeckImportRequest request) {
+
+        logger.debug("Import deck request from user id={}: name={}, {} cards, {} tags",
+                userId, request.getName(), request.getCardCount(), request.getTagCount());
+
+        DeckEntity deck = deckImportService.importDeck(userId, request);
+        DeckResponse response = new DeckResponse(deck);
+
+        logger.info("Deck imported successfully: deckId={}, name='{}'", deck.getId(), deck.getName());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Exports a complete deck with all cards and tags.
+     *
+     * <p>This endpoint retrieves a deck and all its associated data, packaging
+     * it into a JSON response that can be saved and later re-imported.
+     *
+     * <p><strong>Response Example:</strong>
+     * <pre>
+     * {
+     *   "id": 123,
+     *   "name": "Japanese N5 Vocabulary",
+     *   "description": "Essential JLPT N5 vocabulary",
+     *   "createdAt": "2024-01-15T10:30:00",
+     *   "updatedAt": "2024-01-20T14:45:00",
+     *   "cards": [...],
+     *   "tags": [...],
+     *   "metadata": {
+     *     "exportDate": "2024-01-22T09:15:00",
+     *     "version": "1.0",
+     *     "cardCount": 50,
+     *     "tagCount": 5
+     *   }
+     * }
+     * </pre>
+     *
+     * @param userId the ID of the authenticated user
+     * @param deckId the ID of the deck to export
+     * @return the deck export response
+     */
+    @GetMapping("/{deckId}/export")
+    public ResponseEntity<DeckExportResponse> exportDeck(
+            @CurrentUser Long userId,
+            @PathVariable Long deckId) {
+
+        logger.debug("Export deck request from user id={} for deck id={}", userId, deckId);
+
+        DeckExportResponse response = deckExportService.exportDeck(userId, deckId);
+
+        logger.info("Deck exported successfully: deckId={}, name='{}'", deckId, response.getName());
+
+        return ResponseEntity.ok(response);
     }
 }

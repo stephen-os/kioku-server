@@ -19,6 +19,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for DeckService.
@@ -437,5 +439,66 @@ class DeckServiceTest {
         assertThat(deckService.userOwnsDeck(999L, testUser.getId())).isFalse();
 
         logger.debug("Test passed: Ownership verification works correctly");
+    }
+
+    @Test
+    @DisplayName("Should return true when deck name is duplicate")
+    void testIsDuplicateNameTrue() {
+        logger.debug("Test: Duplicate deck name");
+
+        // Create a deck with the name first
+        deckService.createDeck(testUser.getId(), "Japanese Vocabulary", "Test deck description");
+
+        // Now check if it's a duplicate
+        boolean isDuplicate = deckService.isDuplicateName(testUser.getId(), "Japanese Vocabulary");
+
+        assertTrue(isDuplicate);
+
+        logger.debug("Test passed: Duplicate name detected");
+    }
+
+    @Test
+    @DisplayName("Should return false when deck name is not duplicate")
+    void testIsDuplicateNameFalse() {
+        logger.debug("Test: Non-duplicate deck name");
+
+        // Don't create any deck, just check for a name that doesn't exist
+        boolean isDuplicate = deckService.isDuplicateName(testUser.getId(), "Non-existent Deck");
+
+        assertFalse(isDuplicate);
+
+        logger.debug("Test passed: Non-duplicate name confirmed");
+    }
+
+    @Test
+    @DisplayName("Should be case-sensitive for duplicate name check")
+    void testIsDuplicateNameCaseSensitive() {
+        logger.debug("Test: Case-sensitive duplicate name check");
+
+        deckService.createDeck(testUser.getId(), "MyDeck", "Test description");
+
+        boolean existsExact = deckService.isDuplicateName(testUser.getId(), "MyDeck");
+        boolean existsLower = deckService.isDuplicateName(testUser.getId(), "mydeck");
+
+        assertTrue(existsExact);
+        assertFalse(existsLower);
+
+        logger.debug("Test passed: Case-sensitive check works correctly");
+    }
+
+    @Test
+    @DisplayName("Should isolate deck names by user")
+    void testIsDuplicateNameUserIsolation() {
+        logger.debug("Test: Deck name isolation by user");
+
+        deckService.createDeck(testUser.getId(), "Shared Deck Name", "Test description");
+
+        boolean existsForTestUser = deckService.isDuplicateName(testUser.getId(), "Shared Deck Name");
+        boolean existsForOtherUser = deckService.isDuplicateName(otherUser.getId(), "Shared Deck Name");
+
+        assertTrue(existsForTestUser);
+        assertFalse(existsForOtherUser);
+
+        logger.debug("Test passed: Deck names isolated by user");
     }
 }

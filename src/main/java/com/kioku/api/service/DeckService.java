@@ -222,4 +222,26 @@ public class DeckService {
         logger.debug("User id={} owns deck id={}: {}", userId, deckId, owns);
         return owns;
     }
+
+    /**
+     * Checks if a deck name already exists for the user.
+     *
+     * <p>Deck names must be unique per user. This method performs a
+     * case-sensitive check for the exact deck name.
+     *
+     * @param userId the ID of the user
+     * @param deckName the deck name to check
+     * @return true if a deck with this name exists, false otherwise
+     */
+    public boolean isDuplicateName(Long userId, String deckName) {
+        logger.debug("Checking for duplicate deck name '{}' for user id={}", deckName, userId);
+
+        boolean isDuplicate = deckRepository.existsByUserIdAndName(userId, deckName);
+
+        if (isDuplicate) {
+            logger.debug("Duplicate deck name found: '{}' for user id={}", deckName, userId);
+        }
+
+        return isDuplicate;
+    }
 }
