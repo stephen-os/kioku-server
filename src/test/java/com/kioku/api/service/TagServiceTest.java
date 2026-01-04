@@ -1,6 +1,5 @@
 package com.kioku.api.service;
 
-import com.kioku.api.BaseIntegrationTest;
 import com.kioku.api.entity.DeckEntity;
 import com.kioku.api.entity.TagEntity;
 import com.kioku.api.entity.UserEntity;
@@ -10,11 +9,11 @@ import com.kioku.api.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;  // ✅ ADD THIS
+import org.springframework.test.context.ActiveProfiles;  // ✅ ADD THIS
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -34,14 +33,22 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>Deck-specific tag isolation</li>
  * </ul>
  *
+ * <p><strong>Test Infrastructure:</strong>
+ * <ul>
+ *   <li>Uses H2 in-memory database for fast testing</li>
+ *   <li>Loads full Spring application context</li>
+ *   <li>Transactional - each test is rolled back</li>
+ * </ul>
+ *
  * @author Stephen Watson
  * @version 1.0
  * @since 1.0
  */
-@DisplayName("TagService Integration Tests")
-@MockitoSettings(strictness = Strictness.LENIENT)
+@SpringBootTest
+@ActiveProfiles("test")
 @Transactional
-class TagServiceTest extends BaseIntegrationTest {
+@DisplayName("TagService Tests")
+class TagServiceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(TagServiceTest.class);
 

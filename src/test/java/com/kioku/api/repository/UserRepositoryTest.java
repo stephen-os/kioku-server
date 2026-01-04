@@ -1,6 +1,5 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.BaseIntegrationTest;
 import com.kioku.api.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -34,9 +35,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * @version 1.0
  * @since 1.0
  */
-@DisplayName("UserRepository Integration Tests")
-@Transactional
-class UserRepositoryTest extends BaseIntegrationTest {
+@DataJpaTest
+@ActiveProfiles("test")
+@DisplayName("UserRepository Tests")
+class UserRepositoryTest {
 
     private static final Logger logger = LoggerFactory.getLogger(UserRepositoryTest.class);
 

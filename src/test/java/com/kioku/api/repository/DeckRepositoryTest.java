@@ -1,11 +1,12 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.TestContainersConfiguration;
 import com.kioku.api.entity.DeckEntity;
 import com.kioku.api.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
@@ -16,10 +17,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@DataJpaTest
 @ActiveProfiles("test")
-@Import(TestContainersConfiguration.class)
-@Transactional
+@DisplayName("DeckRepository Tests")
 class DeckRepositoryTest {
 
     @Autowired

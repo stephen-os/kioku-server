@@ -1,6 +1,5 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.BaseIntegrationTest;
 import com.kioku.api.entity.CardEntity;
 import com.kioku.api.entity.DeckEntity;
 import com.kioku.api.entity.TagEntity;
@@ -11,7 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,9 +36,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * @version 1.0
  * @since 1.0
  */
-@DisplayName("CardRepository Integration Tests")
-@Transactional
-class CardRepositoryTest extends BaseIntegrationTest {
+@DataJpaTest
+@ActiveProfiles("test")
+@DisplayName("CardRepository Tests")
+class CardRepositoryTest {
 
     private static final Logger logger = LoggerFactory.getLogger(CardRepositoryTest.class);
 
