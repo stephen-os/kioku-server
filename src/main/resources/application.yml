@@ -1,10 +1,7 @@
 spring:
   # Database
   datasource:
-      url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
-      username: ${PGUSER}
-      password: ${PGPASSWORD}
-      driver-class-name: org.postgresql.Driver
+      url: ${DATABASE_URL}
 
   # Hibernate
   jpa:
