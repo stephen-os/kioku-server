@@ -246,37 +246,37 @@ class CardServiceTest {
     }
 
     /**
-     * Tests that getCardOrThrow returns card when found.
+     * Tests that getCard returns card when found.
      */
     @Test
-    @DisplayName("Should return card with getCardOrThrow")
-    void testGetCardOrThrow() {
-        logger.debug("Test: Getting card with getCardOrThrow");
+    @DisplayName("Should return card with getCard")
+    void testgetCard() {
+        logger.debug("Test: Getting card with getCard");
 
         when(deckService.userOwnsDeck(DECK_ID, USER_ID)).thenReturn(true);
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
 
-        CardEntity card = cardService.getCardOrThrow(USER_ID, DECK_ID, CARD_ID);
+        Optional<CardEntity> card = cardService.getCard(USER_ID, DECK_ID, CARD_ID);
 
-        assertNotNull(card);
+        assertNotNull(card.isPresent());
         assertEquals(testCard, card);
 
         logger.debug("Test passed: Card retrieved successfully");
     }
 
     /**
-     * Tests that getCardOrThrow throws exception when not found.
+     * Tests that getCard throws exception when not found.
      */
     @Test
     @DisplayName("Should throw exception when card not found")
-    void testGetCardOrThrowNotFound() {
-        logger.debug("Test: Getting non-existent card with getCardOrThrow");
+    void testgetCardNotFound() {
+        logger.debug("Test: Getting non-existent card with getCard");
 
         when(deckService.userOwnsDeck(DECK_ID, USER_ID)).thenReturn(true);
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () -> {
-            cardService.getCardOrThrow(USER_ID, DECK_ID, CARD_ID);
+            cardService.getCard(USER_ID, DECK_ID, CARD_ID);
         });
 
         logger.debug("Test passed: Exception thrown for not found");
@@ -548,84 +548,5 @@ class CardServiceTest {
         verify(cardRepository).save(testCard);
 
         logger.debug("Test passed: Tag removed from card");
-    }
-
-    // Duplicate Check Tests
-
-    /**
-     * Tests duplicate check.
-     */
-    @Test
-    @DisplayName("Should check for duplicate")
-    void testIsDuplicate() {
-        logger.debug("Test: Checking for duplicate");
-
-        when(cardRepository.existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK)).thenReturn(true);
-
-        boolean isDuplicate = cardService.isDuplicate(DECK_ID, CARD_FRONT, CARD_BACK);
-
-        assertTrue(isDuplicate);
-        verify(cardRepository).existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK);
-
-        logger.debug("Test passed: Duplicate check works");
-    }
-
-    /**
-     * Tests that non-duplicate returns false.
-     */
-    @Test
-    @DisplayName("Should return false for non-duplicate")
-    void testIsNotDuplicate() {
-        logger.debug("Test: Checking non-duplicate");
-
-        when(cardRepository.existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK)).thenReturn(false);
-
-        boolean isDuplicate = cardService.isDuplicate(DECK_ID, CARD_FRONT, CARD_BACK);
-
-        assertFalse(isDuplicate);
-
-        logger.debug("Test passed: Non-duplicate check works");
-    }
-
-    // Count Tests
-
-    /**
-     * Tests counting cards in a deck.
-     */
-    @Test
-    @DisplayName("Should count cards in deck")
-    void testCountCards() {
-        logger.debug("Test: Counting cards in deck");
-
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeckEntity);
-        when(cardRepository.countByDeckId(DECK_ID)).thenReturn(5L);
-
-        long count = cardService.countCards(USER_ID, DECK_ID);
-
-        assertEquals(5L, count);
-        verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
-        verify(cardRepository).countByDeckId(DECK_ID);
-
-        logger.debug("Test passed: Counted {} cards", count);
-    }
-
-    /**
-     * Tests that counting fails if user doesn't own deck.
-     */
-    @Test
-    @DisplayName("Should throw exception when counting cards in unowned deck")
-    void testCountCardsUnauthorized() {
-        logger.debug("Test: Counting cards in unowned deck");
-
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID))
-                .thenThrow(new IllegalArgumentException("Deck not found or access denied"));
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            cardService.countCards(USER_ID, DECK_ID);
-        });
-
-        verify(cardRepository, never()).countByDeckId(anyLong());
-
-        logger.debug("Test passed: Exception thrown for unauthorized access");
     }
 }

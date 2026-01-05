@@ -55,7 +55,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         WHERE c.deck.id = :deckId
         ORDER BY c.createdAt ASC
         """)
-    List<CardEntity> findByDeckIdWithTags(@Param("deckId") Long deckId);
+    List<CardEntity> findByDeckId(@Param("deckId") Long deckId);
 
     /**
      * Finds a specific card within a specific deck with tags eagerly loaded.
@@ -76,7 +76,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         LEFT JOIN FETCH c.tags
         WHERE c.id = :id AND c.deck.id = :deckId
         """)
-    Optional<CardEntity> findByIdAndDeckIdWithTags(@Param("id") Long id, @Param("deckId") Long deckId);
+    Optional<CardEntity> findByIdAndDeckId(@Param("id") Long id, @Param("deckId") Long deckId);
 
     /**
      * Checks if a card with the same front and back text exists in a deck.
@@ -128,7 +128,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         OR LOWER(c.back) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
         ORDER BY c.createdAt ASC
         """)
-    List<CardEntity> searchByDeckIdWithTags(@Param("deckId") Long deckId, @Param("searchTerm") String searchTerm);
+    List<CardEntity> searchByDeckId(@Param("deckId") Long deckId, @Param("searchTerm") String searchTerm);
 
     /**
      * Finds all cards in a deck that have a specific tag with tags eagerly loaded.
@@ -155,7 +155,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         )
         ORDER BY c.createdAt ASC
         """)
-    List<CardEntity> findByDeckIdAndTagIdWithTags(@Param("deckId") Long deckId, @Param("tagId") Long tagId);
+    List<CardEntity> findByDeckIdAndTagId(@Param("deckId") Long deckId, @Param("tagId") Long tagId);
 
     /**
      * Counts the number of cards in a deck.

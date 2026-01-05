@@ -127,7 +127,7 @@ public class CardService {
         deckService.getDeckOrThrow(deckId, userId);
 
         // Fetch cards with tags eagerly loaded
-        List<CardEntity> cards = cardRepository.findByDeckIdWithTags(deckId);
+        List<CardEntity> cards = cardRepository.findByDeckId(deckId);
 
         logger.debug("Found {} cards in deck id={}", cards.size(), deckId);
         return cards;
@@ -152,7 +152,7 @@ public class CardService {
         deckService.getDeckOrThrow(deckId, userId);
 
         // Fetch card with tags eagerly loaded
-        Optional<CardEntity> card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId);
+        Optional<CardEntity> card = cardRepository.findByIdAndDeckId(cardId, deckId);
 
         logger.debug("Card found: {}", card.isPresent());
         return card;
@@ -185,7 +185,7 @@ public class CardService {
         deckService.getDeckOrThrow(deckId, userId);
 
         // Get existing card
-        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+        CardEntity card = cardRepository.findByIdAndDeckId(cardId, deckId)
                 .orElseThrow(() -> {
                     logger.warn("Card id={} not found in deck id={}", cardId, deckId);
                     return new IllegalArgumentException("Card not found in this deck");
@@ -228,7 +228,7 @@ public class CardService {
         deckService.getDeckOrThrow(deckId, userId);
 
         // Verify card exists in deck
-        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+        CardEntity card = cardRepository.findByIdAndDeckId(cardId, deckId)
                 .orElseThrow(() -> {
                     logger.warn("Card id={} not found in deck id={}", cardId, deckId);
                     return new IllegalArgumentException("Card not found in this deck");
@@ -257,7 +257,7 @@ public class CardService {
         deckService.getDeckOrThrow(deckId, userId);
 
         // Search with tags eagerly loaded
-        List<CardEntity> cards = cardRepository.searchByDeckIdWithTags(deckId, searchTerm);
+        List<CardEntity> cards = cardRepository.searchByDeckId(deckId, searchTerm);
 
         logger.debug("Found {} cards matching search term in deck id={}", cards.size(), deckId);
         return cards;
@@ -287,7 +287,7 @@ public class CardService {
                 .orElseThrow(() -> new IllegalArgumentException("Tag not found in this deck"));
 
         // Fetch cards with tags eagerly loaded
-        List<CardEntity> cards = cardRepository.findByDeckIdAndTagIdWithTags(deckId, tagId);
+        List<CardEntity> cards = cardRepository.findByDeckIdAndTagId(deckId, tagId);
 
         logger.debug("Found {} cards with tag id={} in deck id={}", cards.size(), tagId, deckId);
         return cards;
@@ -319,7 +319,7 @@ public class CardService {
         deckService.getDeckOrThrow(deckId, userId);
 
         // Get card
-        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+        CardEntity card = cardRepository.findByIdAndDeckId(cardId, deckId)
                 .orElseThrow(() -> {
                     logger.warn("Card id={} not found in deck id={}", cardId, deckId);
                     return new IllegalArgumentException("Card not found in this deck");
@@ -366,7 +366,7 @@ public class CardService {
         deckService.getDeckOrThrow(deckId, userId);
 
         // Get card
-        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+        CardEntity card = cardRepository.findByIdAndDeckId(cardId, deckId)
                 .orElseThrow(() -> {
                     logger.warn("Card id={} not found in deck id={}", cardId, deckId);
                     return new IllegalArgumentException("Card not found in this deck");
