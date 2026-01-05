@@ -1,7 +1,8 @@
 spring:
   # Database
   datasource:
-    url: jdbc:${DATABASE_URL}
+    username: ${PGUSER}
+    password: ${PGPASSWORD}
 
   # Hibernate
   jpa:
@@ -12,7 +13,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           lob:
             non_contextual_creation: true
