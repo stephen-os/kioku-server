@@ -1,16 +1,13 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,8 +25,8 @@ class DeckRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    private UserEntity testUserEntity;
-    private UserEntity otherUserEntity;
+    private User testUser;
+    private User otherUser;
 
     @BeforeEach
     void setUp() {
@@ -37,56 +34,56 @@ class DeckRepositoryTest {
         userRepository.deleteAll();
 
         // Create test users
-        testUserEntity = new UserEntity("test@example.com", "hashedPassword");
-        testUserEntity = userRepository.save(testUserEntity);
+        testUser = new User("test@example.com", "hashedPassword");
+        testUser = userRepository.save(testUser);
 
-        otherUserEntity = new UserEntity("other@example.com", "hashedPassword");
-        otherUserEntity = userRepository.save(otherUserEntity);
+        otherUser = new User("other@example.com", "hashedPassword");
+        otherUser = userRepository.save(otherUser);
     }
 
     @Test
     void testSaveDeck() {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "Japanese Verbs", "JLPT N5 verbs");
+        Deck deck = new Deck(testUser, "Japanese Verbs", "JLPT N5 verbs");
 
         // When
-        DeckEntity savedDeckEntity = deckRepository.save(deckEntity);
+        Deck savedDeck = deckRepository.save(deck);
 
         // Then
-        assertNotNull(savedDeckEntity.getId());
-        assertNotNull(savedDeckEntity.getCreatedAt());
-        assertNotNull(savedDeckEntity.getUpdatedAt());
-        assertEquals("Japanese Verbs", savedDeckEntity.getName());
-        assertEquals(testUserEntity.getId(), savedDeckEntity.getUser().getId());
+        assertNotNull(savedDeck.getId());
+        assertNotNull(savedDeck.getCreatedAt());
+        assertNotNull(savedDeck.getUpdatedAt());
+        assertEquals("Japanese Verbs", savedDeck.getName());
+        assertEquals(testUser.getId(), savedDeck.getUser().getId());
     }
 
     @Test
     void testFindByUserId() {
         // Given
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, "Deck 1", "Description 1");
-        DeckEntity deckEntity2 = new DeckEntity(testUserEntity, "Deck 2", "Description 2");
-        DeckEntity otherDeckEntity = new DeckEntity(otherUserEntity, "Other Deck", "Other description");
+        Deck deck1 = new Deck(testUser, "Deck 1", "Description 1");
+        Deck deck2 = new Deck(testUser, "Deck 2", "Description 2");
+        Deck otherDeck = new Deck(otherUser, "Other Deck", "Other description");
 
-        deckRepository.save(deckEntity1);
-        deckRepository.save(deckEntity2);
-        deckRepository.save(otherDeckEntity);
+        deckRepository.save(deck1);
+        deckRepository.save(deck2);
+        deckRepository.save(otherDeck);
 
         // When
-        List<DeckEntity> userDeckEntities = deckRepository.findByUserId(testUserEntity.getId());
+        List<Deck> userDeckEntities = deckRepository.findByUserId(testUser.getId());
 
         // Then
         assertEquals(2, userDeckEntities.size());
-        assertTrue(userDeckEntities.stream().allMatch(d -> d.getUser().getId().equals(testUserEntity.getId())));
+        assertTrue(userDeckEntities.stream().allMatch(d -> d.getUser().getId().equals(testUser.getId())));
     }
 
     @Test
     void testFindByIdAndUserId() {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "My Deck", "Description");
-        deckEntity = deckRepository.save(deckEntity);
+        Deck deck = new Deck(testUser, "My Deck", "Description");
+        deck = deckRepository.save(deck);
 
         // When
-        Optional<DeckEntity> found = deckRepository.findByIdAndUserId(deckEntity.getId(), testUserEntity.getId());
+        Optional<Deck> found = deckRepository.findByIdAndUserId(deck.getId(), testUser.getId());
 
         // Then
         assertTrue(found.isPresent());
@@ -96,11 +93,11 @@ class DeckRepositoryTest {
     @Test
     void testFindByIdAndUserIdNotFound() {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "My Deck", "Description");
-        deckEntity = deckRepository.save(deckEntity);
+        Deck deck = new Deck(testUser, "My Deck", "Description");
+        deck = deckRepository.save(deck);
 
         // When - Try to access with wrong user
-        Optional<DeckEntity> found = deckRepository.findByIdAndUserId(deckEntity.getId(), otherUserEntity.getId());
+        Optional<Deck> found = deckRepository.findByIdAndUserId(deck.getId(), otherUser.getId());
 
         // Then
         assertFalse(found.isPresent());
@@ -109,56 +106,56 @@ class DeckRepositoryTest {
     @Test
     void testExistsByIdAndUserId() {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "My Deck", "Description");
-        deckEntity = deckRepository.save(deckEntity);
+        Deck deck = new Deck(testUser, "My Deck", "Description");
+        deck = deckRepository.save(deck);
 
         // When & Then
-        assertTrue(deckRepository.existsByIdAndUserId(deckEntity.getId(), testUserEntity.getId()));
-        assertFalse(deckRepository.existsByIdAndUserId(deckEntity.getId(), otherUserEntity.getId()));
-        assertFalse(deckRepository.existsByIdAndUserId(999L, testUserEntity.getId()));
+        assertTrue(deckRepository.existsByIdAndUserId(deck.getId(), testUser.getId()));
+        assertFalse(deckRepository.existsByIdAndUserId(deck.getId(), otherUser.getId()));
+        assertFalse(deckRepository.existsByIdAndUserId(999L, testUser.getId()));
     }
 
     @Test
     void testUpdateDeck() throws InterruptedException {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "Original Name", "Original Description");
-        deckEntity = deckRepository.save(deckEntity);
+        Deck deck = new Deck(testUser, "Original Name", "Original Description");
+        deck = deckRepository.save(deck);
 
-        Long deckId = deckEntity.getId();
-        var originalUpdatedAt = deckEntity.getUpdatedAt();
-        var originalCreatedAt = deckEntity.getCreatedAt();
+        Long deckId = deck.getId();
+        var originalUpdatedAt = deck.getUpdatedAt();
+        var originalCreatedAt = deck.getCreatedAt();
 
         // Sleep to ensure timestamp difference
         Thread.sleep(100); // Increased to 100ms
 
         // When
-        deckEntity.setName("Updated Name");
-        deckEntity.setDescription("Updated Description");
-        DeckEntity updatedDeckEntity = deckRepository.save(deckEntity);
+        deck.setName("Updated Name");
+        deck.setDescription("Updated Description");
+        Deck updatedDeck = deckRepository.save(deck);
 
         // Then
-        assertEquals(deckId, updatedDeckEntity.getId());
-        assertEquals("Updated Name", updatedDeckEntity.getName());
-        assertEquals("Updated Description", updatedDeckEntity.getDescription());
+        assertEquals(deckId, updatedDeck.getId());
+        assertEquals("Updated Name", updatedDeck.getName());
+        assertEquals("Updated Description", updatedDeck.getDescription());
 
         // Check timestamps - updatedAt should change, createdAt should not
-        assertNotNull(updatedDeckEntity.getUpdatedAt());
-        assertNotNull(updatedDeckEntity.getCreatedAt());
-        assertEquals(originalCreatedAt, updatedDeckEntity.getCreatedAt()); // createdAt unchanged
+        assertNotNull(updatedDeck.getUpdatedAt());
+        assertNotNull(updatedDeck.getCreatedAt());
+        assertEquals(originalCreatedAt, updatedDeck.getCreatedAt()); // createdAt unchanged
 
         // updatedAt should be equal or after (depending on precision)
-        assertFalse(updatedDeckEntity.getUpdatedAt().isBefore(originalUpdatedAt));
+        assertFalse(updatedDeck.getUpdatedAt().isBefore(originalUpdatedAt));
     }
 
     @Test
     void testDeleteDeck() {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "To Delete", "Description");
-        deckEntity = deckRepository.save(deckEntity);
-        Long deckId = deckEntity.getId();
+        Deck deck = new Deck(testUser, "To Delete", "Description");
+        deck = deckRepository.save(deck);
+        Long deckId = deck.getId();
 
         // When
-        deckRepository.delete(deckEntity);
+        deckRepository.delete(deck);
 
         // Then
         assertFalse(deckRepository.existsById(deckId));
@@ -167,7 +164,7 @@ class DeckRepositoryTest {
     @Test
     void testFindByUserIdEmptyList() {
         // When
-        List<DeckEntity> deckEntities = deckRepository.findByUserId(testUserEntity.getId());
+        List<Deck> deckEntities = deckRepository.findByUserId(testUser.getId());
 
         // Then
         assertTrue(deckEntities.isEmpty());
@@ -176,13 +173,13 @@ class DeckRepositoryTest {
     @Test
     void testUserDeletionDoesNotCascadeToDecks() {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "My Deck", "Description");
-        deckEntity = deckRepository.save(deckEntity);
+        Deck deck = new Deck(testUser, "My Deck", "Description");
+        deck = deckRepository.save(deck);
 
         // When - Delete user
         // This should fail because of foreign key constraint
         assertThrows(Exception.class, () -> {
-            userRepository.delete(testUserEntity);
+            userRepository.delete(testUser);
             userRepository.flush();
         });
     }
@@ -190,15 +187,15 @@ class DeckRepositoryTest {
     @Test
     void testDuplicateDeckNameForSameUserThrowsException() {
         // Given
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, "Japanese Verbs", "Description 1");
-        deckRepository.save(deckEntity1);
+        Deck deck1 = new Deck(testUser, "Japanese Verbs", "Description 1");
+        deckRepository.save(deck1);
 
         // When - Try to create duplicate name for same user
-        DeckEntity deckEntity2 = new DeckEntity(testUserEntity, "Japanese Verbs", "Description 2");
+        Deck deck2 = new Deck(testUser, "Japanese Verbs", "Description 2");
 
         // Then - Should throw exception due to unique constraint
         assertThrows(Exception.class, () -> {
-            deckRepository.save(deckEntity2);
+            deckRepository.save(deck2);
             deckRepository.flush();
         });
     }
@@ -206,38 +203,38 @@ class DeckRepositoryTest {
     @Test
     void testSameDeckNameForDifferentUsersIsAllowed() {
         // Given
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, "Japanese Verbs", "Description");
-        DeckEntity deckEntity2 = new DeckEntity(otherUserEntity, "Japanese Verbs", "Description");
+        Deck deck1 = new Deck(testUser, "Japanese Verbs", "Description");
+        Deck deck2 = new Deck(otherUser, "Japanese Verbs", "Description");
 
         // When & Then - Should work fine, different users can have same deck names
         assertDoesNotThrow(() -> {
-            deckRepository.save(deckEntity1);
-            deckRepository.save(deckEntity2);
+            deckRepository.save(deck1);
+            deckRepository.save(deck2);
             deckRepository.flush();
         });
 
         // Verify both saved
-        assertEquals(1, deckRepository.findByUserId(testUserEntity.getId()).size());
-        assertEquals(1, deckRepository.findByUserId(otherUserEntity.getId()).size());
+        assertEquals(1, deckRepository.findByUserId(testUser.getId()).size());
+        assertEquals(1, deckRepository.findByUserId(otherUser.getId()).size());
     }
 
     @Test
     void testUpdateDeckNameToExistingNameThrowsException() {
         // Given - Create two decks with different names
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, "Deck A", "Description A");
-        DeckEntity deckEntity2 = new DeckEntity(testUserEntity, "Deck B", "Description B");
+        Deck deck1 = new Deck(testUser, "Deck A", "Description A");
+        Deck deck2 = new Deck(testUser, "Deck B", "Description B");
 
-        deckEntity1 = deckRepository.save(deckEntity1);
-        deckEntity2 = deckRepository.save(deckEntity2);
+        deck1 = deckRepository.save(deck1);
+        deck2 = deckRepository.save(deck2);
 
-        final DeckEntity finalDeckEntity2 = deckEntity2;  // Make it final for lambda
+        final Deck finalDeck2 = deck2;  // Make it final for lambda
 
         // When - Try to rename deck2 to same name as deck1
-        finalDeckEntity2.setName("Deck A");
+        finalDeck2.setName("Deck A");
 
         // Then - Should throw exception
         assertThrows(Exception.class, () -> {
-            deckRepository.save(finalDeckEntity2);
+            deckRepository.save(finalDeck2);
             deckRepository.flush();
         });
     }
@@ -245,26 +242,26 @@ class DeckRepositoryTest {
     @Test
     void testUpdateDeckNameToNewNameSucceeds() {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "Original Name", "Description");
-        deckEntity = deckRepository.save(deckEntity);
-        Long deckId = deckEntity.getId();
+        Deck deck = new Deck(testUser, "Original Name", "Description");
+        deck = deckRepository.save(deck);
+        Long deckId = deck.getId();
 
         // When - Update to a new unique name
-        deckEntity.setName("New Unique Name");
-        DeckEntity updatedDeckEntity = deckRepository.save(deckEntity);
+        deck.setName("New Unique Name");
+        Deck updatedDeck = deckRepository.save(deck);
 
         // Then
-        assertEquals(deckId, updatedDeckEntity.getId());
-        assertEquals("New Unique Name", updatedDeckEntity.getName());
+        assertEquals(deckId, updatedDeck.getId());
+        assertEquals("New Unique Name", updatedDeck.getName());
     }
 
     @Test
     void testVersionIncrementOnUpdate() throws InterruptedException {
         // Given
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "Test Deck", "Description");
-        deckEntity = deckRepository.save(deckEntity);
+        Deck deck = new Deck(testUser, "Test Deck", "Description");
+        deck = deckRepository.save(deck);
 
-        Long originalVersion = deckEntity.getVersion();
+        Long originalVersion = deck.getVersion();
         assertNotNull(originalVersion);
         assertEquals(0L, originalVersion); // Version starts at 0
 
@@ -272,12 +269,12 @@ class DeckRepositoryTest {
         Thread.sleep(10);
 
         // When - Update the deck
-        deckEntity.setDescription("Updated Description");
-        DeckEntity updatedDeckEntity = deckRepository.save(deckEntity);
+        deck.setDescription("Updated Description");
+        Deck updatedDeck = deckRepository.save(deck);
         deckRepository.flush(); // Force the update to happen
 
         // Then - Version should increment
-        assertNotNull(updatedDeckEntity.getVersion());
-        assertEquals(1L, updatedDeckEntity.getVersion()); // Should be exactly 1
+        assertNotNull(updatedDeck.getVersion());
+        assertEquals(1L, updatedDeck.getVersion()); // Should be exactly 1
     }
 }

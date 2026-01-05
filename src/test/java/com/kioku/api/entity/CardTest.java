@@ -9,11 +9,11 @@ import org.slf4j.LoggerFactory;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for CardEntity entity.
+ * Unit tests for Card entity.
  *
  * <p>These tests verify:
  * <ul>
- *   <li>CardEntity creation with required and optional fields</li>
+ *   <li>Card creation with required and optional fields</li>
  *   <li>Field validation (front, back, deck cannot be null/empty)</li>
  *   <li>Editing card content (front, back, notes)</li>
  *   <li>Tag management (add, remove, clear)</li>
@@ -26,10 +26,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * @version 1.0
  * @since 1.0
  */
-@DisplayName("CardEntity Entity Unit Tests")
-class CardEntityTest {
+@DisplayName("Card Entity Unit Tests")
+class CardTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(CardEntityTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(CardTest.class);
 
     // Test data constants
     private static final String TEST_EMAIL = "test@example.com";
@@ -43,19 +43,19 @@ class CardEntityTest {
     private static final String UPDATED_BACK = "to drink";
     private static final String TAG_NAME = "verbs";
 
-    private UserEntity testUserEntity;
-    private DeckEntity testDeckEntity;
+    private User testUser;
+    private Deck testDeck;
 
     /**
      * Sets up test fixtures before each test.
      */
     @BeforeEach
     void setUp() {
-        logger.debug("Setting up CardEntity test: Creating test user and deck");
-        testUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        testUserEntity.setId(1L);
-        testDeckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        testDeckEntity.setId(1L);
+        logger.debug("Setting up Card test: Creating test user and deck");
+        testUser = new User(TEST_EMAIL, PASSWORD_HASH);
+        testUser.setId(1L);
+        testDeck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        testDeck.setId(1L);
     }
 
     // Constructor Tests
@@ -68,17 +68,17 @@ class CardEntityTest {
     void testCardCreation() {
         logger.debug("Test: Creating card with front='{}', back='{}'", CARD_FRONT, CARD_BACK);
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertEquals(CARD_FRONT, card.getFront());
         assertEquals(CARD_BACK, card.getBack());
-        assertEquals(testDeckEntity, card.getDeck());
+        assertEquals(testDeck, card.getDeck());
         assertNull(card.getId());
         assertNull(card.getNotes());
         assertNotNull(card.getTags());
         assertTrue(card.getTags().isEmpty());
 
-        logger.debug("Test passed: CardEntity created successfully");
+        logger.debug("Test passed: Card created successfully");
     }
 
     /**
@@ -89,14 +89,14 @@ class CardEntityTest {
     void testCardCreationWithNotes() {
         logger.debug("Test: Creating card with notes='{}'", CARD_NOTES);
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK, CARD_NOTES);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK, CARD_NOTES);
 
         assertEquals(CARD_FRONT, card.getFront());
         assertEquals(CARD_BACK, card.getBack());
         assertEquals(CARD_NOTES, card.getNotes());
-        assertEquals(testDeckEntity, card.getDeck());
+        assertEquals(testDeck, card.getDeck());
 
-        logger.debug("Test passed: CardEntity created with notes");
+        logger.debug("Test passed: Card created with notes");
     }
 
     /**
@@ -107,7 +107,7 @@ class CardEntityTest {
     void testNoArgsConstructor() {
         logger.debug("Test: Creating card with no-args constructor");
 
-        CardEntity card = new CardEntity();
+        Card card = new Card();
 
         assertNotNull(card);
         assertNull(card.getFront());
@@ -130,7 +130,7 @@ class CardEntityTest {
         logger.debug("Test: Creating card with null deck");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new CardEntity(null, CARD_FRONT, CARD_BACK);
+            new Card(null, CARD_FRONT, CARD_BACK);
         });
 
         logger.debug("Test passed: Exception thrown for null deck");
@@ -145,7 +145,7 @@ class CardEntityTest {
         logger.debug("Test: Creating card with null front");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new CardEntity(testDeckEntity, null, CARD_BACK);
+            new Card(testDeck, null, CARD_BACK);
         });
 
         logger.debug("Test passed: Exception thrown for null front");
@@ -160,7 +160,7 @@ class CardEntityTest {
         logger.debug("Test: Creating card with empty front");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new CardEntity(testDeckEntity, "", CARD_BACK);
+            new Card(testDeck, "", CARD_BACK);
         });
 
         logger.debug("Test passed: Exception thrown for empty front");
@@ -175,7 +175,7 @@ class CardEntityTest {
         logger.debug("Test: Creating card with whitespace-only front");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new CardEntity(testDeckEntity, "   ", CARD_BACK);
+            new Card(testDeck, "   ", CARD_BACK);
         });
 
         logger.debug("Test passed: Exception thrown for whitespace-only front");
@@ -190,7 +190,7 @@ class CardEntityTest {
         logger.debug("Test: Creating card with null back");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new CardEntity(testDeckEntity, CARD_FRONT, null);
+            new Card(testDeck, CARD_FRONT, null);
         });
 
         logger.debug("Test passed: Exception thrown for null back");
@@ -205,7 +205,7 @@ class CardEntityTest {
         logger.debug("Test: Creating card with empty back");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new CardEntity(testDeckEntity, CARD_FRONT, "");
+            new Card(testDeck, CARD_FRONT, "");
         });
 
         logger.debug("Test passed: Exception thrown for empty back");
@@ -219,7 +219,7 @@ class CardEntityTest {
     void testSetNullDeck() {
         logger.debug("Test: Setting null deck");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertThrows(IllegalArgumentException.class, () -> {
             card.setDeck(null);
@@ -236,7 +236,7 @@ class CardEntityTest {
     void testSetNullFront() {
         logger.debug("Test: Setting null front");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertThrows(IllegalArgumentException.class, () -> {
             card.setFront(null);
@@ -253,7 +253,7 @@ class CardEntityTest {
     void testSetEmptyFront() {
         logger.debug("Test: Setting empty front");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertThrows(IllegalArgumentException.class, () -> {
             card.setFront("");
@@ -270,7 +270,7 @@ class CardEntityTest {
     void testSetNullBack() {
         logger.debug("Test: Setting null back");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertThrows(IllegalArgumentException.class, () -> {
             card.setBack(null);
@@ -287,7 +287,7 @@ class CardEntityTest {
     void testSetEmptyBack() {
         logger.debug("Test: Setting empty back");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertThrows(IllegalArgumentException.class, () -> {
             card.setBack("");
@@ -306,7 +306,7 @@ class CardEntityTest {
     void testEditFront() {
         logger.debug("Test: Editing card front from '{}' to '{}'", CARD_FRONT, UPDATED_FRONT);
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card.setFront(UPDATED_FRONT);
 
         assertEquals(UPDATED_FRONT, card.getFront());
@@ -323,7 +323,7 @@ class CardEntityTest {
     void testEditBack() {
         logger.debug("Test: Editing card back from '{}' to '{}'", CARD_BACK, UPDATED_BACK);
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card.setBack(UPDATED_BACK);
 
         assertEquals(CARD_FRONT, card.getFront()); // Front unchanged
@@ -340,7 +340,7 @@ class CardEntityTest {
     void testEditNotes() {
         logger.debug("Test: Editing card notes");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
         assertNull(card.getNotes());
 
         card.setNotes(CARD_NOTES);
@@ -360,7 +360,7 @@ class CardEntityTest {
     void testClearNotes() {
         logger.debug("Test: Clearing card notes");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK, CARD_NOTES);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK, CARD_NOTES);
         assertEquals(CARD_NOTES, card.getNotes());
 
         card.setNotes(null);
@@ -377,7 +377,7 @@ class CardEntityTest {
     void testEditAllFields() {
         logger.debug("Test: Editing all card fields");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         card.setFront(UPDATED_FRONT);
         card.setBack(UPDATED_BACK);
@@ -400,14 +400,14 @@ class CardEntityTest {
     void testReassignDeck() {
         logger.debug("Test: Reassigning card to different deck");
 
-        DeckEntity newDeckEntity = new DeckEntity(testUserEntity, "New Deck", "Another deck");
-        newDeckEntity.setId(2L);
+        Deck newDeck = new Deck(testUser, "New Deck", "Another deck");
+        newDeck.setId(2L);
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
-        assertEquals(testDeckEntity, card.getDeck());
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
+        assertEquals(testDeck, card.getDeck());
 
-        card.setDeck(newDeckEntity);
-        assertEquals(newDeckEntity, card.getDeck());
+        card.setDeck(newDeck);
+        assertEquals(newDeck, card.getDeck());
 
         logger.debug("Test passed: Deck reassigned successfully");
     }
@@ -422,13 +422,13 @@ class CardEntityTest {
     void testAddTag() {
         logger.debug("Test: Adding tag='{}' to card", TAG_NAME);
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME); // ✅ Tag now requires deck
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
+        Tag tag = new Tag(testDeck, TAG_NAME); // ✅ Tag now requires deck
 
-        card.addTag(tagEntity);
+        card.addTag(tag);
 
-        assertTrue(card.getTags().contains(tagEntity));
-        assertTrue(tagEntity.getCards().contains(card));
+        assertTrue(card.getTags().contains(tag));
+        assertTrue(tag.getCards().contains(card));
 
         logger.debug("Test passed: Tag added successfully");
     }
@@ -441,15 +441,15 @@ class CardEntityTest {
     void testRemoveTag() {
         logger.debug("Test: Removing tag from card");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME); // ✅ Tag now requires deck
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
+        Tag tag = new Tag(testDeck, TAG_NAME); // ✅ Tag now requires deck
 
-        card.addTag(tagEntity);
-        assertTrue(card.getTags().contains(tagEntity));
+        card.addTag(tag);
+        assertTrue(card.getTags().contains(tag));
 
-        card.removeTag(tagEntity);
-        assertFalse(card.getTags().contains(tagEntity));
-        assertFalse(tagEntity.getCards().contains(card));
+        card.removeTag(tag);
+        assertFalse(card.getTags().contains(tag));
+        assertFalse(tag.getCards().contains(card));
 
         logger.debug("Test passed: Tag removed successfully");
     }
@@ -462,19 +462,19 @@ class CardEntityTest {
     void testAddMultipleTags() {
         logger.debug("Test: Adding multiple tags to card");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
-        TagEntity tagEntity1 = new TagEntity(testDeckEntity, "verbs"); // ✅ Tag now requires deck
-        TagEntity tagEntity2 = new TagEntity(testDeckEntity, "N5");    // ✅ Tag now requires deck
-        TagEntity tagEntity3 = new TagEntity(testDeckEntity, "food");  // ✅ Tag now requires deck
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
+        Tag tag1 = new Tag(testDeck, "verbs"); // ✅ Tag now requires deck
+        Tag tag2 = new Tag(testDeck, "N5");    // ✅ Tag now requires deck
+        Tag tag3 = new Tag(testDeck, "food");  // ✅ Tag now requires deck
 
-        card.addTag(tagEntity1);
-        card.addTag(tagEntity2);
-        card.addTag(tagEntity3);
+        card.addTag(tag1);
+        card.addTag(tag2);
+        card.addTag(tag3);
 
         assertEquals(3, card.getTags().size());
-        assertTrue(card.getTags().contains(tagEntity1));
-        assertTrue(card.getTags().contains(tagEntity2));
-        assertTrue(card.getTags().contains(tagEntity3));
+        assertTrue(card.getTags().contains(tag1));
+        assertTrue(card.getTags().contains(tag2));
+        assertTrue(card.getTags().contains(tag3));
 
         logger.debug("Test passed: Multiple tags added successfully");
     }
@@ -487,7 +487,7 @@ class CardEntityTest {
     void testAddNullTag() {
         logger.debug("Test: Adding null tag");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertThrows(IllegalArgumentException.class, () -> {
             card.addTag(null);
@@ -504,7 +504,7 @@ class CardEntityTest {
     void testRemoveNullTag() {
         logger.debug("Test: Removing null tag");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertThrows(IllegalArgumentException.class, () -> {
             card.removeTag(null);
@@ -521,19 +521,19 @@ class CardEntityTest {
     void testClearTags() {
         logger.debug("Test: Clearing all tags from card");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
-        TagEntity tagEntity1 = new TagEntity(testDeckEntity, "verbs"); // ✅ Tag now requires deck
-        TagEntity tagEntity2 = new TagEntity(testDeckEntity, "N5");    // ✅ Tag now requires deck
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
+        Tag tag1 = new Tag(testDeck, "verbs"); // ✅ Tag now requires deck
+        Tag tag2 = new Tag(testDeck, "N5");    // ✅ Tag now requires deck
 
-        card.addTag(tagEntity1);
-        card.addTag(tagEntity2);
+        card.addTag(tag1);
+        card.addTag(tag2);
         assertEquals(2, card.getTags().size());
 
         card.clearTags();
 
         assertEquals(0, card.getTags().size());
-        assertFalse(tagEntity1.getCards().contains(card));
-        assertFalse(tagEntity2.getCards().contains(card));
+        assertFalse(tag1.getCards().contains(card));
+        assertFalse(tag2.getCards().contains(card));
 
         logger.debug("Test passed: All tags cleared successfully");
     }
@@ -547,26 +547,26 @@ class CardEntityTest {
         logger.debug("Test: Deck-specific tags");
 
         // Create two decks with same tag name
-        DeckEntity japaneseDeckEntity = new DeckEntity(testUserEntity, "Japanese", "Japanese vocab");
-        japaneseDeckEntity.setId(1L);
-        DeckEntity spanishDeckEntity = new DeckEntity(testUserEntity, "Spanish", "Spanish vocab");
-        spanishDeckEntity.setId(2L);
+        Deck japaneseDeck = new Deck(testUser, "Japanese", "Japanese vocab");
+        japaneseDeck.setId(1L);
+        Deck spanishDeck = new Deck(testUser, "Spanish", "Spanish vocab");
+        spanishDeck.setId(2L);
 
-        TagEntity japaneseVerbsTagEntity = new TagEntity(japaneseDeckEntity, "verbs");
-        TagEntity spanishVerbsTagEntity = new TagEntity(spanishDeckEntity, "verbs");
+        Tag japaneseVerbsTag = new Tag(japaneseDeck, "verbs");
+        Tag spanishVerbsTag = new Tag(spanishDeck, "verbs");
 
-        CardEntity japaneseCard = new CardEntity(japaneseDeckEntity, "食べる", "to eat");
-        CardEntity spanishCard = new CardEntity(spanishDeckEntity, "comer", "to eat");
+        Card japaneseCard = new Card(japaneseDeck, "食べる", "to eat");
+        Card spanishCard = new Card(spanishDeck, "comer", "to eat");
 
-        japaneseCard.addTag(japaneseVerbsTagEntity);
-        spanishCard.addTag(spanishVerbsTagEntity);
+        japaneseCard.addTag(japaneseVerbsTag);
+        spanishCard.addTag(spanishVerbsTag);
 
         // Both cards have "verbs" tag, but from different decks
-        assertTrue(japaneseCard.getTags().contains(japaneseVerbsTagEntity));
-        assertFalse(japaneseCard.getTags().contains(spanishVerbsTagEntity));
+        assertTrue(japaneseCard.getTags().contains(japaneseVerbsTag));
+        assertFalse(japaneseCard.getTags().contains(spanishVerbsTag));
 
-        assertTrue(spanishCard.getTags().contains(spanishVerbsTagEntity));
-        assertFalse(spanishCard.getTags().contains(japaneseVerbsTagEntity));
+        assertTrue(spanishCard.getTags().contains(spanishVerbsTag));
+        assertFalse(spanishCard.getTags().contains(japaneseVerbsTag));
 
         logger.debug("Test passed: Deck-specific tags work correctly");
     }
@@ -581,13 +581,13 @@ class CardEntityTest {
     void testCardEquality() {
         logger.debug("Test: Testing card equality");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card1 = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card1.setId(1L);
 
-        CardEntity card2 = new CardEntity(testDeckEntity, "Different", "Content");
+        Card card2 = new Card(testDeck, "Different", "Content");
         card2.setId(1L);
 
-        CardEntity card3 = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card3 = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card3.setId(2L);
 
         // Same ID = equal
@@ -607,12 +607,12 @@ class CardEntityTest {
     void testEqualityReflexive() {
         logger.debug("Test: Testing reflexive equality");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card.setId(1L);
 
         assertEquals(card, card);
 
-        logger.debug("Test passed: CardEntity equals itself");
+        logger.debug("Test passed: Card equals itself");
     }
 
     /**
@@ -623,12 +623,12 @@ class CardEntityTest {
     void testEqualityNull() {
         logger.debug("Test: Testing equality with null");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card.setId(1L);
 
         assertNotEquals(null, card);
 
-        logger.debug("Test passed: CardEntity not equal to null");
+        logger.debug("Test passed: Card not equal to null");
     }
 
     /**
@@ -639,12 +639,12 @@ class CardEntityTest {
     void testEqualityDifferentClass() {
         logger.debug("Test: Testing equality with different class");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card.setId(1L);
 
-        assertNotEquals(card, "Not a CardEntity");
+        assertNotEquals(card, "Not a Card");
 
-        logger.debug("Test passed: CardEntity not equal to different class");
+        logger.debug("Test passed: Card not equal to different class");
     }
 
     /**
@@ -655,8 +655,8 @@ class CardEntityTest {
     void testEqualityWithoutIds() {
         logger.debug("Test: Testing equality for cards without IDs");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
-        CardEntity card2 = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card1 = new Card(testDeck, CARD_FRONT, CARD_BACK);
+        Card card2 = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         // Same instance
         assertEquals(card1, card1);
@@ -675,10 +675,10 @@ class CardEntityTest {
     void testCardHashCode() {
         logger.debug("Test: Testing hash code consistency");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card1 = new Card(testDeck, CARD_FRONT, CARD_BACK);
         card1.setId(1L);
 
-        CardEntity card2 = new CardEntity(testDeckEntity, "Different", "Content");
+        Card card2 = new Card(testDeck, "Different", "Content");
         card2.setId(1L);
 
         assertEquals(card1.hashCode(), card2.hashCode());
@@ -696,7 +696,7 @@ class CardEntityTest {
     void testToStringIncludesContent() {
         logger.debug("Test: Testing toString includes content");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK, CARD_NOTES);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK, CARD_NOTES);
 
         String cardString = card.toString();
 
@@ -715,9 +715,9 @@ class CardEntityTest {
     void testToStringDoesNotExposeSensitiveData() {
         logger.debug("Test: Testing toString does not expose sensitive data");
 
-        UserEntity sensitiveUserEntity = new UserEntity("secret@example.com", "secretPassword");
-        DeckEntity sensitiveDeckEntity = new DeckEntity(sensitiveUserEntity, "My Deck", "Description");
-        CardEntity card = new CardEntity(sensitiveDeckEntity, CARD_FRONT, CARD_BACK);
+        User sensitiveUser = new User("secret@example.com", "secretPassword");
+        Deck sensitiveDeck = new Deck(sensitiveUser, "My Deck", "Description");
+        Card card = new Card(sensitiveDeck, CARD_FRONT, CARD_BACK);
 
         String cardString = card.toString();
 
@@ -737,12 +737,12 @@ class CardEntityTest {
     void testToStringIncludesTagCount() {
         logger.debug("Test: Testing toString includes tag count");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
-        TagEntity tagEntity1 = new TagEntity(testDeckEntity, "verbs"); // ✅ Tag now requires deck
-        TagEntity tagEntity2 = new TagEntity(testDeckEntity, "N5");    // ✅ Tag now requires deck
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
+        Tag tag1 = new Tag(testDeck, "verbs"); // ✅ Tag now requires deck
+        Tag tag2 = new Tag(testDeck, "N5");    // ✅ Tag now requires deck
 
-        card.addTag(tagEntity1);
-        card.addTag(tagEntity2);
+        card.addTag(tag1);
+        card.addTag(tag2);
 
         String cardString = card.toString();
 
@@ -761,7 +761,7 @@ class CardEntityTest {
     void testVersionGetterSetter() {
         logger.debug("Test: Testing version getter and setter");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertNull(card.getVersion());
 
@@ -779,7 +779,7 @@ class CardEntityTest {
     void testIdGetterSetter() {
         logger.debug("Test: Testing ID getter and setter");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT, CARD_BACK);
+        Card card = new Card(testDeck, CARD_FRONT, CARD_BACK);
 
         assertNull(card.getId());
 

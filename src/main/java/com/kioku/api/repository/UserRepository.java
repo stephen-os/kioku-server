@@ -1,6 +1,6 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository interface for UserEntity entity database operations.
+ * Repository interface for User entity database operations.
  *
  * <p>This repository provides methods for:
  * <ul>
@@ -29,7 +29,7 @@ import java.util.Optional;
  * @since 1.0
  */
 @Repository
-public interface UserRepository extends JpaRepository<UserEntity, Long> {
+public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Finds a user by email address.
@@ -41,7 +41,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @return an Optional containing the user if found, empty otherwise
      */
     @Query("SELECT u FROM UserEntity u WHERE LOWER(u.email) = LOWER(:email)")
-    Optional<UserEntity> findByEmail(@Param("email") String email);
+    Optional<User> findByEmail(@Param("email") String email);
 
     /**
      * Checks if a user with the given email exists.
@@ -64,7 +64,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @param token the email verification token
      * @return an Optional containing the user if found, empty otherwise
      */
-    Optional<UserEntity> findByEmailVerificationToken(String token);
+    Optional<User> findByEmailVerificationToken(String token);
 
     /**
      * Finds a user by password reset token.
@@ -75,7 +75,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @param token the password reset token
      * @return an Optional containing the user if found, empty otherwise
      */
-    Optional<UserEntity> findByPasswordResetToken(String token);
+    Optional<User> findByPasswordResetToken(String token);
 
     /**
      * Finds all users with a specific status.
@@ -83,7 +83,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @param status the user status to filter by
      * @return a list of users with the given status
      */
-    List<UserEntity> findByStatus(UserEntity.UserStatus status);
+    List<User> findByStatus(User.UserStatus status);
 
     /**
      * Finds all currently locked accounts.
@@ -94,7 +94,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @return a list of locked users
      */
     @Query("SELECT u FROM UserEntity u WHERE u.lockedUntil > :now")
-    List<UserEntity> findLockedAccounts(@Param("now") LocalDateTime now);
+    List<User> findLockedAccounts(@Param("now") LocalDateTime now);
 
     /**
      * Finds all soft-deleted accounts.
@@ -104,7 +104,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @return a list of soft-deleted users
      */
     @Query("SELECT u FROM UserEntity u WHERE u.deletedAt IS NOT NULL")
-    List<UserEntity> findDeletedAccounts();
+    List<User> findDeletedAccounts();
 
     /**
      * Finds all active, non-deleted, non-locked users.
@@ -122,7 +122,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     @Query("SELECT u FROM UserEntity u WHERE u.status = 'ACTIVE' " +
             "AND u.deletedAt IS NULL " +
             "AND (u.lockedUntil IS NULL OR u.lockedUntil < :now)")
-    List<UserEntity> findActiveAccounts(@Param("now") LocalDateTime now);
+    List<User> findActiveAccounts(@Param("now") LocalDateTime now);
 
     /**
      * Finds users by email verification status.
@@ -130,7 +130,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @param emailVerified {@code true} to find verified users, {@code false} for unverified
      * @return a list of users with the specified verification status
      */
-    List<UserEntity> findByEmailVerified(boolean emailVerified);
+    List<User> findByEmailVerified(boolean emailVerified);
 
     /**
      * Counts the number of users created after a specific date.

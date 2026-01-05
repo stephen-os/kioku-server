@@ -2,9 +2,9 @@ package com.kioku.api.service;
 
 import com.kioku.api.dto.request.CardImportDto;
 import com.kioku.api.dto.request.DeckImportRequest;
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -90,7 +90,7 @@ public class DeckImportService {
      *     cards,
      *     tags
      * );
-     * DeckEntity deck = importService.importDeck(userId, request);
+     * Deck deck = importService.importDeck(userId, request);
      * </pre>
      *
      * @param userId the ID of the user importing the deck
@@ -99,7 +99,7 @@ public class DeckImportService {
      * @throws IllegalArgumentException if deck name already exists, duplicate cards found, or validation fails
      */
     @Transactional
-    public DeckEntity importDeck(Long userId, DeckImportRequest request) {
+    public Deck importDeck(Long userId, DeckImportRequest request) {
         logger.debug("Importing deck for user id={}: name={}, {} cards, {} tags",
                 userId, request.getName(), request.getCardCount(), request.getTagCount());
 
@@ -110,11 +110,11 @@ public class DeckImportService {
         }
 
         // 2. Create the deck
-        DeckEntity deck = deckService.createDeck(userId, request.getName(), request.getDescription());
+        Deck deck = deckService.createDeck(userId, request.getName(), request.getDescription());
         logger.debug("Deck created: deckId={}", deck.getId());
 
         // 3. Create tags (deduplicate by name)
-        Map<String, TagEntity> tagMap = createTags(userId, deck.getId(), request);
+        Map<String, Tag> tagMap = createTags(userId, deck.getId(), request);
         logger.debug("Created {} unique tags", tagMap.size());
 
         // 4. Create cards and associate tags
@@ -134,15 +134,15 @@ public class DeckImportService {
      * @param request the import request
      * @return a map of tag names to tag entities
      */
-    private Map<String, TagEntity> createTags(Long userId, Long deckId, DeckImportRequest request) {
-        Map<String, TagEntity> tagMap = new HashMap<>();
+    private Map<String, Tag> createTags(Long userId, Long deckId, DeckImportRequest request) {
+        Map<String, Tag> tagMap = new HashMap<>();
 
         // Add tags from explicit tag list
         if (request.hasTags()) {
             for (var tagDto : request.getTags()) {
                 String tagName = tagDto.getName();
                 if (!tagMap.containsKey(tagName)) {
-                    TagEntity tag = tagService.createTag(userId, deckId, tagName);
+                    Tag tag = tagService.createTag(userId, deckId, tagName);
                     tagMap.put(tagName, tag);
                     logger.debug("Created tag: {}", tagName);
                 }
@@ -162,7 +162,7 @@ public class DeckImportService {
      * @throws IllegalArgumentException if duplicate cards are found within the import
      */
     private void createCardsWithTags(Long userId, Long deckId, DeckImportRequest request,
-                                     Map<String, TagEntity> tagMap) {
+                                     Map<String, Tag> tagMap) {
         Set<String> processedCards = new HashSet<>();
         int cardIndex = 0;
 
@@ -181,7 +181,7 @@ public class DeckImportService {
             processedCards.add(cardKey);
 
             // Create the card
-            CardEntity card = cardService.createCard(
+            Card card = cardService.createCard(
                     userId,
                     deckId,
                     cardDto.getFront(),
@@ -207,17 +207,17 @@ public class DeckImportService {
      * @param tagMap the map of existing tags
      */
     private void associateTagsWithCard(Long userId, Long deckId, Long cardId,
-                                       CardImportDto cardDto, Map<String, TagEntity> tagMap) {
+                                       CardImportDto cardDto, Map<String, Tag> tagMap) {
         for (String tagName : cardDto.getTags()) {
             // Create tag if it doesn't exist yet
             if (!tagMap.containsKey(tagName)) {
-                TagEntity tag = tagService.createTag(userId, deckId, tagName);
+                Tag tag = tagService.createTag(userId, deckId, tagName);
                 tagMap.put(tagName, tag);
                 logger.debug("Created tag from card reference: {}", tagName);
             }
 
             // Add tag to card
-            TagEntity tag = tagMap.get(tagName);
+            Tag tag = tagMap.get(tagName);
             cardService.addTagToCard(userId, deckId, cardId, tag.getId());
         }
     }

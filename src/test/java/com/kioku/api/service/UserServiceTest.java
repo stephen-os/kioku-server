@@ -1,6 +1,6 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.User;
 import com.kioku.api.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -65,7 +65,7 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-    private UserEntity testUserEntity;
+    private User testUser;
 
     /**
      * Sets up test fixtures before each test.
@@ -73,8 +73,8 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         logger.debug("Setting up test: Creating test user with email={}", TEST_EMAIL);
-        testUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        testUserEntity.setId(USER_ID);
+        testUser = new User(TEST_EMAIL, PASSWORD_HASH);
+        testUser.setId(USER_ID);
     }
 
     // User Lookup Tests
@@ -87,9 +87,9 @@ class UserServiceTest {
     void testFindById() {
         logger.debug("Test: Finding user by id={}", USER_ID);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
 
-        Optional<UserEntity> found = userService.findById(USER_ID);
+        Optional<User> found = userService.findById(USER_ID);
 
         assertTrue(found.isPresent());
         assertEquals(TEST_EMAIL, found.get().getEmail());
@@ -108,7 +108,7 @@ class UserServiceTest {
 
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        Optional<UserEntity> found = userService.findById(USER_ID);
+        Optional<User> found = userService.findById(USER_ID);
 
         assertFalse(found.isPresent());
         verify(userRepository).findById(USER_ID);
@@ -124,9 +124,9 @@ class UserServiceTest {
     void testFindByEmail() {
         logger.debug("Test: Finding user by email={}", TEST_EMAIL);
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUserEntity));
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
 
-        Optional<UserEntity> found = userService.findByEmail(TEST_EMAIL);
+        Optional<User> found = userService.findByEmail(TEST_EMAIL);
 
         assertTrue(found.isPresent());
         assertEquals(TEST_EMAIL, found.get().getEmail());
@@ -161,14 +161,14 @@ class UserServiceTest {
     void testFindByStatus() {
         logger.debug("Test: Finding users by status=ACTIVE");
 
-        when(userRepository.findByStatus(UserEntity.UserStatus.ACTIVE))
-                .thenReturn(List.of(testUserEntity));
+        when(userRepository.findByStatus(User.UserStatus.ACTIVE))
+                .thenReturn(List.of(testUser));
 
-        List<UserEntity> userEntities = userService.findByStatus(UserEntity.UserStatus.ACTIVE);
+        List<User> userEntities = userService.findByStatus(User.UserStatus.ACTIVE);
 
         assertEquals(1, userEntities.size());
         assertEquals(TEST_EMAIL, userEntities.get(0).getEmail());
-        verify(userRepository).findByStatus(UserEntity.UserStatus.ACTIVE);
+        verify(userRepository).findByStatus(User.UserStatus.ACTIVE);
 
         logger.debug("Test passed: Found {} users with status ACTIVE", userEntities.size());
     }
@@ -186,20 +186,20 @@ class UserServiceTest {
         when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
         when(passwordEncoder.encode(PLAIN_PASSWORD)).thenReturn(PASSWORD_HASH);
         // ✅ FIX: Use Answer to capture and return the actual user being saved
-        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> {
-            UserEntity userEntity = invocation.getArgument(0);
-            userEntity.setId(USER_ID); // Simulate ID being set by database
-            return userEntity;
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId(USER_ID); // Simulate ID being set by database
+            return user;
         });
 
-        UserEntity registered = userService.registerUser(TEST_EMAIL, PLAIN_PASSWORD);
+        User registered = userService.registerUser(TEST_EMAIL, PLAIN_PASSWORD);
 
         assertNotNull(registered);
         assertEquals(TEST_EMAIL, registered.getEmail());
-        assertEquals(UserEntity.UserStatus.PENDING_VERIFICATION, registered.getStatus());
+        assertEquals(User.UserStatus.PENDING_VERIFICATION, registered.getStatus());
         verify(userRepository).existsByEmail(TEST_EMAIL);
         verify(passwordEncoder).encode(PLAIN_PASSWORD);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: User registered successfully");
     }
@@ -219,7 +219,7 @@ class UserServiceTest {
         });
 
         verify(userRepository).existsByEmail(TEST_EMAIL);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Duplicate email registration prevented");
     }
@@ -234,18 +234,18 @@ class UserServiceTest {
     void testAuthenticateUserSuccess() {
         logger.debug("Test: Authenticating user with valid credentials");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUserEntity));
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(true);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        Optional<UserEntity> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
+        Optional<User> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
 
         assertTrue(authenticated.isPresent());
         assertEquals(TEST_EMAIL, authenticated.get().getEmail());
         assertEquals(0, authenticated.get().getFailedLoginAttempts());
         verify(userRepository).findByEmail(TEST_EMAIL);
         verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: User authenticated successfully");
     }
@@ -258,16 +258,16 @@ class UserServiceTest {
     void testAuthenticateUserInvalidPassword() {
         logger.debug("Test: Authenticating user with invalid password");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUserEntity));
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(false);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        Optional<UserEntity> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
+        Optional<User> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
 
         assertFalse(authenticated.isPresent());
         verify(userRepository).findByEmail(TEST_EMAIL);
         verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: Authentication failed with invalid password");
     }
@@ -282,12 +282,12 @@ class UserServiceTest {
 
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.empty());
 
-        Optional<UserEntity> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
+        Optional<User> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
 
         assertFalse(authenticated.isPresent());
         verify(userRepository).findByEmail(TEST_EMAIL);
         verify(passwordEncoder, never()).matches(anyString(), anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Authentication failed for non-existent user");
     }
@@ -300,16 +300,16 @@ class UserServiceTest {
     void testAuthenticateUserLocked() {
         logger.debug("Test: Authenticating locked user");
 
-        testUserEntity.setLockedUntil(LocalDateTime.now().plusHours(1));
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        testUser.setLockedUntil(LocalDateTime.now().plusHours(1));
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        Optional<UserEntity> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
+        Optional<User> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
 
         assertFalse(authenticated.isPresent());
         verify(userRepository).findByEmail(TEST_EMAIL);
         verify(passwordEncoder, never()).matches(anyString(), anyString());
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: Authentication failed for locked account");
     }
@@ -322,15 +322,15 @@ class UserServiceTest {
     void testAuthenticateUserDeleted() {
         logger.debug("Test: Authenticating deleted user");
 
-        testUserEntity.softDelete();
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUserEntity));
+        testUser.softDelete();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
 
-        Optional<UserEntity> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
+        Optional<User> authenticated = userService.authenticateUser(TEST_EMAIL, PLAIN_PASSWORD);
 
         assertFalse(authenticated.isPresent());
         verify(userRepository).findByEmail(TEST_EMAIL);
         verify(passwordEncoder, never()).matches(anyString(), anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Authentication failed for deleted account");
     }
@@ -345,15 +345,15 @@ class UserServiceTest {
     void testInitiateEmailVerification() {
         logger.debug("Test: Initiating email verification for user id={}", USER_ID);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         String token = userService.initiateEmailVerification(USER_ID);
 
         assertNotNull(token);
         assertFalse(token.isEmpty());
         verify(userRepository).findById(USER_ID);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: Email verification initiated with token");
     }
@@ -373,7 +373,7 @@ class UserServiceTest {
         });
 
         verify(userRepository).findById(USER_ID);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Exception thrown for non-existent user");
     }
@@ -386,16 +386,16 @@ class UserServiceTest {
     void testVerifyEmailSuccess() {
         logger.debug("Test: Verifying email with valid token");
 
-        testUserEntity.setEmailVerificationToken(VERIFICATION_TOKEN);
+        testUser.setEmailVerificationToken(VERIFICATION_TOKEN);
         when(userRepository.findByEmailVerificationToken(VERIFICATION_TOKEN))
-                .thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         boolean verified = userService.verifyEmail(VERIFICATION_TOKEN);
 
         assertTrue(verified);
         verify(userRepository).findByEmailVerificationToken(VERIFICATION_TOKEN);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: Email verified successfully");
     }
@@ -415,7 +415,7 @@ class UserServiceTest {
 
         assertFalse(verified);
         verify(userRepository).findByEmailVerificationToken(VERIFICATION_TOKEN);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Email verification failed with invalid token");
     }
@@ -430,15 +430,15 @@ class UserServiceTest {
     void testInitiatePasswordReset() {
         logger.debug("Test: Initiating password reset for email={}", TEST_EMAIL);
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         Optional<String> token = userService.initiatePasswordReset(TEST_EMAIL);
 
         assertTrue(token.isPresent());
         assertFalse(token.get().isEmpty());
         verify(userRepository).findByEmail(TEST_EMAIL);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: Password reset initiated with token");
     }
@@ -457,7 +457,7 @@ class UserServiceTest {
 
         assertFalse(token.isPresent());
         verify(userRepository).findByEmail(TEST_EMAIL);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Empty result for non-existent user");
     }
@@ -470,18 +470,18 @@ class UserServiceTest {
     void testResetPasswordSuccess() {
         logger.debug("Test: Resetting password with valid token");
 
-        testUserEntity.setPasswordResetToken(RESET_TOKEN);
+        testUser.setPasswordResetToken(RESET_TOKEN);
         when(userRepository.findByPasswordResetToken(RESET_TOKEN))
-                .thenReturn(Optional.of(testUserEntity));
+                .thenReturn(Optional.of(testUser));
         when(passwordEncoder.encode(PLAIN_PASSWORD)).thenReturn(OTHER_PASSWORD_HASH);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         boolean reset = userService.resetPassword(RESET_TOKEN, PLAIN_PASSWORD);
 
         assertTrue(reset);
         verify(userRepository).findByPasswordResetToken(RESET_TOKEN);
         verify(passwordEncoder).encode(PLAIN_PASSWORD);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: Password reset successfully");
     }
@@ -502,7 +502,7 @@ class UserServiceTest {
         assertFalse(reset);
         verify(userRepository).findByPasswordResetToken(RESET_TOKEN);
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Password reset failed with invalid token");
     }
@@ -517,10 +517,10 @@ class UserServiceTest {
     void testUpdatePasswordSuccess() {
         logger.debug("Test: Updating password for user id={}", USER_ID);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(true);
         when(passwordEncoder.encode("NewPassword123!")).thenReturn(OTHER_PASSWORD_HASH);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         boolean updated = userService.updatePassword(USER_ID, PLAIN_PASSWORD, "NewPassword123!");
 
@@ -528,7 +528,7 @@ class UserServiceTest {
         verify(userRepository).findById(USER_ID);
         verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
         verify(passwordEncoder).encode("NewPassword123!");
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: Password updated successfully");
     }
@@ -541,7 +541,7 @@ class UserServiceTest {
     void testUpdatePasswordWrongCurrent() {
         logger.debug("Test: Updating password with incorrect current password");
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(false);
 
         boolean updated = userService.updatePassword(USER_ID, PLAIN_PASSWORD, "NewPassword123!");
@@ -549,7 +549,7 @@ class UserServiceTest {
         assertFalse(updated);
         verify(userRepository).findById(USER_ID);
         verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Password update failed with incorrect current password");
     }
@@ -569,7 +569,7 @@ class UserServiceTest {
         });
 
         verify(userRepository).findById(USER_ID);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Exception thrown for non-existent user");
     }
@@ -584,13 +584,13 @@ class UserServiceTest {
     void testDeleteUser() {
         logger.debug("Test: Soft deleting user id={}", USER_ID);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         userService.deleteUser(USER_ID);
 
         verify(userRepository).findById(USER_ID);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: User soft deleted");
     }
@@ -603,14 +603,14 @@ class UserServiceTest {
     void testRestoreUser() {
         logger.debug("Test: Restoring user id={}", USER_ID);
 
-        testUserEntity.softDelete();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        testUser.softDelete();
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         userService.restoreUser(USER_ID);
 
         verify(userRepository).findById(USER_ID);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: User restored");
     }
@@ -623,13 +623,13 @@ class UserServiceTest {
     void testSuspendUser() {
         logger.debug("Test: Suspending user id={}", USER_ID);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         userService.suspendUser(USER_ID);
 
         verify(userRepository).findById(USER_ID);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: User suspended");
     }
@@ -642,14 +642,14 @@ class UserServiceTest {
     void testActivateUser() {
         logger.debug("Test: Activating user id={}", USER_ID);
 
-        testUserEntity.setStatus(UserEntity.UserStatus.SUSPENDED);
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        testUser.setStatus(User.UserStatus.SUSPENDED);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         userService.activateUser(USER_ID);
 
         verify(userRepository).findById(USER_ID);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: User activated");
     }
@@ -662,15 +662,15 @@ class UserServiceTest {
     void testUnlockUser() {
         logger.debug("Test: Unlocking user id={}", USER_ID);
 
-        testUserEntity.setLockedUntil(LocalDateTime.now().plusHours(1));
-        testUserEntity.setFailedLoginAttempts(5);
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUserEntity));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        testUser.setLockedUntil(LocalDateTime.now().plusHours(1));
+        testUser.setFailedLoginAttempts(5);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         userService.unlockUser(USER_ID);
 
         verify(userRepository).findById(USER_ID);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
 
         logger.debug("Test passed: User unlocked");
     }
@@ -686,14 +686,14 @@ class UserServiceTest {
         logger.debug("Test: Creating user with pre-hashed password");
 
         when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUserEntity);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        UserEntity created = userService.createUser(TEST_EMAIL, PASSWORD_HASH);
+        User created = userService.createUser(TEST_EMAIL, PASSWORD_HASH);
 
         assertNotNull(created);
         assertEquals(TEST_EMAIL, created.getEmail());
         verify(userRepository).existsByEmail(TEST_EMAIL);
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userRepository).save(any(User.class));
         verify(passwordEncoder, never()).encode(anyString());
 
         logger.debug("Test passed: User created with pre-hashed password");
@@ -714,7 +714,7 @@ class UserServiceTest {
         });
 
         verify(userRepository).existsByEmail(TEST_EMAIL);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, never()).save(any(User.class));
 
         logger.debug("Test passed: Exception thrown for duplicate email");
     }

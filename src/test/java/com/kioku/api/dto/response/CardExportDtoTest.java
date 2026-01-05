@@ -1,9 +1,9 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>These tests verify:
  * <ul>
- *   <li>Construction from CardEntity</li>
+ *   <li>Construction from Card</li>
  *   <li>Constructor behavior with all fields</li>
  *   <li>Getter and setter functionality</li>
  *   <li>Tag handling</li>
@@ -42,16 +42,16 @@ class CardExportDtoTest {
     private static final String BACK = "to eat";
     private static final String NOTES = "ru-verb";
 
-    private UserEntity testUser;
-    private DeckEntity testDeck;
+    private User testUser;
+    private Deck testDeck;
     private LocalDateTime testTime;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up CardExportDto test");
 
-        testUser = new UserEntity("test@example.com", "hashedPassword");
-        testDeck = new DeckEntity(testUser, "Test Deck", "Description");
+        testUser = new User("test@example.com", "hashedPassword");
+        testDeck = new Deck(testUser, "Test Deck", "Description");
         testTime = LocalDateTime.now();
     }
 
@@ -71,11 +71,11 @@ class CardExportDtoTest {
     }
 
     @Test
-    @DisplayName("Should create CardExportDto from CardEntity without tags")
+    @DisplayName("Should create CardExportDto from Card without tags")
     void testEntityConstructorWithoutTags() {
         logger.debug("Test: Entity constructor without tags");
 
-        CardEntity card = new CardEntity(testDeck, FRONT, BACK);
+        Card card = new Card(testDeck, FRONT, BACK);
         card.setId(CARD_ID);
         card.setNotes(NOTES);
 
@@ -92,16 +92,16 @@ class CardExportDtoTest {
     }
 
     @Test
-    @DisplayName("Should create CardExportDto from CardEntity with tags")
+    @DisplayName("Should create CardExportDto from Card with tags")
     void testEntityConstructorWithTags() {
         logger.debug("Test: Entity constructor with tags");
 
-        CardEntity card = new CardEntity(testDeck, FRONT, BACK);
+        Card card = new Card(testDeck, FRONT, BACK);
         card.setId(CARD_ID);
         card.setNotes(NOTES);
 
-        TagEntity tag1 = new TagEntity(testDeck, "verbs");
-        TagEntity tag2 = new TagEntity(testDeck, "food");
+        Tag tag1 = new Tag(testDeck, "verbs");
+        Tag tag2 = new Tag(testDeck, "food");
         card.addTag(tag1);
         card.addTag(tag2);
 
@@ -162,7 +162,7 @@ class CardExportDtoTest {
     void testEntityConstructorWithNullNotes() {
         logger.debug("Test: Entity constructor with null notes");
 
-        CardEntity card = new CardEntity(testDeck, FRONT, BACK);
+        Card card = new Card(testDeck, FRONT, BACK);
         card.setId(CARD_ID);
         // notes not set (null)
 
@@ -223,12 +223,12 @@ class CardExportDtoTest {
     void testTagOrderPreserved() {
         logger.debug("Test: Tag order preservation");
 
-        CardEntity card = new CardEntity(testDeck, FRONT, BACK);
+        Card card = new Card(testDeck, FRONT, BACK);
         card.setId(CARD_ID);
 
-        TagEntity tag1 = new TagEntity(testDeck, "alpha");
-        TagEntity tag2 = new TagEntity(testDeck, "beta");
-        TagEntity tag3 = new TagEntity(testDeck, "gamma");
+        Tag tag1 = new Tag(testDeck, "alpha");
+        Tag tag2 = new Tag(testDeck, "beta");
+        Tag tag3 = new Tag(testDeck, "gamma");
         card.addTag(tag1);
         card.addTag(tag2);
         card.addTag(tag3);
@@ -236,7 +236,7 @@ class CardExportDtoTest {
         CardExportDto dto = new CardExportDto(card);
 
         assertEquals(3, dto.getTags().size());
-        // Order may vary depending on Set implementation in CardEntity
+        // Order may vary depending on Set implementation in Card
         assertTrue(dto.getTags().contains("alpha"));
         assertTrue(dto.getTags().contains("beta"));
         assertTrue(dto.getTags().contains("gamma"));
@@ -364,12 +364,12 @@ class CardExportDtoTest {
     void testManyTags() {
         logger.debug("Test: Many tags");
 
-        CardEntity card = new CardEntity(testDeck, FRONT, BACK);
+        Card card = new Card(testDeck, FRONT, BACK);
         card.setId(CARD_ID);
 
         // Add many tags
         for (int i = 0; i < 50; i++) {
-            TagEntity tag = new TagEntity(testDeck, "tag" + i);
+            Tag tag = new Tag(testDeck, "tag" + i);
             card.addTag(tag);
         }
 

@@ -3,10 +3,10 @@ package com.kioku.api.service;
 import com.kioku.api.dto.request.CardImportDto;
 import com.kioku.api.dto.request.DeckImportRequest;
 import com.kioku.api.dto.request.TagImportDto;
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -69,17 +69,17 @@ class DeckImportServiceTest {
     @InjectMocks
     private DeckImportService importService;
 
-    private UserEntity testUser;
-    private DeckEntity testDeck;
+    private User testUser;
+    private Deck testDeck;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up DeckImportService test");
 
-        testUser = mock(UserEntity.class);
+        testUser = mock(User.class);
         when(testUser.getId()).thenReturn(USER_ID);
 
-        testDeck = mock(DeckEntity.class);
+        testDeck = mock(Deck.class);
         when(testDeck.getId()).thenReturn(DECK_ID);
         when(testDeck.getName()).thenReturn(DECK_NAME);
     }
@@ -100,9 +100,9 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         assertEquals(DECK_ID, result.getId());
@@ -131,17 +131,17 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
 
-        TagEntity verbsTag = mock(TagEntity.class);
+        Tag verbsTag = mock(Tag.class);
         when(verbsTag.getId()).thenReturn(TAG_ID);
-        TagEntity foodTag = mock(TagEntity.class);
+        Tag foodTag = mock(Tag.class);
         when(foodTag.getId()).thenReturn(TAG_ID + 1);
 
         when(tagService.createTag(USER_ID, DECK_ID, "verbs")).thenReturn(verbsTag);
         when(tagService.createTag(USER_ID, DECK_ID, "food")).thenReturn(foodTag);
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         verify(tagService).createTag(USER_ID, DECK_ID, "verbs");
@@ -164,23 +164,23 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
 
-        TagEntity verbsTag = mock(TagEntity.class);
+        Tag verbsTag = mock(Tag.class);
         when(verbsTag.getId()).thenReturn(TAG_ID);
-        TagEntity foodTag = mock(TagEntity.class);
+        Tag foodTag = mock(Tag.class);
         when(foodTag.getId()).thenReturn(TAG_ID + 1);
 
         when(tagService.createTag(USER_ID, DECK_ID, "verbs")).thenReturn(verbsTag);
         when(tagService.createTag(USER_ID, DECK_ID, "food")).thenReturn(foodTag);
 
-        CardEntity card1 = mock(CardEntity.class);
+        Card card1 = mock(Card.class);
         when(card1.getId()).thenReturn(CARD_ID);
-        CardEntity card2 = mock(CardEntity.class);
+        Card card2 = mock(Card.class);
         when(card2.getId()).thenReturn(CARD_ID + 1);
 
         when(cardService.createCard(USER_ID, DECK_ID, "食べる", "to eat", null)).thenReturn(card1);
         when(cardService.createCard(USER_ID, DECK_ID, "飲む", "to drink", null)).thenReturn(card2);
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         verify(tagService).createTag(USER_ID, DECK_ID, "verbs");
@@ -209,19 +209,19 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
 
-        TagEntity verbsTag = mock(TagEntity.class);
+        Tag verbsTag = mock(Tag.class);
         when(verbsTag.getId()).thenReturn(TAG_ID);
         when(tagService.createTag(USER_ID, DECK_ID, "verbs")).thenReturn(verbsTag);
 
-        CardEntity card1 = mock(CardEntity.class);
+        Card card1 = mock(Card.class);
         when(card1.getId()).thenReturn(CARD_ID);
-        CardEntity card2 = mock(CardEntity.class);
+        Card card2 = mock(Card.class);
         when(card2.getId()).thenReturn(CARD_ID + 1);
 
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
                 .thenReturn(card1, card2);
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         // Tag should only be created once
@@ -243,9 +243,9 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
         when(cardService.createCard(USER_ID, DECK_ID, "食べる", "to eat", "ru-verb"))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         verify(cardService).createCard(USER_ID, DECK_ID, "食べる", "to eat", "ru-verb");
@@ -291,7 +291,7 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             importService.importDeck(USER_ID, request);
@@ -366,9 +366,9 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         verify(cardService, times(100)).createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any());
@@ -393,11 +393,11 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
         when(tagService.createTag(eq(USER_ID), eq(DECK_ID), anyString()))
-                .thenReturn(mock(TagEntity.class));
+                .thenReturn(mock(Tag.class));
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         verify(tagService, times(50)).createTag(eq(USER_ID), eq(DECK_ID), anyString());
@@ -420,9 +420,9 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, null)).thenReturn(testDeck);
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         verify(deckService).createDeck(USER_ID, DECK_NAME, null);
@@ -443,9 +443,9 @@ class DeckImportServiceTest {
         when(deckService.isDuplicateName(USER_ID, DECK_NAME)).thenReturn(false);
         when(deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION)).thenReturn(testDeck);
         when(cardService.createCard(eq(USER_ID), eq(DECK_ID), anyString(), anyString(), any()))
-                .thenReturn(mock(CardEntity.class));
+                .thenReturn(mock(Card.class));
 
-        DeckEntity result = importService.importDeck(USER_ID, request);
+        Deck result = importService.importDeck(USER_ID, request);
 
         assertNotNull(result);
         verify(tagService, never()).createTag(anyLong(), anyLong(), anyString());

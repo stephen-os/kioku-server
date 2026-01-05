@@ -1,6 +1,6 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.CardEntity;
+import com.kioku.api.entity.Card;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository interface for CardEntity entity database operations.
+ * Repository interface for Card entity database operations.
  *
  * <p>This repository provides methods for:
  * <ul>
@@ -33,7 +33,7 @@ import java.util.Optional;
  * @since 1.0
  */
 @Repository
-public interface CardRepository extends JpaRepository<CardEntity, Long> {
+public interface CardRepository extends JpaRepository<Card, Long> {
 
     /**
      * Finds all cards in a specific deck with tags eagerly loaded.
@@ -55,7 +55,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         WHERE c.deck.id = :deckId
         ORDER BY c.createdAt ASC
         """)
-    List<CardEntity> findByDeckId(@Param("deckId") Long deckId);
+    List<Card> findByDeckId(@Param("deckId") Long deckId);
 
     /**
      * Finds a specific card within a specific deck with tags eagerly loaded.
@@ -76,7 +76,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         LEFT JOIN FETCH c.tags
         WHERE c.id = :id AND c.deck.id = :deckId
         """)
-    Optional<CardEntity> findByIdAndDeckId(@Param("id") Long id, @Param("deckId") Long deckId);
+    Optional<Card> findByIdAndDeckId(@Param("id") Long id, @Param("deckId") Long deckId);
 
     /**
      * Checks if a card with the same front and back text exists in a deck.
@@ -128,7 +128,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         OR LOWER(c.back) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
         ORDER BY c.createdAt ASC
         """)
-    List<CardEntity> searchByDeckId(@Param("deckId") Long deckId, @Param("searchTerm") String searchTerm);
+    List<Card> searchByDeckId(@Param("deckId") Long deckId, @Param("searchTerm") String searchTerm);
 
     /**
      * Finds all cards in a deck that have a specific tag with tags eagerly loaded.
@@ -155,7 +155,7 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
         )
         ORDER BY c.createdAt ASC
         """)
-    List<CardEntity> findByDeckIdAndTagId(@Param("deckId") Long deckId, @Param("tagId") Long tagId);
+    List<Card> findByDeckIdAndTagId(@Param("deckId") Long deckId, @Param("tagId") Long tagId);
 
     /**
      * Counts the number of cards in a deck.

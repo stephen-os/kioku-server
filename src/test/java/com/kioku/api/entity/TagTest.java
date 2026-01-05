@@ -28,9 +28,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 1.0
  */
 @DisplayName("Tag Entity Unit Tests")
-class TagEntityTest {
+class TagTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(TagEntityTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(TagTest.class);
 
     // Test data constants
     private static final String TEST_EMAIL = "test@example.com";
@@ -40,8 +40,8 @@ class TagEntityTest {
     private static final String TAG_NAME = "verbs";
     private static final String UPDATED_TAG_NAME = "nouns";
 
-    private UserEntity testUserEntity;
-    private DeckEntity testDeckEntity;
+    private User testUser;
+    private Deck testDeck;
 
     /**
      * Sets up test fixtures before each test.
@@ -49,10 +49,10 @@ class TagEntityTest {
     @BeforeEach
     void setUp() {
         logger.debug("Setting up Tag test: Creating user and deck");
-        testUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        testUserEntity.setId(1L);
-        testDeckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        testDeckEntity.setId(1L);
+        testUser = new User(TEST_EMAIL, PASSWORD_HASH);
+        testUser.setId(1L);
+        testDeck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        testDeck.setId(1L);
     }
 
     // Constructor Tests
@@ -65,14 +65,14 @@ class TagEntityTest {
     void testTagCreation() {
         logger.debug("Test: Creating tag with name='{}'", TAG_NAME);
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
-        assertEquals(testDeckEntity, tagEntity.getDeck());
-        assertEquals(testUserEntity, tagEntity.getUser()); // User inherited from deck
-        assertEquals(TAG_NAME, tagEntity.getName());
-        assertNull(tagEntity.getId());
-        assertNotNull(tagEntity.getCards());
-        assertTrue(tagEntity.getCards().isEmpty());
+        assertEquals(testDeck, tag.getDeck());
+        assertEquals(testUser, tag.getUser()); // User inherited from deck
+        assertEquals(TAG_NAME, tag.getName());
+        assertNull(tag.getId());
+        assertNotNull(tag.getCards());
+        assertTrue(tag.getCards().isEmpty());
 
         logger.debug("Test passed: Tag created successfully");
     }
@@ -85,10 +85,10 @@ class TagEntityTest {
     void testUserInheritedFromDeck() {
         logger.debug("Test: User inheritance from deck");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
-        assertEquals(testDeckEntity.getUser(), tagEntity.getUser());
-        assertEquals(testUserEntity, tagEntity.getUser());
+        assertEquals(testDeck.getUser(), tag.getUser());
+        assertEquals(testUser, tag.getUser());
 
         logger.debug("Test passed: User inherited correctly");
     }
@@ -101,13 +101,13 @@ class TagEntityTest {
     void testNoArgsConstructor() {
         logger.debug("Test: Creating tag with no-args constructor");
 
-        TagEntity tagEntity = new TagEntity();
+        Tag tag = new Tag();
 
-        assertNotNull(tagEntity);
-        assertNull(tagEntity.getDeck());
-        assertNull(tagEntity.getUser());
-        assertNull(tagEntity.getName());
-        assertNotNull(tagEntity.getCards());
+        assertNotNull(tag);
+        assertNull(tag.getDeck());
+        assertNull(tag.getUser());
+        assertNull(tag.getName());
+        assertNotNull(tag.getCards());
 
         logger.debug("Test passed: No-args constructor works");
     }
@@ -123,7 +123,7 @@ class TagEntityTest {
         logger.debug("Test: Creating tag with null deck");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new TagEntity(null, TAG_NAME);
+            new Tag(null, TAG_NAME);
         });
 
         logger.debug("Test passed: Exception thrown for null deck");
@@ -138,7 +138,7 @@ class TagEntityTest {
         logger.debug("Test: Creating tag with null name");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new TagEntity(testDeckEntity, null);
+            new Tag(testDeck, null);
         });
 
         logger.debug("Test passed: Exception thrown for null name");
@@ -153,7 +153,7 @@ class TagEntityTest {
         logger.debug("Test: Creating tag with empty name");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new TagEntity(testDeckEntity, "");
+            new Tag(testDeck, "");
         });
 
         logger.debug("Test passed: Exception thrown for empty name");
@@ -168,7 +168,7 @@ class TagEntityTest {
         logger.debug("Test: Creating tag with whitespace-only name");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new TagEntity(testDeckEntity, "   ");
+            new Tag(testDeck, "   ");
         });
 
         logger.debug("Test passed: Exception thrown for whitespace-only name");
@@ -182,10 +182,10 @@ class TagEntityTest {
     void testSetNullDeck() {
         logger.debug("Test: Setting null deck");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagEntity.setDeck(null);
+            tag.setDeck(null);
         });
 
         logger.debug("Test passed: Exception thrown for setting null deck");
@@ -199,10 +199,10 @@ class TagEntityTest {
     void testSetNullUser() {
         logger.debug("Test: Setting null user");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagEntity.setUser(null);
+            tag.setUser(null);
         });
 
         logger.debug("Test passed: Exception thrown for setting null user");
@@ -216,10 +216,10 @@ class TagEntityTest {
     void testSetNullName() {
         logger.debug("Test: Setting null name");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagEntity.setName(null);
+            tag.setName(null);
         });
 
         logger.debug("Test passed: Exception thrown for setting null name");
@@ -233,10 +233,10 @@ class TagEntityTest {
     void testSetEmptyName() {
         logger.debug("Test: Setting empty name");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagEntity.setName("");
+            tag.setName("");
         });
 
         logger.debug("Test passed: Exception thrown for setting empty name");
@@ -250,10 +250,10 @@ class TagEntityTest {
     void testSetWhitespaceName() {
         logger.debug("Test: Setting whitespace-only name");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagEntity.setName("   ");
+            tag.setName("   ");
         });
 
         logger.debug("Test passed: Exception thrown for setting whitespace name");
@@ -269,9 +269,9 @@ class TagEntityTest {
     void testNameTrimmedInConstructor() {
         logger.debug("Test: Name trimming in constructor");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, "  " + TAG_NAME + "  ");
+        Tag tag = new Tag(testDeck, "  " + TAG_NAME + "  ");
 
-        assertEquals(TAG_NAME, tagEntity.getName());
+        assertEquals(TAG_NAME, tag.getName());
 
         logger.debug("Test passed: Name trimmed successfully");
     }
@@ -284,10 +284,10 @@ class TagEntityTest {
     void testNameTrimmedInSetter() {
         logger.debug("Test: Name trimming in setter");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity.setName("  " + UPDATED_TAG_NAME + "  ");
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag.setName("  " + UPDATED_TAG_NAME + "  ");
 
-        assertEquals(UPDATED_TAG_NAME, tagEntity.getName());
+        assertEquals(UPDATED_TAG_NAME, tag.getName());
 
         logger.debug("Test passed: Name trimmed in setter");
     }
@@ -302,10 +302,10 @@ class TagEntityTest {
     void testEditName() {
         logger.debug("Test: Editing tag name from '{}' to '{}'", TAG_NAME, UPDATED_TAG_NAME);
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity.setName(UPDATED_TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag.setName(UPDATED_TAG_NAME);
 
-        assertEquals(UPDATED_TAG_NAME, tagEntity.getName());
+        assertEquals(UPDATED_TAG_NAME, tag.getName());
 
         logger.debug("Test passed: Name edited successfully");
     }
@@ -318,14 +318,14 @@ class TagEntityTest {
     void testChangeDeck() {
         logger.debug("Test: Changing tag's deck");
 
-        DeckEntity newDeckEntity = new DeckEntity(testUserEntity, "New Deck", "Description");
-        newDeckEntity.setId(2L);
+        Deck newDeck = new Deck(testUser, "New Deck", "Description");
+        newDeck.setId(2L);
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        assertEquals(testDeckEntity, tagEntity.getDeck());
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        assertEquals(testDeck, tag.getDeck());
 
-        tagEntity.setDeck(newDeckEntity);
-        assertEquals(newDeckEntity, tagEntity.getDeck());
+        tag.setDeck(newDeck);
+        assertEquals(newDeck, tag.getDeck());
 
         logger.debug("Test passed: Deck changed successfully");
     }
@@ -338,14 +338,14 @@ class TagEntityTest {
     void testChangeUser() {
         logger.debug("Test: Changing tag's user");
 
-        UserEntity newUserEntity = new UserEntity("other@example.com", PASSWORD_HASH);
-        newUserEntity.setId(2L);
+        User newUser = new User("other@example.com", PASSWORD_HASH);
+        newUser.setId(2L);
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        assertEquals(testUserEntity, tagEntity.getUser());
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        assertEquals(testUser, tag.getUser());
 
-        tagEntity.setUser(newUserEntity);
-        assertEquals(newUserEntity, tagEntity.getUser());
+        tag.setUser(newUser);
+        assertEquals(newUser, tag.getUser());
 
         logger.debug("Test passed: User changed successfully");
     }
@@ -360,17 +360,17 @@ class TagEntityTest {
     void testSameNameDifferentDecks() {
         logger.debug("Test: Same tag name in different decks");
 
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, "Japanese", "Description");
-        deckEntity1.setId(1L);
-        DeckEntity deckEntity2 = new DeckEntity(testUserEntity, "Spanish", "Description");
-        deckEntity2.setId(2L);
+        Deck deck1 = new Deck(testUser, "Japanese", "Description");
+        deck1.setId(1L);
+        Deck deck2 = new Deck(testUser, "Spanish", "Description");
+        deck2.setId(2L);
 
-        TagEntity tagEntity1 = new TagEntity(deckEntity1, "verbs");
-        TagEntity tagEntity2 = new TagEntity(deckEntity2, "verbs");
+        Tag tag1 = new Tag(deck1, "verbs");
+        Tag tag2 = new Tag(deck2, "verbs");
 
-        assertEquals("verbs", tagEntity1.getName());
-        assertEquals("verbs", tagEntity2.getName());
-        assertNotEquals(tagEntity1.getDeck(), tagEntity2.getDeck());
+        assertEquals("verbs", tag1.getName());
+        assertEquals("verbs", tag2.getName());
+        assertNotEquals(tag1.getDeck(), tag2.getDeck());
 
         logger.debug("Test passed: Same name allowed in different decks");
     }
@@ -385,20 +385,20 @@ class TagEntityTest {
     void testTagEquality() {
         logger.debug("Test: Testing tag equality");
 
-        TagEntity tagEntity1 = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity1.setId(1L);
+        Tag tag1 = new Tag(testDeck, TAG_NAME);
+        tag1.setId(1L);
 
-        TagEntity tagEntity2 = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity2.setId(1L);
+        Tag tag2 = new Tag(testDeck, TAG_NAME);
+        tag2.setId(1L);
 
-        TagEntity tagEntity3 = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity3.setId(2L);
+        Tag tag3 = new Tag(testDeck, TAG_NAME);
+        tag3.setId(2L);
 
         // Same ID and name = equal
-        assertEquals(tagEntity1, tagEntity2);
+        assertEquals(tag1, tag2);
 
         // Different ID = not equal
-        assertNotEquals(tagEntity1, tagEntity3);
+        assertNotEquals(tag1, tag3);
 
         logger.debug("Test passed: Equality based on ID and name works correctly");
     }
@@ -411,10 +411,10 @@ class TagEntityTest {
     void testEqualityReflexive() {
         logger.debug("Test: Testing reflexive equality");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity.setId(1L);
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag.setId(1L);
 
-        assertEquals(tagEntity, tagEntity);
+        assertEquals(tag, tag);
 
         logger.debug("Test passed: Tag equals itself");
     }
@@ -427,10 +427,10 @@ class TagEntityTest {
     void testEqualityNull() {
         logger.debug("Test: Testing equality with null");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity.setId(1L);
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag.setId(1L);
 
-        assertNotEquals(null, tagEntity);
+        assertNotEquals(null, tag);
 
         logger.debug("Test passed: Tag not equal to null");
     }
@@ -443,10 +443,10 @@ class TagEntityTest {
     void testEqualityDifferentClass() {
         logger.debug("Test: Testing equality with different class");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity.setId(1L);
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag.setId(1L);
 
-        assertNotEquals(tagEntity, "Not a Tag");
+        assertNotEquals(tag, "Not a Tag");
 
         logger.debug("Test passed: Tag not equal to different class");
     }
@@ -459,14 +459,14 @@ class TagEntityTest {
     void testEqualityWithoutIds() {
         logger.debug("Test: Testing equality for tags without IDs");
 
-        TagEntity tagEntity1 = new TagEntity(testDeckEntity, TAG_NAME);
-        TagEntity tagEntity2 = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag1 = new Tag(testDeck, TAG_NAME);
+        Tag tag2 = new Tag(testDeck, TAG_NAME);
 
         // Same instance
-        assertEquals(tagEntity1, tagEntity1);
+        assertEquals(tag1, tag1);
 
         // Different instances without IDs are not equal
-        assertNotEquals(tagEntity1, tagEntity2);
+        assertNotEquals(tag1, tag2);
 
         logger.debug("Test passed: Tags without IDs handled correctly");
     }
@@ -479,13 +479,13 @@ class TagEntityTest {
     void testHashCodeConsistency() {
         logger.debug("Test: Testing hash code consistency");
 
-        TagEntity tagEntity1 = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity1.setId(1L);
+        Tag tag1 = new Tag(testDeck, TAG_NAME);
+        tag1.setId(1L);
 
-        TagEntity tagEntity2 = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity2.setId(1L);
+        Tag tag2 = new Tag(testDeck, TAG_NAME);
+        tag2.setId(1L);
 
-        assertEquals(tagEntity1.hashCode(), tagEntity2.hashCode());
+        assertEquals(tag1.hashCode(), tag2.hashCode());
 
         logger.debug("Test passed: Hash code consistent with equals");
     }
@@ -500,10 +500,10 @@ class TagEntityTest {
     void testToStringIncludesDetails() {
         logger.debug("Test: Testing toString includes details");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity.setId(1L);
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag.setId(1L);
 
-        String tagString = tagEntity.toString();
+        String tagString = tag.toString();
 
         assertTrue(tagString.contains(TAG_NAME));
         assertTrue(tagString.contains("id=1"));
@@ -520,9 +520,9 @@ class TagEntityTest {
     void testToStringIncludesDeckId() {
         logger.debug("Test: Testing toString includes deck ID");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
-        String tagString = tagEntity.toString();
+        String tagString = tag.toString();
 
         assertTrue(tagString.contains("deckId=1"));
 
@@ -537,9 +537,9 @@ class TagEntityTest {
     void testToStringIncludesCardCount() {
         logger.debug("Test: Testing toString includes card count");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
-        String tagString = tagEntity.toString();
+        String tagString = tag.toString();
 
         assertTrue(tagString.contains("cardCount=0"));
 
@@ -556,12 +556,12 @@ class TagEntityTest {
     void testIdGetterSetter() {
         logger.debug("Test: Testing ID getter and setter");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
-        assertNull(tagEntity.getId());
+        assertNull(tag.getId());
 
-        tagEntity.setId(100L);
-        assertEquals(100L, tagEntity.getId());
+        tag.setId(100L);
+        assertEquals(100L, tag.getId());
 
         logger.debug("Test passed: ID getter and setter work");
     }
@@ -574,10 +574,10 @@ class TagEntityTest {
     void testCardsGetterSetter() {
         logger.debug("Test: Testing cards getter and setter");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
 
-        assertNotNull(tagEntity.getCards());
-        assertTrue(tagEntity.getCards().isEmpty());
+        assertNotNull(tag.getCards());
+        assertTrue(tag.getCards().isEmpty());
 
         logger.debug("Test passed: Cards getter works");
     }

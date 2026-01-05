@@ -1,8 +1,8 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,10 +61,10 @@ class TagRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    private UserEntity testUserEntity;
-    private UserEntity otherUserEntity;
-    private DeckEntity japaneseDeckEntity;
-    private DeckEntity spanishDeckEntity;
+    private User testUser;
+    private User otherUser;
+    private Deck japaneseDeck;
+    private Deck spanishDeck;
 
     /**
      * Sets up test fixtures before each test.
@@ -78,20 +77,20 @@ class TagRepositoryTest {
         deckRepository.deleteAll();
         userRepository.deleteAll();
 
-        testUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        testUserEntity = userRepository.save(testUserEntity);
+        testUser = new User(TEST_EMAIL, PASSWORD_HASH);
+        testUser = userRepository.save(testUser);
 
-        otherUserEntity = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
-        otherUserEntity = userRepository.save(otherUserEntity);
+        otherUser = new User(OTHER_EMAIL, PASSWORD_HASH);
+        otherUser = userRepository.save(otherUser);
 
-        japaneseDeckEntity = new DeckEntity(testUserEntity, DECK_NAME_1, DECK_DESCRIPTION);
-        japaneseDeckEntity = deckRepository.save(japaneseDeckEntity);
+        japaneseDeck = new Deck(testUser, DECK_NAME_1, DECK_DESCRIPTION);
+        japaneseDeck = deckRepository.save(japaneseDeck);
 
-        spanishDeckEntity = new DeckEntity(testUserEntity, DECK_NAME_2, DECK_DESCRIPTION);
-        spanishDeckEntity = deckRepository.save(spanishDeckEntity);
+        spanishDeck = new Deck(testUser, DECK_NAME_2, DECK_DESCRIPTION);
+        spanishDeck = deckRepository.save(spanishDeck);
 
         logger.debug("Test setup complete: user id={}, japanese deck id={}, spanish deck id={}",
-                testUserEntity.getId(), japaneseDeckEntity.getId(), spanishDeckEntity.getId());
+                testUser.getId(), japaneseDeck.getId(), spanishDeck.getId());
     }
 
     // Basic CRUD Tests
@@ -102,17 +101,17 @@ class TagRepositoryTest {
     @Test
     @DisplayName("Should save a tag")
     void testSaveTag() {
-        logger.debug("Test: Saving tag to deck id={}", japaneseDeckEntity.getId());
+        logger.debug("Test: Saving tag to deck id={}", japaneseDeck.getId());
 
-        TagEntity tagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity savedTagEntity = tagRepository.save(tagEntity);
+        Tag tag = new Tag(japaneseDeck, TAG_VERBS);
+        Tag savedTag = tagRepository.save(tag);
 
-        assertNotNull(savedTagEntity.getId());
-        assertEquals(TAG_VERBS, savedTagEntity.getName());
-        assertEquals(japaneseDeckEntity.getId(), savedTagEntity.getDeck().getId());
-        assertEquals(testUserEntity.getId(), savedTagEntity.getUser().getId());
+        assertNotNull(savedTag.getId());
+        assertEquals(TAG_VERBS, savedTag.getName());
+        assertEquals(japaneseDeck.getId(), savedTag.getDeck().getId());
+        assertEquals(testUser.getId(), savedTag.getUser().getId());
 
-        logger.debug("Test passed: Tag saved with id={}", savedTagEntity.getId());
+        logger.debug("Test passed: Tag saved with id={}", savedTag.getId());
     }
 
     /**
@@ -123,15 +122,15 @@ class TagRepositoryTest {
     void testFindById() {
         logger.debug("Test: Finding tag by ID");
 
-        TagEntity tagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity savedTagEntity = tagRepository.save(tagEntity);
+        Tag tag = new Tag(japaneseDeck, TAG_VERBS);
+        Tag savedTag = tagRepository.save(tag);
 
-        Optional<TagEntity> found = tagRepository.findById(savedTagEntity.getId());
+        Optional<Tag> found = tagRepository.findById(savedTag.getId());
 
         assertTrue(found.isPresent());
         assertEquals(TAG_VERBS, found.get().getName());
 
-        logger.debug("Test passed: Tag found by id={}", savedTagEntity.getId());
+        logger.debug("Test passed: Tag found by id={}", savedTag.getId());
     }
 
     /**
@@ -142,11 +141,11 @@ class TagRepositoryTest {
     void testDeleteTag() {
         logger.debug("Test: Deleting tag");
 
-        TagEntity tagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity savedTagEntity = tagRepository.save(tagEntity);
-        Long tagId = savedTagEntity.getId();
+        Tag tag = new Tag(japaneseDeck, TAG_VERBS);
+        Tag savedTag = tagRepository.save(tag);
+        Long tagId = savedTag.getId();
 
-        tagRepository.delete(savedTagEntity);
+        tagRepository.delete(savedTag);
 
         assertFalse(tagRepository.existsById(tagId));
 
@@ -161,21 +160,21 @@ class TagRepositoryTest {
     @Test
     @DisplayName("Should find tags by deck ID")
     void testFindByDeckId() {
-        logger.debug("Test: Finding tags by deck id={}", japaneseDeckEntity.getId());
+        logger.debug("Test: Finding tags by deck id={}", japaneseDeck.getId());
 
-        TagEntity tagEntity1 = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity tagEntity2 = new TagEntity(japaneseDeckEntity, TAG_NOUNS);
-        TagEntity tagEntity3 = new TagEntity(spanishDeckEntity, TAG_ADJECTIVES); // Different deck
+        Tag tag1 = new Tag(japaneseDeck, TAG_VERBS);
+        Tag tag2 = new Tag(japaneseDeck, TAG_NOUNS);
+        Tag tag3 = new Tag(spanishDeck, TAG_ADJECTIVES); // Different deck
 
-        tagRepository.save(tagEntity1);
-        tagRepository.save(tagEntity2);
-        tagRepository.save(tagEntity3);
+        tagRepository.save(tag1);
+        tagRepository.save(tag2);
+        tagRepository.save(tag3);
 
-        List<TagEntity> japaneseTagEntities = tagRepository.findByDeckId(japaneseDeckEntity.getId());
+        List<Tag> japaneseTagEntities = tagRepository.findByDeckId(japaneseDeck.getId());
 
         assertEquals(2, japaneseTagEntities.size());
         assertTrue(japaneseTagEntities.stream()
-                .allMatch(t -> t.getDeck().getId().equals(japaneseDeckEntity.getId())));
+                .allMatch(t -> t.getDeck().getId().equals(japaneseDeck.getId())));
 
         logger.debug("Test passed: Found {} tags in deck", japaneseTagEntities.size());
     }
@@ -188,7 +187,7 @@ class TagRepositoryTest {
     void testFindByNonExistentDeck() {
         logger.debug("Test: Finding tags in non-existent deck");
 
-        List<TagEntity> tagEntities = tagRepository.findByDeckId(999L);
+        List<Tag> tagEntities = tagRepository.findByDeckId(999L);
 
         assertTrue(tagEntities.isEmpty());
 
@@ -203,7 +202,7 @@ class TagRepositoryTest {
     void testFindByDeckIdEmptyList() {
         logger.debug("Test: Finding tags in deck with no tags");
 
-        List<TagEntity> tagEntities = tagRepository.findByDeckId(japaneseDeckEntity.getId());
+        List<Tag> tagEntities = tagRepository.findByDeckId(japaneseDeck.getId());
 
         assertTrue(tagEntities.isEmpty());
 
@@ -220,11 +219,11 @@ class TagRepositoryTest {
     void testFindByIdAndDeckId() {
         logger.debug("Test: Finding tag by ID and deck ID");
 
-        TagEntity tagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity savedTagEntity = tagRepository.save(tagEntity);
+        Tag tag = new Tag(japaneseDeck, TAG_VERBS);
+        Tag savedTag = tagRepository.save(tag);
 
-        Optional<TagEntity> found = tagRepository.findByIdAndDeckId(
-                savedTagEntity.getId(), japaneseDeckEntity.getId());
+        Optional<Tag> found = tagRepository.findByIdAndDeckId(
+                savedTag.getId(), japaneseDeck.getId());
 
         assertTrue(found.isPresent());
         assertEquals(TAG_VERBS, found.get().getName());
@@ -240,11 +239,11 @@ class TagRepositoryTest {
     void testFindByIdAndWrongDeckId() {
         logger.debug("Test: Finding tag with wrong deck ID");
 
-        TagEntity tagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity savedTagEntity = tagRepository.save(tagEntity);
+        Tag tag = new Tag(japaneseDeck, TAG_VERBS);
+        Tag savedTag = tagRepository.save(tag);
 
-        Optional<TagEntity> found = tagRepository.findByIdAndDeckId(
-                savedTagEntity.getId(), spanishDeckEntity.getId()); // Wrong deck
+        Optional<Tag> found = tagRepository.findByIdAndDeckId(
+                savedTag.getId(), spanishDeck.getId()); // Wrong deck
 
         assertFalse(found.isPresent());
 
@@ -261,11 +260,11 @@ class TagRepositoryTest {
     void testExistsByDeckIdAndName() {
         logger.debug("Test: Detecting duplicate tag names");
 
-        TagEntity tagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        tagRepository.save(tagEntity);
+        Tag tag = new Tag(japaneseDeck, TAG_VERBS);
+        tagRepository.save(tag);
 
-        assertTrue(tagRepository.existsByDeckIdAndName(japaneseDeckEntity.getId(), TAG_VERBS));
-        assertFalse(tagRepository.existsByDeckIdAndName(japaneseDeckEntity.getId(), TAG_NOUNS));
+        assertTrue(tagRepository.existsByDeckIdAndName(japaneseDeck.getId(), TAG_VERBS));
+        assertFalse(tagRepository.existsByDeckIdAndName(japaneseDeck.getId(), TAG_NOUNS));
 
         logger.debug("Test passed: Duplicate detection works");
     }
@@ -278,13 +277,13 @@ class TagRepositoryTest {
     void testDuplicateTagNameInSameDeckThrowsException() {
         logger.debug("Test: Creating duplicate tag in same deck");
 
-        TagEntity tagEntity1 = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        tagRepository.save(tagEntity1);
+        Tag tag1 = new Tag(japaneseDeck, TAG_VERBS);
+        tagRepository.save(tag1);
 
-        TagEntity tagEntity2 = new TagEntity(japaneseDeckEntity, TAG_VERBS); // Same deck, same name
+        Tag tag2 = new Tag(japaneseDeck, TAG_VERBS); // Same deck, same name
 
         assertThrows(Exception.class, () -> {
-            tagRepository.save(tagEntity2);
+            tagRepository.save(tag2);
             tagRepository.flush();
         });
 
@@ -299,18 +298,18 @@ class TagRepositoryTest {
     void testSameTagNameInDifferentDecksIsAllowed() {
         logger.debug("Test: Same tag name in different decks");
 
-        TagEntity japaneseVerbsTagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity spanishVerbsTagEntity = new TagEntity(spanishDeckEntity, TAG_VERBS); // Same name, different deck
+        Tag japaneseVerbsTag = new Tag(japaneseDeck, TAG_VERBS);
+        Tag spanishVerbsTag = new Tag(spanishDeck, TAG_VERBS); // Same name, different deck
 
         assertDoesNotThrow(() -> {
-            tagRepository.save(japaneseVerbsTagEntity);
-            tagRepository.save(spanishVerbsTagEntity);
+            tagRepository.save(japaneseVerbsTag);
+            tagRepository.save(spanishVerbsTag);
             tagRepository.flush();
         });
 
         // Verify both saved
-        assertEquals(1, tagRepository.findByDeckId(japaneseDeckEntity.getId()).size());
-        assertEquals(1, tagRepository.findByDeckId(spanishDeckEntity.getId()).size());
+        assertEquals(1, tagRepository.findByDeckId(japaneseDeck.getId()).size());
+        assertEquals(1, tagRepository.findByDeckId(spanishDeck.getId()).size());
 
         logger.debug("Test passed: Same tag name allowed in different decks");
     }
@@ -324,23 +323,23 @@ class TagRepositoryTest {
         logger.debug("Test: Deck-specific tag isolation");
 
         // Create "verbs" tag in both decks
-        TagEntity japaneseVerbsTagEntity = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        japaneseVerbsTagEntity = tagRepository.save(japaneseVerbsTagEntity);
+        Tag japaneseVerbsTag = new Tag(japaneseDeck, TAG_VERBS);
+        japaneseVerbsTag = tagRepository.save(japaneseVerbsTag);
 
-        TagEntity spanishVerbsTagEntity = new TagEntity(spanishDeckEntity, TAG_VERBS);
-        spanishVerbsTagEntity = tagRepository.save(spanishVerbsTagEntity);
+        Tag spanishVerbsTag = new Tag(spanishDeck, TAG_VERBS);
+        spanishVerbsTag = tagRepository.save(spanishVerbsTag);
 
         // Verify they're different tags
-        assertNotEquals(japaneseVerbsTagEntity.getId(), spanishVerbsTagEntity.getId());
+        assertNotEquals(japaneseVerbsTag.getId(), spanishVerbsTag.getId());
 
         // Verify deck isolation
-        List<TagEntity> japaneseTagEntities = tagRepository.findByDeckId(japaneseDeckEntity.getId());
+        List<Tag> japaneseTagEntities = tagRepository.findByDeckId(japaneseDeck.getId());
         assertEquals(1, japaneseTagEntities.size());
-        assertEquals(japaneseVerbsTagEntity.getId(), japaneseTagEntities.get(0).getId());
+        assertEquals(japaneseVerbsTag.getId(), japaneseTagEntities.get(0).getId());
 
-        List<TagEntity> spanishTagEntities = tagRepository.findByDeckId(spanishDeckEntity.getId());
+        List<Tag> spanishTagEntities = tagRepository.findByDeckId(spanishDeck.getId());
         assertEquals(1, spanishTagEntities.size());
-        assertEquals(spanishVerbsTagEntity.getId(), spanishTagEntities.get(0).getId());
+        assertEquals(spanishVerbsTag.getId(), spanishTagEntities.get(0).getId());
 
         logger.debug("Test passed: Tags properly isolated by deck");
     }
@@ -355,24 +354,24 @@ class TagRepositoryTest {
     void testFindByUserId() {
         logger.debug("Test: Finding all user's tags");
 
-        TagEntity japaneseTagEntity1 = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity japaneseTagEntity2 = new TagEntity(japaneseDeckEntity, TAG_NOUNS);
-        TagEntity spanishTagEntity = new TagEntity(spanishDeckEntity, TAG_ADJECTIVES);
+        Tag japaneseTag1 = new Tag(japaneseDeck, TAG_VERBS);
+        Tag japaneseTag2 = new Tag(japaneseDeck, TAG_NOUNS);
+        Tag spanishTag = new Tag(spanishDeck, TAG_ADJECTIVES);
 
-        DeckEntity otherUserDeckEntity = new DeckEntity(otherUserEntity, "Other Deck", "Description");
-        otherUserDeckEntity = deckRepository.save(otherUserDeckEntity);
-        TagEntity otherUserTagEntity = new TagEntity(otherUserDeckEntity, TAG_VERBS);
+        Deck otherUserDeck = new Deck(otherUser, "Other Deck", "Description");
+        otherUserDeck = deckRepository.save(otherUserDeck);
+        Tag otherUserTag = new Tag(otherUserDeck, TAG_VERBS);
 
-        tagRepository.save(japaneseTagEntity1);
-        tagRepository.save(japaneseTagEntity2);
-        tagRepository.save(spanishTagEntity);
-        tagRepository.save(otherUserTagEntity);
+        tagRepository.save(japaneseTag1);
+        tagRepository.save(japaneseTag2);
+        tagRepository.save(spanishTag);
+        tagRepository.save(otherUserTag);
 
-        List<TagEntity> testUserTagEntities = tagRepository.findByUserId(testUserEntity.getId());
+        List<Tag> testUserTagEntities = tagRepository.findByUserId(testUser.getId());
 
         assertEquals(3, testUserTagEntities.size());
         assertTrue(testUserTagEntities.stream()
-                .allMatch(t -> t.getUser().getId().equals(testUserEntity.getId())));
+                .allMatch(t -> t.getUser().getId().equals(testUser.getId())));
 
         logger.debug("Test passed: Found {} tags for user", testUserTagEntities.size());
     }
@@ -385,7 +384,7 @@ class TagRepositoryTest {
     void testFindByUserIdEmptyList() {
         logger.debug("Test: Finding tags for user with no tags");
 
-        List<TagEntity> tagEntities = tagRepository.findByUserId(testUserEntity.getId());
+        List<Tag> tagEntities = tagRepository.findByUserId(testUser.getId());
 
         assertTrue(tagEntities.isEmpty());
 
@@ -402,15 +401,15 @@ class TagRepositoryTest {
     void testCountByDeckId() {
         logger.debug("Test: Counting tags in deck");
 
-        TagEntity tagEntity1 = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity tagEntity2 = new TagEntity(japaneseDeckEntity, TAG_NOUNS);
-        TagEntity tagEntity3 = new TagEntity(japaneseDeckEntity, TAG_ADJECTIVES);
+        Tag tag1 = new Tag(japaneseDeck, TAG_VERBS);
+        Tag tag2 = new Tag(japaneseDeck, TAG_NOUNS);
+        Tag tag3 = new Tag(japaneseDeck, TAG_ADJECTIVES);
 
-        tagRepository.save(tagEntity1);
-        tagRepository.save(tagEntity2);
-        tagRepository.save(tagEntity3);
+        tagRepository.save(tag1);
+        tagRepository.save(tag2);
+        tagRepository.save(tag3);
 
-        long count = tagRepository.countByDeckId(japaneseDeckEntity.getId());
+        long count = tagRepository.countByDeckId(japaneseDeck.getId());
 
         assertEquals(3, count);
 
@@ -425,7 +424,7 @@ class TagRepositoryTest {
     void testCountEmptyDeck() {
         logger.debug("Test: Counting tags in empty deck");
 
-        long count = tagRepository.countByDeckId(japaneseDeckEntity.getId());
+        long count = tagRepository.countByDeckId(japaneseDeck.getId());
 
         assertEquals(0, count);
 
@@ -457,18 +456,18 @@ class TagRepositoryTest {
     void testDeleteByDeckId() {
         logger.debug("Test: Deleting all tags in deck");
 
-        TagEntity tagEntity1 = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity tagEntity2 = new TagEntity(japaneseDeckEntity, TAG_NOUNS);
-        TagEntity spanishTagEntity = new TagEntity(spanishDeckEntity, TAG_ADJECTIVES);
+        Tag tag1 = new Tag(japaneseDeck, TAG_VERBS);
+        Tag tag2 = new Tag(japaneseDeck, TAG_NOUNS);
+        Tag spanishTag = new Tag(spanishDeck, TAG_ADJECTIVES);
 
-        tagRepository.save(tagEntity1);
-        tagRepository.save(tagEntity2);
-        tagRepository.save(spanishTagEntity);
+        tagRepository.save(tag1);
+        tagRepository.save(tag2);
+        tagRepository.save(spanishTag);
 
-        tagRepository.deleteByDeckId(japaneseDeckEntity.getId());
+        tagRepository.deleteByDeckId(japaneseDeck.getId());
 
-        assertEquals(0, tagRepository.countByDeckId(japaneseDeckEntity.getId()));
-        assertEquals(1, tagRepository.countByDeckId(spanishDeckEntity.getId())); // Spanish tag unaffected
+        assertEquals(0, tagRepository.countByDeckId(japaneseDeck.getId()));
+        assertEquals(1, tagRepository.countByDeckId(spanishDeck.getId())); // Spanish tag unaffected
 
         logger.debug("Test passed: All tags in deck deleted");
     }
@@ -483,13 +482,13 @@ class TagRepositoryTest {
     void testFindAll() {
         logger.debug("Test: Finding all tags");
 
-        TagEntity tagEntity1 = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity tagEntity2 = new TagEntity(spanishDeckEntity, TAG_NOUNS);
+        Tag tag1 = new Tag(japaneseDeck, TAG_VERBS);
+        Tag tag2 = new Tag(spanishDeck, TAG_NOUNS);
 
-        tagRepository.save(tagEntity1);
-        tagRepository.save(tagEntity2);
+        tagRepository.save(tag1);
+        tagRepository.save(tag2);
 
-        List<TagEntity> allTagEntities = tagRepository.findAll();
+        List<Tag> allTagEntities = tagRepository.findAll();
 
         assertEquals(2, allTagEntities.size());
 
@@ -504,11 +503,11 @@ class TagRepositoryTest {
     void testDeleteAll() {
         logger.debug("Test: Deleting all tags");
 
-        TagEntity tagEntity1 = new TagEntity(japaneseDeckEntity, TAG_VERBS);
-        TagEntity tagEntity2 = new TagEntity(spanishDeckEntity, TAG_NOUNS);
+        Tag tag1 = new Tag(japaneseDeck, TAG_VERBS);
+        Tag tag2 = new Tag(spanishDeck, TAG_NOUNS);
 
-        tagRepository.save(tagEntity1);
-        tagRepository.save(tagEntity2);
+        tagRepository.save(tag1);
+        tagRepository.save(tag2);
 
         tagRepository.deleteAll();
 

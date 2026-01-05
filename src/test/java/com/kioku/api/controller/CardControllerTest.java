@@ -4,10 +4,10 @@ import com.kioku.api.dto.request.CreateCardRequest;
 import com.kioku.api.dto.request.UpdateCardRequest;
 import com.kioku.api.dto.response.CardResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.security.CurrentUserArgumentResolver;
 import com.kioku.api.security.JwtAuthenticationFilter;
@@ -45,7 +45,6 @@ import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import java.util.List;
 
 /**
  * Integration tests for CardController using RestTestClient (Spring Boot 4.0).
@@ -125,25 +124,25 @@ class CardControllerTest {
     }
 
     RestTestClient client;
-    private UserEntity testUser;
-    private DeckEntity testDeck;
-    private CardEntity testCard;
-    private TagEntity testTag;
+    private User testUser;
+    private Deck testDeck;
+    private Card testCard;
+    private Tag testTag;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up CardController test");
 
-        testUser = new UserEntity("test@example.com", "hashedPassword");
+        testUser = new User("test@example.com", "hashedPassword");
         testUser.setId(TEST_USER_ID);
 
-        testDeck = new DeckEntity(testUser, "Test Deck", "Test Description");
+        testDeck = new Deck(testUser, "Test Deck", "Test Description");
         testDeck.setId(TEST_DECK_ID);
 
-        testCard = new CardEntity(testDeck, TEST_FRONT, TEST_BACK, TEST_NOTES);
+        testCard = new Card(testDeck, TEST_FRONT, TEST_BACK, TEST_NOTES);
         testCard.setId(TEST_CARD_ID);
 
-        testTag = new TagEntity(testDeck, "Test Tag");
+        testTag = new Tag(testDeck, "Test Tag");
         testTag.setId(TEST_TAG_ID);
 
         client = RestTestClient.bindTo(mockMvc).build();
@@ -308,10 +307,10 @@ class CardControllerTest {
     void testGetDeckCardsSuccess() {
         logger.debug("Test: Successful retrieval of all cards");
 
-        CardEntity card2 = new CardEntity(testDeck, "Front 2", "Back 2", "Notes 2");
+        Card card2 = new Card(testDeck, "Front 2", "Back 2", "Notes 2");
         card2.setId(2L);
 
-        List<CardEntity> cards = Arrays.asList(testCard, card2);
+        List<Card> cards = Arrays.asList(testCard, card2);
 
         when(cardService.getDeckCards(TEST_USER_ID, TEST_DECK_ID)).thenReturn(cards);
 
@@ -342,7 +341,7 @@ class CardControllerTest {
         logger.debug("Test: Search cards by text");
 
         String searchTerm = "Java";
-        List<CardEntity> cards = Arrays.asList(testCard);
+        List<Card> cards = Arrays.asList(testCard);
 
         when(cardService.searchCards(TEST_USER_ID, TEST_DECK_ID, searchTerm)).thenReturn(cards);
 
@@ -370,7 +369,7 @@ class CardControllerTest {
     void testFilterCardsByTagSuccess() {
         logger.debug("Test: Filter cards by tag");
 
-        List<CardEntity> cards = Arrays.asList(testCard);
+        List<Card> cards = Arrays.asList(testCard);
 
         when(cardService.getCardsByTag(TEST_USER_ID, TEST_DECK_ID, TEST_TAG_ID)).thenReturn(cards);
 
@@ -398,7 +397,7 @@ class CardControllerTest {
         logger.debug("Test: Search takes priority over tag filter");
 
         String searchTerm = "Java";
-        List<CardEntity> cards = Arrays.asList(testCard);
+        List<Card> cards = Arrays.asList(testCard);
 
         when(cardService.searchCards(TEST_USER_ID, TEST_DECK_ID, searchTerm)).thenReturn(cards);
 
@@ -420,7 +419,7 @@ class CardControllerTest {
     void testBlankSearchTerm() {
         logger.debug("Test: Blank search term is ignored");
 
-        List<CardEntity> cards = Arrays.asList(testCard);
+        List<Card> cards = Arrays.asList(testCard);
 
         when(cardService.getDeckCards(TEST_USER_ID, TEST_DECK_ID)).thenReturn(cards);
 
@@ -496,7 +495,7 @@ class CardControllerTest {
 
         UpdateCardRequest request = new UpdateCardRequest(UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES);
 
-        CardEntity updatedCard = new CardEntity(testDeck, UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES);
+        Card updatedCard = new Card(testDeck, UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES);
         updatedCard.setId(TEST_CARD_ID);
 
         when(cardService.updateCard(TEST_USER_ID, TEST_DECK_ID, TEST_CARD_ID,
@@ -655,7 +654,7 @@ class CardControllerTest {
     void testAddTagToCardSuccess() {
         logger.debug("Test: Successful add tag to card");
 
-        CardEntity cardWithTag = new CardEntity(testDeck, TEST_FRONT, TEST_BACK, TEST_NOTES);
+        Card cardWithTag = new Card(testDeck, TEST_FRONT, TEST_BACK, TEST_NOTES);
         cardWithTag.setId(TEST_CARD_ID);
         cardWithTag.addTag(testTag);
 

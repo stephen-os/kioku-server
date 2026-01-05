@@ -1,9 +1,9 @@
 package com.kioku.api.service;
 
 import com.kioku.api.dto.response.DeckExportResponse;
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -104,15 +104,15 @@ public class DeckExportService {
         logger.debug("Exporting deck id={} for user id={}", deckId, userId);
 
         // Get deck with ownership check
-        DeckEntity deck = deckService.getDeckOrThrow(deckId, userId);
+        Deck deck = deckService.getDeckOrThrow(deckId, userId);
         logger.debug("Deck retrieved: name={}", deck.getName());
 
         // Get all cards in the deck
-        List<CardEntity> cards = cardService.getDeckCards(userId, deckId);
+        List<Card> cards = cardService.getDeckCards(userId, deckId);
         logger.debug("Retrieved {} cards", cards.size());
 
         // Get all tags in the deck
-        List<TagEntity> tags = tagService.getDeckTags(userId, deckId);
+        List<Tag> tags = tagService.getDeckTags(userId, deckId);
         logger.debug("Retrieved {} tags", tags.size());
 
         // Build export response

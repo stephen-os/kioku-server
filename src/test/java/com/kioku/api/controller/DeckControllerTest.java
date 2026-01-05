@@ -6,8 +6,8 @@ import com.kioku.api.dto.response.DeckExportResponse;
 import com.kioku.api.dto.response.DeckResponse;
 import com.kioku.api.dto.response.ErrorResponse;
 import com.kioku.api.dto.response.TagExportDto;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.User;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.security.JwtAuthenticationFilter;
 import com.kioku.api.service.DeckExportService;
@@ -98,8 +98,8 @@ class DeckControllerTest {
     private DeckExportService deckExportService;
 
     RestTestClient client;
-    private UserEntity testUser;
-    private DeckEntity testDeck;
+    private User testUser;
+    private Deck testDeck;
 
     @TestConfiguration
     static class ControllerTestConfig implements WebMvcConfigurer {
@@ -127,10 +127,10 @@ class DeckControllerTest {
     void setUp() {
         logger.debug("Setting up DeckController test");
 
-        testUser = new UserEntity("test@example.com", "hashedPassword");
+        testUser = new User("test@example.com", "hashedPassword");
         testUser.setId(TEST_USER_ID);
 
-        testDeck = new DeckEntity(testUser, TEST_NAME, TEST_DESCRIPTION);
+        testDeck = new Deck(testUser, TEST_NAME, TEST_DESCRIPTION);
         testDeck.setId(TEST_DECK_ID);
 
         client = RestTestClient.bindTo(mockMvc).build();
@@ -287,7 +287,7 @@ class DeckControllerTest {
         logger.debug("Test: Deck creation without description");
 
         CreateDeckRequest request = new CreateDeckRequest(TEST_NAME, null);
-        DeckEntity deckWithoutDescription = new DeckEntity(testUser, TEST_NAME, null);
+        Deck deckWithoutDescription = new Deck(testUser, TEST_NAME, null);
         deckWithoutDescription.setId(TEST_DECK_ID);
 
         when(deckService.createDeck(TEST_USER_ID, TEST_NAME, null))
@@ -320,10 +320,10 @@ class DeckControllerTest {
     void testGetUserDecksSuccess() {
         logger.debug("Test: Successful retrieval of all user decks");
 
-        DeckEntity deck2 = new DeckEntity(testUser, "Spanish Vocab", "Spanish vocabulary");
+        Deck deck2 = new Deck(testUser, "Spanish Vocab", "Spanish vocabulary");
         deck2.setId(2L);
 
-        List<DeckEntity> decks = Arrays.asList(testDeck, deck2);
+        List<Deck> decks = Arrays.asList(testDeck, deck2);
 
         when(deckService.getUserDecks(TEST_USER_ID)).thenReturn(decks);
 
@@ -430,7 +430,7 @@ class DeckControllerTest {
 
         UpdateDeckRequest request = new UpdateDeckRequest(UPDATED_NAME, UPDATED_DESCRIPTION);
 
-        DeckEntity updatedDeck = new DeckEntity(testUser, UPDATED_NAME, UPDATED_DESCRIPTION);
+        Deck updatedDeck = new Deck(testUser, UPDATED_NAME, UPDATED_DESCRIPTION);
         updatedDeck.setId(TEST_DECK_ID);
 
         when(deckService.updateDeck(TEST_DECK_ID, TEST_USER_ID, UPDATED_NAME, UPDATED_DESCRIPTION))
@@ -595,7 +595,7 @@ class DeckControllerTest {
                 )
         );
 
-        DeckEntity deck = new DeckEntity(testUser, "Japanese N5", "JLPT N5 vocabulary");
+        Deck deck = new Deck(testUser, "Japanese N5", "JLPT N5 vocabulary");
         deck.setId(1L);
 
         when(deckImportService.importDeck(eq(TEST_USER_ID), any(DeckImportRequest.class))).thenReturn(deck);

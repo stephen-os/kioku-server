@@ -1,7 +1,7 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
 import com.kioku.api.repository.TagRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,11 +79,11 @@ public class TagService {
      * @return the created tag
      * @throws IllegalArgumentException if user doesn't own deck or duplicate exists
      */
-    public TagEntity createTag(Long userId, Long deckId, String name) {
+    public Tag createTag(Long userId, Long deckId, String name) {
         logger.debug("Creating tag '{}' in deck id={} for user id={}", name, deckId, userId);
 
         // Verify user owns the deck
-        DeckEntity deckEntity = deckService.getDeckOrThrow(deckId, userId);
+        Deck deck = deckService.getDeckOrThrow(deckId, userId);
 
         // Check for duplicate name within deck
         if (tagRepository.existsByDeckIdAndName(deckId, name)) {
@@ -91,11 +91,11 @@ public class TagService {
             throw new IllegalArgumentException("Tag with name '" + name + "' already exists in this deck");
         }
 
-        TagEntity tagEntity = new TagEntity(deckEntity, name);
-        TagEntity savedTagEntity = tagRepository.save(tagEntity);
+        Tag tag = new Tag(deck, name);
+        Tag savedTag = tagRepository.save(tag);
 
-        logger.debug("Tag created successfully with id={}", savedTagEntity.getId());
-        return savedTagEntity;
+        logger.debug("Tag created successfully with id={}", savedTag.getId());
+        return savedTag;
     }
 
     /**
@@ -107,13 +107,13 @@ public class TagService {
      * @throws IllegalArgumentException if user doesn't own the deck
      */
     @Transactional(readOnly = true)
-    public List<TagEntity> getDeckTags(Long userId, Long deckId) {
+    public List<Tag> getDeckTags(Long userId, Long deckId) {
         logger.debug("Getting tags for deck id={}, user id={}", deckId, userId);
 
         // Verify user owns the deck
         deckService.getDeckOrThrow(deckId, userId);
 
-        List<TagEntity> tagEntities = tagRepository.findByDeckId(deckId);
+        List<Tag> tagEntities = tagRepository.findByDeckId(deckId);
         logger.debug("Found {} tags in deck id={}", tagEntities.size(), deckId);
 
         return tagEntities;
@@ -130,10 +130,10 @@ public class TagService {
      * @return list of all user's tags across all decks
      */
     @Transactional(readOnly = true)
-    public List<TagEntity> getAllUserTags(Long userId) {
+    public List<Tag> getAllUserTags(Long userId) {
         logger.debug("Getting all tags for user id={}", userId);
 
-        List<TagEntity> tagEntities = tagRepository.findByUserId(userId);
+        List<Tag> tagEntities = tagRepository.findByUserId(userId);
         logger.debug("Found {} total tags for user id={}", tagEntities.size(), userId);
 
         return tagEntities;
@@ -150,7 +150,7 @@ public class TagService {
      * @return an Optional containing the tag if found and owned, empty otherwise
      */
     @Transactional(readOnly = true)
-    public Optional<TagEntity> getTag(Long userId, Long deckId, Long tagId) {
+    public Optional<Tag> getTag(Long userId, Long deckId, Long tagId) {
         logger.debug("Getting tag id={} from deck id={} for user id={}", tagId, deckId, userId);
 
         // Verify user owns the deck
@@ -159,7 +159,7 @@ public class TagService {
             return Optional.empty();
         }
 
-        Optional<TagEntity> tag = tagRepository.findByIdAndDeckId(tagId, deckId);
+        Optional<Tag> tag = tagRepository.findByIdAndDeckId(tagId, deckId);
         logger.debug("Tag found: {}", tag.isPresent());
 
         return tag;
@@ -175,7 +175,7 @@ public class TagService {
      * @throws IllegalArgumentException if tag not found or access denied
      */
     @Transactional(readOnly = true)
-    public TagEntity getTagOrThrow(Long userId, Long deckId, Long tagId) {
+    public Tag getTagOrThrow(Long userId, Long deckId, Long tagId) {
         if (deckId != null) {
             return getTag(userId, deckId, tagId)
                     .orElseThrow(() -> {
@@ -185,7 +185,7 @@ public class TagService {
                     });
         } else {
             // Verify user owns the tag (check via user_id)
-            Optional<TagEntity> tag = tagRepository.findById(tagId);
+            Optional<Tag> tag = tagRepository.findById(tagId);
             if (tag.isEmpty() || !tag.get().getUser().getId().equals(userId)) {
                 logger.warn("Tag not found or access denied: tag id={}, user id={}", tagId, userId);
                 throw new IllegalArgumentException("Tag not found or access denied: " + tagId);
@@ -206,7 +206,7 @@ public class TagService {
      * @throws IllegalArgumentException if tag not found or access denied
      */
     @Transactional(readOnly = true)
-    public TagEntity getTagOrThrow(Long userId, Long tagId) {
+    public Tag getTagOrThrow(Long userId, Long tagId) {
         return getTagOrThrow(userId, null, tagId);
     }
 
@@ -222,13 +222,13 @@ public class TagService {
      * @return the existing or newly created tag
      * @throws IllegalArgumentException if user doesn't own the deck
      */
-    public TagEntity getOrCreateTag(Long userId, Long deckId, String name) {
+    public Tag getOrCreateTag(Long userId, Long deckId, String name) {
         logger.debug("Getting or creating tag '{}' in deck id={} for user id={}", name, deckId, userId);
 
         // Verify user owns the deck
         deckService.getDeckOrThrow(deckId, userId);
 
-        Optional<TagEntity> existingTag = findTagByName(userId, deckId, name);
+        Optional<Tag> existingTag = findTagByName(userId, deckId, name);
 
         if (existingTag.isPresent()) {
             logger.debug("Tag '{}' already exists with id={}", name, existingTag.get().getId());
@@ -255,24 +255,24 @@ public class TagService {
      * @return the updated tag
      * @throws IllegalArgumentException if access denied or update would create duplicate
      */
-    public TagEntity updateTag(Long userId, Long deckId, Long tagId, String name) {
+    public Tag updateTag(Long userId, Long deckId, Long tagId, String name) {
         logger.debug("Updating tag id={} in deck id={} for user id={}", tagId, deckId, userId);
 
-        TagEntity tagEntity = getTagOrThrow(userId, deckId, tagId);
+        Tag tag = getTagOrThrow(userId, deckId, tagId);
 
         // Check if new name conflicts with another tag in the same deck
-        if (!tagEntity.getName().equals(name)) {
+        if (!tag.getName().equals(name)) {
             if (tagRepository.existsByDeckIdAndName(deckId, name)) {
                 logger.warn("Tag update failed: tag '{}' already exists in deck id={}", name, deckId);
                 throw new IllegalArgumentException("Tag with name '" + name + "' already exists in this deck");
             }
         }
 
-        tagEntity.setName(name);
-        TagEntity updatedTagEntity = tagRepository.save(tagEntity);
+        tag.setName(name);
+        Tag updatedTag = tagRepository.save(tag);
 
         logger.debug("Tag id={} updated successfully", tagId);
-        return updatedTagEntity;
+        return updatedTag;
     }
 
     /**
@@ -288,8 +288,8 @@ public class TagService {
     public void deleteTag(Long userId, Long deckId, Long tagId) {
         logger.debug("Deleting tag id={} from deck id={} for user id={}", tagId, deckId, userId);
 
-        TagEntity tagEntity = getTagOrThrow(userId, deckId, tagId);
-        tagRepository.delete(tagEntity);
+        Tag tag = getTagOrThrow(userId, deckId, tagId);
+        tagRepository.delete(tag);
 
         logger.debug("Tag id={} deleted successfully", tagId);
     }
@@ -304,15 +304,15 @@ public class TagService {
      * @throws IllegalArgumentException if user doesn't own the deck
      */
     @Transactional(readOnly = true)
-    public Optional<TagEntity> findTagByName(Long userId, Long deckId, String name) {
+    public Optional<Tag> findTagByName(Long userId, Long deckId, String name) {
         logger.debug("Finding tag '{}' in deck id={} for user id={}", name, deckId, userId);
 
         // Verify user owns the deck
         deckService.getDeckOrThrow(deckId, userId);
 
         // Find all tags in deck and filter by name
-        List<TagEntity> deckTagEntities = tagRepository.findByDeckId(deckId);
-        Optional<TagEntity> tag = deckTagEntities.stream()
+        List<Tag> deckTagEntities = tagRepository.findByDeckId(deckId);
+        Optional<Tag> tag = deckTagEntities.stream()
                 .filter(t -> t.getName().equals(name))
                 .findFirst();
 

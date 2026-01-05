@@ -1,8 +1,8 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import com.kioku.api.repository.DeckRepository;
 import com.kioku.api.repository.TagRepository;
 import com.kioku.api.repository.UserRepository;
@@ -76,11 +76,11 @@ class TagServiceTest {
     @Autowired
     private UserRepository userRepository;
 
-    private UserEntity testUserEntity;
-    private UserEntity otherUserEntity;
-    private DeckEntity japaneseDeckEntity;
-    private DeckEntity spanishDeckEntity;
-    private DeckEntity otherUserDeckEntity;
+    private User testUser;
+    private User otherUser;
+    private Deck japaneseDeck;
+    private Deck spanishDeck;
+    private Deck otherUserDeck;
 
     /**
      * Sets up test fixtures before each test.
@@ -93,23 +93,23 @@ class TagServiceTest {
         deckRepository.deleteAll();
         userRepository.deleteAll();
 
-        testUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        testUserEntity = userRepository.save(testUserEntity);
+        testUser = new User(TEST_EMAIL, PASSWORD_HASH);
+        testUser = userRepository.save(testUser);
 
-        otherUserEntity = new UserEntity(OTHER_EMAIL, PASSWORD_HASH);
-        otherUserEntity = userRepository.save(otherUserEntity);
+        otherUser = new User(OTHER_EMAIL, PASSWORD_HASH);
+        otherUser = userRepository.save(otherUser);
 
-        japaneseDeckEntity = new DeckEntity(testUserEntity, DECK_NAME_JAPANESE, DECK_DESCRIPTION);
-        japaneseDeckEntity = deckRepository.save(japaneseDeckEntity);
+        japaneseDeck = new Deck(testUser, DECK_NAME_JAPANESE, DECK_DESCRIPTION);
+        japaneseDeck = deckRepository.save(japaneseDeck);
 
-        spanishDeckEntity = new DeckEntity(testUserEntity, DECK_NAME_SPANISH, DECK_DESCRIPTION);
-        spanishDeckEntity = deckRepository.save(spanishDeckEntity);
+        spanishDeck = new Deck(testUser, DECK_NAME_SPANISH, DECK_DESCRIPTION);
+        spanishDeck = deckRepository.save(spanishDeck);
 
-        otherUserDeckEntity = new DeckEntity(otherUserEntity, "Other Deck", "Description");
-        otherUserDeckEntity = deckRepository.save(otherUserDeckEntity);
+        otherUserDeck = new Deck(otherUser, "Other Deck", "Description");
+        otherUserDeck = deckRepository.save(otherUserDeck);
 
         logger.debug("Test setup complete: user id={}, japanese deck id={}, spanish deck id={}",
-                testUserEntity.getId(), japaneseDeckEntity.getId(), spanishDeckEntity.getId());
+                testUser.getId(), japaneseDeck.getId(), spanishDeck.getId());
     }
 
     // Tag Creation Tests
@@ -122,14 +122,14 @@ class TagServiceTest {
     void testCreateTag() {
         logger.debug("Test: Creating tag in deck");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        assertNotNull(tagEntity.getId());
-        assertEquals(TAG_VERBS, tagEntity.getName());
-        assertEquals(japaneseDeckEntity.getId(), tagEntity.getDeck().getId());
-        assertEquals(testUserEntity.getId(), tagEntity.getUser().getId());
+        assertNotNull(tag.getId());
+        assertEquals(TAG_VERBS, tag.getName());
+        assertEquals(japaneseDeck.getId(), tag.getDeck().getId());
+        assertEquals(testUser.getId(), tag.getUser().getId());
 
-        logger.debug("Test passed: Tag created with id={}", tagEntity.getId());
+        logger.debug("Test passed: Tag created with id={}", tag.getId());
     }
 
     /**
@@ -140,10 +140,10 @@ class TagServiceTest {
     void testCreateTagWithDuplicateNameThrowsException() {
         logger.debug("Test: Creating duplicate tag in same deck");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+            tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
         });
 
         logger.debug("Test passed: Exception thrown for duplicate tag");
@@ -157,12 +157,12 @@ class TagServiceTest {
     void testCreateTagWithSameNameInDifferentDecks() {
         logger.debug("Test: Creating same tag name in different decks");
 
-        TagEntity japaneseTagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        TagEntity spanishTagEntity = tagService.createTag(testUserEntity.getId(), spanishDeckEntity.getId(), TAG_VERBS);
+        Tag japaneseTag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        Tag spanishTag = tagService.createTag(testUser.getId(), spanishDeck.getId(), TAG_VERBS);
 
-        assertNotEquals(japaneseTagEntity.getId(), spanishTagEntity.getId());
-        assertEquals(TAG_VERBS, japaneseTagEntity.getName());
-        assertEquals(TAG_VERBS, spanishTagEntity.getName());
+        assertNotEquals(japaneseTag.getId(), spanishTag.getId());
+        assertEquals(TAG_VERBS, japaneseTag.getName());
+        assertEquals(TAG_VERBS, spanishTag.getName());
 
         logger.debug("Test passed: Same tag name allowed in different decks");
     }
@@ -176,7 +176,7 @@ class TagServiceTest {
         logger.debug("Test: Creating tag in non-existent deck");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagService.createTag(testUserEntity.getId(), 999L, TAG_VERBS);
+            tagService.createTag(testUser.getId(), 999L, TAG_VERBS);
         });
 
         logger.debug("Test passed: Exception thrown for non-existent deck");
@@ -191,7 +191,7 @@ class TagServiceTest {
         logger.debug("Test: Creating tag in unowned deck");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagService.createTag(testUserEntity.getId(), otherUserDeckEntity.getId(), TAG_VERBS);
+            tagService.createTag(testUser.getId(), otherUserDeck.getId(), TAG_VERBS);
         });
 
         logger.debug("Test passed: Exception thrown for unowned deck");
@@ -207,15 +207,15 @@ class TagServiceTest {
     void testGetDeckTags() {
         logger.debug("Test: Getting all tags in deck");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_NOUNS);
-        tagService.createTag(testUserEntity.getId(), spanishDeckEntity.getId(), TAG_ADJECTIVES);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_NOUNS);
+        tagService.createTag(testUser.getId(), spanishDeck.getId(), TAG_ADJECTIVES);
 
-        List<TagEntity> japaneseTagEntities = tagService.getDeckTags(testUserEntity.getId(), japaneseDeckEntity.getId());
+        List<Tag> japaneseTagEntities = tagService.getDeckTags(testUser.getId(), japaneseDeck.getId());
 
         assertEquals(2, japaneseTagEntities.size());
         assertTrue(japaneseTagEntities.stream()
-                .allMatch(t -> t.getDeck().getId().equals(japaneseDeckEntity.getId())));
+                .allMatch(t -> t.getDeck().getId().equals(japaneseDeck.getId())));
 
         logger.debug("Test passed: Found {} tags in deck", japaneseTagEntities.size());
     }
@@ -228,16 +228,16 @@ class TagServiceTest {
     void testGetAllUserTags() {
         logger.debug("Test: Getting all user's tags");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_NOUNS);
-        tagService.createTag(testUserEntity.getId(), spanishDeckEntity.getId(), TAG_ADJECTIVES);
-        tagService.createTag(otherUserEntity.getId(), otherUserDeckEntity.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_NOUNS);
+        tagService.createTag(testUser.getId(), spanishDeck.getId(), TAG_ADJECTIVES);
+        tagService.createTag(otherUser.getId(), otherUserDeck.getId(), TAG_VERBS);
 
-        List<TagEntity> userTagEntities = tagService.getAllUserTags(testUserEntity.getId());
+        List<Tag> userTagEntities = tagService.getAllUserTags(testUser.getId());
 
         assertEquals(3, userTagEntities.size());
         assertTrue(userTagEntities.stream()
-                .allMatch(t -> t.getUser().getId().equals(testUserEntity.getId())));
+                .allMatch(t -> t.getUser().getId().equals(testUser.getId())));
 
         logger.debug("Test passed: Found {} tags for user", userTagEntities.size());
     }
@@ -250,9 +250,9 @@ class TagServiceTest {
     void testGetTag() {
         logger.debug("Test: Getting specific tag");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        Optional<TagEntity> found = tagService.getTag(testUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId());
+        Optional<Tag> found = tagService.getTag(testUser.getId(), japaneseDeck.getId(), tag.getId());
 
         assertTrue(found.isPresent());
         assertEquals(TAG_VERBS, found.get().getName());
@@ -268,9 +268,9 @@ class TagServiceTest {
     void testGetTagWithWrongDeckReturnsEmpty() {
         logger.debug("Test: Getting tag with wrong deck");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        Optional<TagEntity> found = tagService.getTag(testUserEntity.getId(), spanishDeckEntity.getId(), tagEntity.getId());
+        Optional<Tag> found = tagService.getTag(testUser.getId(), spanishDeck.getId(), tag.getId());
 
         assertFalse(found.isPresent());
 
@@ -285,9 +285,9 @@ class TagServiceTest {
     void testGetTagWithWrongUserReturnsEmpty() {
         logger.debug("Test: Getting tag with wrong user");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        Optional<TagEntity> found = tagService.getTag(otherUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId());
+        Optional<Tag> found = tagService.getTag(otherUser.getId(), japaneseDeck.getId(), tag.getId());
 
         assertFalse(found.isPresent());
 
@@ -302,9 +302,9 @@ class TagServiceTest {
     void testGetTagOrThrow() {
         logger.debug("Test: Getting tag with getTagOrThrow");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        TagEntity found = tagService.getTagOrThrow(testUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId());
+        Tag found = tagService.getTagOrThrow(testUser.getId(), japaneseDeck.getId(), tag.getId());
 
         assertNotNull(found);
         assertEquals(TAG_VERBS, found.getName());
@@ -320,10 +320,10 @@ class TagServiceTest {
     void testGetTagOrThrowWithWrongUserThrowsException() {
         logger.debug("Test: Getting tag with getTagOrThrow for wrong user");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagService.getTagOrThrow(otherUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId());
+            tagService.getTagOrThrow(otherUser.getId(), japaneseDeck.getId(), tag.getId());
         });
 
         logger.debug("Test passed: Exception thrown for wrong user");
@@ -339,11 +339,11 @@ class TagServiceTest {
     void testGetOrCreateTag() {
         logger.debug("Test: Get or create tag");
 
-        TagEntity tagEntity1 = tagService.getOrCreateTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        TagEntity tagEntity2 = tagService.getOrCreateTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag1 = tagService.getOrCreateTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        Tag tag2 = tagService.getOrCreateTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        assertEquals(tagEntity1.getId(), tagEntity2.getId());
-        assertEquals(1, tagService.getDeckTags(testUserEntity.getId(), japaneseDeckEntity.getId()).size());
+        assertEquals(tag1.getId(), tag2.getId());
+        assertEquals(1, tagService.getDeckTags(testUser.getId(), japaneseDeck.getId()).size());
 
         logger.debug("Test passed: Get or create works");
     }
@@ -358,11 +358,11 @@ class TagServiceTest {
     void testUpdateTag() {
         logger.debug("Test: Updating tag name");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        TagEntity updated = tagService.updateTag(testUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId(), TAG_UPDATED);
+        Tag updated = tagService.updateTag(testUser.getId(), japaneseDeck.getId(), tag.getId(), TAG_UPDATED);
 
-        assertEquals(tagEntity.getId(), updated.getId());
+        assertEquals(tag.getId(), updated.getId());
         assertEquals(TAG_UPDATED, updated.getName());
 
         logger.debug("Test passed: Tag updated");
@@ -376,10 +376,10 @@ class TagServiceTest {
     void testUpdateTagWithWrongUserThrowsException() {
         logger.debug("Test: Updating tag with wrong user");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagService.updateTag(otherUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId(), TAG_UPDATED);
+            tagService.updateTag(otherUser.getId(), japaneseDeck.getId(), tag.getId(), TAG_UPDATED);
         });
 
         logger.debug("Test passed: Exception thrown for wrong user");
@@ -393,11 +393,11 @@ class TagServiceTest {
     void testUpdateTagToExistingNameThrowsException() {
         logger.debug("Test: Updating tag to existing name");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        TagEntity tagEntity2 = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_NOUNS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        Tag tag2 = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_NOUNS);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagService.updateTag(testUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity2.getId(), TAG_VERBS);
+            tagService.updateTag(testUser.getId(), japaneseDeck.getId(), tag2.getId(), TAG_VERBS);
         });
 
         logger.debug("Test passed: Exception thrown for duplicate name");
@@ -411,9 +411,9 @@ class TagServiceTest {
     void testUpdateTagKeepingSameNameSucceeds() {
         logger.debug("Test: Updating tag to same name");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        TagEntity updated = tagService.updateTag(testUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId(), TAG_VERBS);
+        Tag updated = tagService.updateTag(testUser.getId(), japaneseDeck.getId(), tag.getId(), TAG_VERBS);
 
         assertEquals(TAG_VERBS, updated.getName());
 
@@ -428,11 +428,11 @@ class TagServiceTest {
     void testUpdateTagToNameInDifferentDeck() {
         logger.debug("Test: Updating tag to name that exists in different deck");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        TagEntity spanishTagEntity = tagService.createTag(testUserEntity.getId(), spanishDeckEntity.getId(), TAG_NOUNS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        Tag spanishTag = tagService.createTag(testUser.getId(), spanishDeck.getId(), TAG_NOUNS);
 
         // Should succeed because "verbs" exists in Japanese deck, not Spanish
-        TagEntity updated = tagService.updateTag(testUserEntity.getId(), spanishDeckEntity.getId(), spanishTagEntity.getId(), TAG_VERBS);
+        Tag updated = tagService.updateTag(testUser.getId(), spanishDeck.getId(), spanishTag.getId(), TAG_VERBS);
 
         assertEquals(TAG_VERBS, updated.getName());
 
@@ -449,10 +449,10 @@ class TagServiceTest {
     void testDeleteTag() {
         logger.debug("Test: Deleting tag");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        Long tagId = tagEntity.getId();
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        Long tagId = tag.getId();
 
-        tagService.deleteTag(testUserEntity.getId(), japaneseDeckEntity.getId(), tagId);
+        tagService.deleteTag(testUser.getId(), japaneseDeck.getId(), tagId);
 
         assertFalse(tagRepository.existsById(tagId));
 
@@ -467,10 +467,10 @@ class TagServiceTest {
     void testDeleteTagWithWrongUserThrowsException() {
         logger.debug("Test: Deleting tag with wrong user");
 
-        TagEntity tagEntity = tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Tag tag = tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            tagService.deleteTag(otherUserEntity.getId(), japaneseDeckEntity.getId(), tagEntity.getId());
+            tagService.deleteTag(otherUser.getId(), japaneseDeck.getId(), tag.getId());
         });
 
         logger.debug("Test passed: Exception thrown for wrong user");
@@ -486,9 +486,9 @@ class TagServiceTest {
     void testFindTagByName() {
         logger.debug("Test: Finding tag by name");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        Optional<TagEntity> found = tagService.findTagByName(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        Optional<Tag> found = tagService.findTagByName(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
         assertTrue(found.isPresent());
         assertEquals(TAG_VERBS, found.get().getName());
@@ -504,9 +504,9 @@ class TagServiceTest {
     void testFindTagByNameNotFound() {
         logger.debug("Test: Finding non-existent tag by name");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
 
-        Optional<TagEntity> found = tagService.findTagByName(testUserEntity.getId(), spanishDeckEntity.getId(), TAG_VERBS);
+        Optional<Tag> found = tagService.findTagByName(testUser.getId(), spanishDeck.getId(), TAG_VERBS);
 
         assertFalse(found.isPresent());
 
@@ -523,11 +523,11 @@ class TagServiceTest {
     void testCountTags() {
         logger.debug("Test: Counting tags in deck");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_NOUNS);
-        tagService.createTag(testUserEntity.getId(), spanishDeckEntity.getId(), TAG_ADJECTIVES);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_NOUNS);
+        tagService.createTag(testUser.getId(), spanishDeck.getId(), TAG_ADJECTIVES);
 
-        long count = tagService.countTags(testUserEntity.getId(), japaneseDeckEntity.getId());
+        long count = tagService.countTags(testUser.getId(), japaneseDeck.getId());
 
         assertEquals(2, count);
 
@@ -544,14 +544,14 @@ class TagServiceTest {
     void testDeleteAllTagsInDeck() {
         logger.debug("Test: Deleting all tags in deck");
 
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_VERBS);
-        tagService.createTag(testUserEntity.getId(), japaneseDeckEntity.getId(), TAG_NOUNS);
-        tagService.createTag(testUserEntity.getId(), spanishDeckEntity.getId(), TAG_ADJECTIVES);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_VERBS);
+        tagService.createTag(testUser.getId(), japaneseDeck.getId(), TAG_NOUNS);
+        tagService.createTag(testUser.getId(), spanishDeck.getId(), TAG_ADJECTIVES);
 
-        tagService.deleteAllTagsInDeck(testUserEntity.getId(), japaneseDeckEntity.getId());
+        tagService.deleteAllTagsInDeck(testUser.getId(), japaneseDeck.getId());
 
-        assertEquals(0, tagService.countTags(testUserEntity.getId(), japaneseDeckEntity.getId()));
-        assertEquals(1, tagService.countTags(testUserEntity.getId(), spanishDeckEntity.getId()));
+        assertEquals(0, tagService.countTags(testUser.getId(), japaneseDeck.getId()));
+        assertEquals(1, tagService.countTags(testUser.getId(), spanishDeck.getId()));
 
         logger.debug("Test passed: All tags in deck deleted");
     }

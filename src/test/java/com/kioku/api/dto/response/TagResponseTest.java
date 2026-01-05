@@ -2,9 +2,9 @@ package com.kioku.api.dto.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,9 +39,9 @@ class TagResponseTest {
     private static final Long TEST_TAG_ID = 1L;
     private static final String TEST_TAG_NAME = "verbs";
 
-    private TagEntity testTag;
-    private DeckEntity testDeck;
-    private UserEntity testUser;
+    private Tag testTag;
+    private Deck testDeck;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
@@ -50,13 +50,13 @@ class TagResponseTest {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        testUser = new UserEntity("user@example.com", "hashedPassword");
+        testUser = new User("user@example.com", "hashedPassword");
         testUser.setId(1L);
 
-        testDeck = new DeckEntity(testUser, "Test Deck", "Test Description");
+        testDeck = new Deck(testUser, "Test Deck", "Test Description");
         testDeck.setId(1L);
 
-        testTag = new TagEntity(testDeck, TEST_TAG_NAME);
+        testTag = new Tag(testDeck, TEST_TAG_NAME);
         testTag.setId(TEST_TAG_ID);
     }
 
@@ -90,7 +90,7 @@ class TagResponseTest {
     }
 
     @Test
-    @DisplayName("Should create response from TagEntity")
+    @DisplayName("Should create response from Tag")
     void testEntityConstructor() {
         logger.debug("Test: Entity constructor");
 
@@ -107,7 +107,7 @@ class TagResponseTest {
     void testEntityConstructorWithDifferentValues() {
         logger.debug("Test: Entity constructor with different values");
 
-        TagEntity customTag = new TagEntity(testDeck, "JLPT-N5");
+        Tag customTag = new Tag(testDeck, "JLPT-N5");
         customTag.setId(99L);
 
         TagResponse response = new TagResponse(customTag);
@@ -272,7 +272,7 @@ class TagResponseTest {
     void testSpecialCharactersInName() {
         logger.debug("Test: Special characters in name");
 
-        TagEntity specialTag = new TagEntity(testDeck, "N5-動詞");
+        Tag specialTag = new Tag(testDeck, "N5-動詞");
         specialTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(specialTag);
@@ -287,7 +287,7 @@ class TagResponseTest {
     void testEmojiInName() {
         logger.debug("Test: Emoji in name");
 
-        TagEntity emojiTag = new TagEntity(testDeck, "important⭐");
+        Tag emojiTag = new Tag(testDeck, "important⭐");
         emojiTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(emojiTag);
@@ -303,7 +303,7 @@ class TagResponseTest {
         logger.debug("Test: Very long name");
 
         String longName = "a".repeat(100);
-        TagEntity longTag = new TagEntity(testDeck, longName);
+        Tag longTag = new Tag(testDeck, longName);
         longTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(longTag);
@@ -319,7 +319,7 @@ class TagResponseTest {
     void testSingleCharacterName() {
         logger.debug("Test: Single character name");
 
-        TagEntity singleTag = new TagEntity(testDeck, "A");
+        Tag singleTag = new Tag(testDeck, "A");
         singleTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(singleTag);
@@ -334,7 +334,7 @@ class TagResponseTest {
     void testNumericName() {
         logger.debug("Test: Numeric name");
 
-        TagEntity numericTag = new TagEntity(testDeck, "123");
+        Tag numericTag = new Tag(testDeck, "123");
         numericTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(numericTag);
@@ -349,7 +349,7 @@ class TagResponseTest {
     void testNameWithSpaces() {
         logger.debug("Test: Name with spaces");
 
-        TagEntity spaceTag = new TagEntity(testDeck, "ru verbs");
+        Tag spaceTag = new Tag(testDeck, "ru verbs");
         spaceTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(spaceTag);
@@ -364,10 +364,10 @@ class TagResponseTest {
     void testCaseSensitivity() {
         logger.debug("Test: Case sensitivity in name");
 
-        TagEntity upperTag = new TagEntity(testDeck, "VERBS");
+        Tag upperTag = new Tag(testDeck, "VERBS");
         upperTag.setId(1L);
 
-        TagEntity lowerTag = new TagEntity(testDeck, "verbs");
+        Tag lowerTag = new Tag(testDeck, "verbs");
         lowerTag.setId(2L);
 
         TagResponse upperResponse = new TagResponse(upperTag);
@@ -434,7 +434,7 @@ class TagResponseTest {
     void testNameWithHyphens() {
         logger.debug("Test: Name with hyphens");
 
-        TagEntity hyphenTag = new TagEntity(testDeck, "JLPT-N5");
+        Tag hyphenTag = new Tag(testDeck, "JLPT-N5");
         hyphenTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(hyphenTag);
@@ -449,7 +449,7 @@ class TagResponseTest {
     void testNameWithUnderscores() {
         logger.debug("Test: Name with underscores");
 
-        TagEntity underscoreTag = new TagEntity(testDeck, "ru_verbs");
+        Tag underscoreTag = new Tag(testDeck, "ru_verbs");
         underscoreTag.setId(TEST_TAG_ID);
 
         TagResponse response = new TagResponse(underscoreTag);

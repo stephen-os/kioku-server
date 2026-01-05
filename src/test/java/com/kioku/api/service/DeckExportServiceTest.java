@@ -1,10 +1,10 @@
 package com.kioku.api.service;
 
 import com.kioku.api.dto.response.DeckExportResponse;
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,17 +64,17 @@ class DeckExportServiceTest {
     @InjectMocks
     private DeckExportService exportService;
 
-    private UserEntity testUser;
-    private DeckEntity testDeck;
+    private User testUser;
+    private Deck testDeck;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up DeckExportService test");
 
-        testUser = mock(UserEntity.class);
+        testUser = mock(User.class);
         when(testUser.getId()).thenReturn(USER_ID);
 
-        testDeck = mock(DeckEntity.class);
+        testDeck = mock(Deck.class);
         when(testDeck.getId()).thenReturn(DECK_ID);
         when(testDeck.getName()).thenReturn(DECK_NAME);
         when(testDeck.getDescription()).thenReturn(DECK_DESCRIPTION);
@@ -91,31 +91,31 @@ class DeckExportServiceTest {
         when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
 
         // Setup cards
-        CardEntity card1 = mock(CardEntity.class);
+        Card card1 = mock(Card.class);
         when(card1.getId()).thenReturn(1L);
         when(card1.getFront()).thenReturn("食べる");
         when(card1.getBack()).thenReturn("to eat");
         when(card1.getTags()).thenReturn(Collections.emptySet());
 
-        CardEntity card2 = mock(CardEntity.class);
+        Card card2 = mock(Card.class);
         when(card2.getId()).thenReturn(2L);
         when(card2.getFront()).thenReturn("飲む");
         when(card2.getBack()).thenReturn("to drink");
         when(card2.getTags()).thenReturn(Collections.emptySet());
 
-        List<CardEntity> cards = Arrays.asList(card1, card2);
+        List<Card> cards = Arrays.asList(card1, card2);
         when(cardService.getDeckCards(USER_ID, DECK_ID)).thenReturn(cards);
 
         // Setup tags
-        TagEntity tag1 = mock(TagEntity.class);
+        Tag tag1 = mock(Tag.class);
         when(tag1.getId()).thenReturn(1L);
         when(tag1.getName()).thenReturn("verbs");
 
-        TagEntity tag2 = mock(TagEntity.class);
+        Tag tag2 = mock(Tag.class);
         when(tag2.getId()).thenReturn(2L);
         when(tag2.getName()).thenReturn("food");
 
-        List<TagEntity> tags = Arrays.asList(tag1, tag2);
+        List<Tag> tags = Arrays.asList(tag1, tag2);
         when(tagService.getDeckTags(USER_ID, DECK_ID)).thenReturn(tags);
 
         // Export
@@ -169,7 +169,7 @@ class DeckExportServiceTest {
 
         when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
 
-        CardEntity card = mock(CardEntity.class);
+        Card card = mock(Card.class);
         when(card.getId()).thenReturn(1L);
         when(card.getFront()).thenReturn("食べる");
         when(card.getBack()).thenReturn("to eat");
@@ -197,7 +197,7 @@ class DeckExportServiceTest {
         when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
         when(cardService.getDeckCards(USER_ID, DECK_ID)).thenReturn(Collections.emptyList());
 
-        TagEntity tag = mock(TagEntity.class);
+        Tag tag = mock(Tag.class);
         when(tag.getId()).thenReturn(1L);
         when(tag.getName()).thenReturn("verbs");
 
@@ -281,9 +281,9 @@ class DeckExportServiceTest {
         when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
 
         // Create 100 mock cards
-        List<CardEntity> cards = new java.util.ArrayList<>();
+        List<Card> cards = new java.util.ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            CardEntity card = mock(CardEntity.class);
+            Card card = mock(Card.class);
             when(card.getId()).thenReturn((long) i);
             when(card.getFront()).thenReturn("Front " + i);
             when(card.getBack()).thenReturn("Back " + i);
@@ -312,9 +312,9 @@ class DeckExportServiceTest {
         when(cardService.getDeckCards(USER_ID, DECK_ID)).thenReturn(Collections.emptyList());
 
         // Create 50 mock tags
-        List<TagEntity> tags = new java.util.ArrayList<>();
+        List<Tag> tags = new java.util.ArrayList<>();
         for (int i = 0; i < 50; i++) {
-            TagEntity tag = mock(TagEntity.class);
+            Tag tag = mock(Tag.class);
             when(tag.getId()).thenReturn((long) i);
             when(tag.getName()).thenReturn("tag" + i);
             tags.add(tag);

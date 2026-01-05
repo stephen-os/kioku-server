@@ -1,7 +1,7 @@
 package com.kioku.api.controller;
 
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.User;
 import com.kioku.api.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +111,7 @@ public class TestController {
 
         logger.debug("Creating test user with email: {}", email);
 
-        UserEntity user = userService.createUser(email, password);
+        User user = userService.createUser(email, password);
 
         Map<String, Object> response = new HashMap<>();
         response.put("id", user.getId());

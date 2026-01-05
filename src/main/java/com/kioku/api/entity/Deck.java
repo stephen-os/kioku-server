@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * Entity representing a flashcard deck.
  *
- * <p>A deck is a collection of flashcards ({@link CardEntity}) that:
+ * <p>A deck is a collection of flashcards ({@link Card}) that:
  * <ul>
  *   <li>Belongs to a single user</li>
  *   <li>Has a unique name per user</li>
@@ -22,9 +22,9 @@ import java.util.Set;
  *
  * <p><strong>Relationships:</strong>
  * <ul>
- *   <li>Many-to-One with {@link UserEntity} (each deck belongs to one user)</li>
- *   <li>One-to-Many with {@link CardEntity} (deck contains multiple cards)</li>
- *   <li>One-to-Many with {@link TagEntity} (deck can have multiple tags)</li>
+ *   <li>Many-to-One with {@link User} (each deck belongs to one user)</li>
+ *   <li>One-to-Many with {@link Card} (deck contains multiple cards)</li>
+ *   <li>One-to-Many with {@link Tag} (deck can have multiple tags)</li>
  * </ul>
  *
  * <p><strong>Edit Support:</strong>
@@ -51,7 +51,7 @@ import java.util.Set;
                 @Index(name = "idx_deck_created_at", columnList = "created_at")
         }
 )
-public class DeckEntity {
+public class Deck {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -70,7 +70,7 @@ public class DeckEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    private User user;
 
     /**
      * The deck name.
@@ -106,7 +106,7 @@ public class DeckEntity {
      * orphanRemoval ensures cards removed from the collection are also deleted.
      */
     @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<CardEntity> cards = new HashSet<>();
+    private Set<Card> cards = new HashSet<>();
 
     /**
      * Tags belonging to this deck.
@@ -114,7 +114,7 @@ public class DeckEntity {
      * orphanRemoval ensures tags removed from the collection are also deleted.
      */
     @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<TagEntity> tags = new HashSet<>();
+    private Set<Tag> tags = new HashSet<>();
 
     /**
      * JPA lifecycle callback - sets timestamps on creation.
@@ -136,7 +136,7 @@ public class DeckEntity {
     /**
      * Default constructor for JPA.
      */
-    public DeckEntity() {
+    public Deck() {
     }
 
     /**
@@ -147,7 +147,7 @@ public class DeckEntity {
      * @param description optional description
      * @throws IllegalArgumentException if user or name is null/empty
      */
-    public DeckEntity(UserEntity user, String name, String description) {
+    public Deck(User user, String name, String description) {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
@@ -210,7 +210,7 @@ public class DeckEntity {
      *
      * @return the owner user
      */
-    public UserEntity getUser() {
+    public User getUser() {
         return user;
     }
 
@@ -223,7 +223,7 @@ public class DeckEntity {
      * @param user the owner user
      * @throws IllegalArgumentException if user is null
      */
-    public void setUser(UserEntity user) {
+    public void setUser(User user) {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
@@ -301,7 +301,7 @@ public class DeckEntity {
      *
      * @return the set of cards (never null)
      */
-    public Set<CardEntity> getCards() {
+    public Set<Card> getCards() {
         return cards;
     }
 
@@ -310,7 +310,7 @@ public class DeckEntity {
      *
      * @return the set of tags (never null)
      */
-    public Set<TagEntity> getTags() {
+    public Set<Tag> getTags() {
         return tags;
     }
 
@@ -327,7 +327,7 @@ public class DeckEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DeckEntity deck = (DeckEntity) o;
+        Deck deck = (Deck) o;
         return id != null && Objects.equals(id, deck.id) && Objects.equals(name, deck.name);
     }
 

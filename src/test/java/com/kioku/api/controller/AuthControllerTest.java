@@ -4,7 +4,7 @@ import com.kioku.api.dto.request.LoginRequest;
 import com.kioku.api.dto.request.RegisterRequest;
 import com.kioku.api.dto.response.AuthResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.User;
 import com.kioku.api.security.JwtUtil;
 import com.kioku.api.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,13 +63,13 @@ class AuthControllerTest {
     private JwtUtil jwtUtil;
 
     RestTestClient client;
-    private UserEntity testUser;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up AuthController test");
 
-        testUser = new UserEntity(TEST_EMAIL, "hashedPassword");
+        testUser = new User(TEST_EMAIL, "hashedPassword");
         testUser.setId(TEST_USER_ID);
 
         client = RestTestClient.bindTo(mockMvc).build();

@@ -2,10 +2,10 @@ package com.kioku.api.dto.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,9 +47,9 @@ class CardResponseTest {
     private static final String TEST_BACK = "to eat";
     private static final String TEST_NOTES = "ru-verb, ichidan verb";
 
-    private CardEntity testCard;
-    private DeckEntity testDeck;
-    private UserEntity testUser;
+    private Card testCard;
+    private Deck testDeck;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
@@ -58,13 +58,13 @@ class CardResponseTest {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        testUser = new UserEntity("user@example.com", "hashedPassword");
+        testUser = new User("user@example.com", "hashedPassword");
         testUser.setId(1L);
 
-        testDeck = new DeckEntity(testUser, "Test Deck", "Test Description");
+        testDeck = new Deck(testUser, "Test Deck", "Test Description");
         testDeck.setId(1L);
 
-        testCard = new CardEntity(testDeck, TEST_FRONT, TEST_BACK);
+        testCard = new Card(testDeck, TEST_FRONT, TEST_BACK);
         testCard.setId(TEST_CARD_ID);
         testCard.setNotes(TEST_NOTES);
     }
@@ -91,7 +91,7 @@ class CardResponseTest {
     }
 
     @Test
-    @DisplayName("Should create response from CardEntity")
+    @DisplayName("Should create response from Card")
     void testEntityConstructor() {
         logger.debug("Test: Entity constructor");
 
@@ -113,9 +113,9 @@ class CardResponseTest {
     void testEntityConstructorWithTags() {
         logger.debug("Test: Entity constructor with tags");
 
-        TagEntity tag1 = new TagEntity(testDeck, "verbs");
+        Tag tag1 = new Tag(testDeck, "verbs");
         tag1.setId(1L);
-        TagEntity tag2 = new TagEntity(testDeck, "JLPT-N5");
+        Tag tag2 = new Tag(testDeck, "JLPT-N5");
         tag2.setId(2L);
 
         testCard.addTag(tag1);
@@ -358,7 +358,7 @@ class CardResponseTest {
         logger.debug("Test: Multiple tags");
 
         for (int i = 1; i <= 5; i++) {
-            TagEntity tag = new TagEntity(testDeck, "tag" + i);
+            Tag tag = new Tag(testDeck, "tag" + i);
             tag.setId((long) i);
             testCard.addTag(tag);
         }
@@ -371,7 +371,7 @@ class CardResponseTest {
     }
 
     @Test
-    @DisplayName("Should copy createdAt from CardEntity without losing precision")
+    @DisplayName("Should copy createdAt from Card without losing precision")
     void shouldPreserveTimestampPrecision() {
         logger.debug("Test: Preserve timestamp precision");
 

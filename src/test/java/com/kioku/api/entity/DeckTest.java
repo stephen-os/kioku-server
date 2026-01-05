@@ -27,9 +27,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 1.0
  */
 @DisplayName("Deck Entity Unit Tests")
-class DeckEntityTest {
+class DeckTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(DeckEntityTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(DeckTest.class);
 
     // Test data constants
     private static final String TEST_EMAIL = "test@example.com";
@@ -39,7 +39,7 @@ class DeckEntityTest {
     private static final String UPDATED_NAME = "Japanese Grammar";
     private static final String UPDATED_DESCRIPTION = "JLPT N5 grammar practice";
 
-    private UserEntity testUserEntity;
+    private User testUser;
 
     /**
      * Sets up test fixtures before each test.
@@ -47,8 +47,8 @@ class DeckEntityTest {
     @BeforeEach
     void setUp() {
         logger.debug("Setting up Deck test: Creating test user");
-        testUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        testUserEntity.setId(1L);
+        testUser = new User(TEST_EMAIL, PASSWORD_HASH);
+        testUser.setId(1L);
     }
 
     // Constructor Tests
@@ -61,13 +61,13 @@ class DeckEntityTest {
     void testDeckCreation() {
         logger.debug("Test: Creating deck with name='{}', description='{}'", DECK_NAME, DECK_DESCRIPTION);
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
-        assertEquals(testUserEntity, deckEntity.getUser());
-        assertEquals(DECK_NAME, deckEntity.getName());
-        assertEquals(DECK_DESCRIPTION, deckEntity.getDescription());
-        assertNull(deckEntity.getId());
-        assertNull(deckEntity.getVersion());
+        assertEquals(testUser, deck.getUser());
+        assertEquals(DECK_NAME, deck.getName());
+        assertEquals(DECK_DESCRIPTION, deck.getDescription());
+        assertNull(deck.getId());
+        assertNull(deck.getVersion());
 
         logger.debug("Test passed: Deck created successfully");
     }
@@ -80,11 +80,11 @@ class DeckEntityTest {
     void testDeckCreationWithNullDescription() {
         logger.debug("Test: Creating deck with null description");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, null);
+        Deck deck = new Deck(testUser, DECK_NAME, null);
 
-        assertEquals(testUserEntity, deckEntity.getUser());
-        assertEquals(DECK_NAME, deckEntity.getName());
-        assertNull(deckEntity.getDescription());
+        assertEquals(testUser, deck.getUser());
+        assertEquals(DECK_NAME, deck.getName());
+        assertNull(deck.getDescription());
 
         logger.debug("Test passed: Deck created with null description");
     }
@@ -97,12 +97,12 @@ class DeckEntityTest {
     void testNoArgsConstructor() {
         logger.debug("Test: Creating deck with no-args constructor");
 
-        DeckEntity deckEntity = new DeckEntity();
+        Deck deck = new Deck();
 
-        assertNotNull(deckEntity);
-        assertNull(deckEntity.getUser());
-        assertNull(deckEntity.getName());
-        assertNull(deckEntity.getDescription());
+        assertNotNull(deck);
+        assertNull(deck.getUser());
+        assertNull(deck.getName());
+        assertNull(deck.getDescription());
 
         logger.debug("Test passed: No-args constructor works");
     }
@@ -118,7 +118,7 @@ class DeckEntityTest {
         logger.debug("Test: Creating deck with null user");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new DeckEntity(null, DECK_NAME, DECK_DESCRIPTION);
+            new Deck(null, DECK_NAME, DECK_DESCRIPTION);
         });
 
         logger.debug("Test passed: Exception thrown for null user");
@@ -133,7 +133,7 @@ class DeckEntityTest {
         logger.debug("Test: Creating deck with null name");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new DeckEntity(testUserEntity, null, DECK_DESCRIPTION);
+            new Deck(testUser, null, DECK_DESCRIPTION);
         });
 
         logger.debug("Test passed: Exception thrown for null name");
@@ -148,7 +148,7 @@ class DeckEntityTest {
         logger.debug("Test: Creating deck with empty name");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new DeckEntity(testUserEntity, "", DECK_DESCRIPTION);
+            new Deck(testUser, "", DECK_DESCRIPTION);
         });
 
         logger.debug("Test passed: Exception thrown for empty name");
@@ -163,7 +163,7 @@ class DeckEntityTest {
         logger.debug("Test: Creating deck with whitespace-only name");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            new DeckEntity(testUserEntity, "   ", DECK_DESCRIPTION);
+            new Deck(testUser, "   ", DECK_DESCRIPTION);
         });
 
         logger.debug("Test passed: Exception thrown for whitespace-only name");
@@ -177,10 +177,10 @@ class DeckEntityTest {
     void testSetNullUser() {
         logger.debug("Test: Setting null user");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            deckEntity.setUser(null);
+            deck.setUser(null);
         });
 
         logger.debug("Test passed: Exception thrown for setting null user");
@@ -194,10 +194,10 @@ class DeckEntityTest {
     void testSetNullName() {
         logger.debug("Test: Setting null name");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            deckEntity.setName(null);
+            deck.setName(null);
         });
 
         logger.debug("Test passed: Exception thrown for setting null name");
@@ -211,10 +211,10 @@ class DeckEntityTest {
     void testSetEmptyName() {
         logger.debug("Test: Setting empty name");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            deckEntity.setName("");
+            deck.setName("");
         });
 
         logger.debug("Test passed: Exception thrown for setting empty name");
@@ -228,10 +228,10 @@ class DeckEntityTest {
     void testSetWhitespaceName() {
         logger.debug("Test: Setting whitespace-only name");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            deckEntity.setName("   ");
+            deck.setName("   ");
         });
 
         logger.debug("Test passed: Exception thrown for setting whitespace name");
@@ -247,9 +247,9 @@ class DeckEntityTest {
     void testNameTrimmedInConstructor() {
         logger.debug("Test: Name trimming in constructor");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, "  " + DECK_NAME + "  ", DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, "  " + DECK_NAME + "  ", DECK_DESCRIPTION);
 
-        assertEquals(DECK_NAME, deckEntity.getName());
+        assertEquals(DECK_NAME, deck.getName());
 
         logger.debug("Test passed: Name trimmed successfully");
     }
@@ -262,9 +262,9 @@ class DeckEntityTest {
     void testDescriptionTrimmedInConstructor() {
         logger.debug("Test: Description trimming in constructor");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, "  " + DECK_DESCRIPTION + "  ");
+        Deck deck = new Deck(testUser, DECK_NAME, "  " + DECK_DESCRIPTION + "  ");
 
-        assertEquals(DECK_DESCRIPTION, deckEntity.getDescription());
+        assertEquals(DECK_DESCRIPTION, deck.getDescription());
 
         logger.debug("Test passed: Description trimmed successfully");
     }
@@ -277,10 +277,10 @@ class DeckEntityTest {
     void testNameTrimmedInSetter() {
         logger.debug("Test: Name trimming in setter");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setName("  " + UPDATED_NAME + "  ");
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setName("  " + UPDATED_NAME + "  ");
 
-        assertEquals(UPDATED_NAME, deckEntity.getName());
+        assertEquals(UPDATED_NAME, deck.getName());
 
         logger.debug("Test passed: Name trimmed in setter");
     }
@@ -293,10 +293,10 @@ class DeckEntityTest {
     void testDescriptionTrimmedInSetter() {
         logger.debug("Test: Description trimming in setter");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setDescription("  " + UPDATED_DESCRIPTION + "  ");
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setDescription("  " + UPDATED_DESCRIPTION + "  ");
 
-        assertEquals(UPDATED_DESCRIPTION, deckEntity.getDescription());
+        assertEquals(UPDATED_DESCRIPTION, deck.getDescription());
 
         logger.debug("Test passed: Description trimmed in setter");
     }
@@ -309,9 +309,9 @@ class DeckEntityTest {
     void testEmptyDescriptionToNull() {
         logger.debug("Test: Converting empty description to null");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, "");
+        Deck deck = new Deck(testUser, DECK_NAME, "");
 
-        assertNull(deckEntity.getDescription());
+        assertNull(deck.getDescription());
 
         logger.debug("Test passed: Empty description converted to null");
     }
@@ -324,10 +324,10 @@ class DeckEntityTest {
     void testWhitespaceDescriptionToNull() {
         logger.debug("Test: Converting whitespace description to null");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setDescription("   ");
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setDescription("   ");
 
-        assertNull(deckEntity.getDescription());
+        assertNull(deck.getDescription());
 
         logger.debug("Test passed: Whitespace description converted to null");
     }
@@ -342,11 +342,11 @@ class DeckEntityTest {
     void testEditName() {
         logger.debug("Test: Editing deck name from '{}' to '{}'", DECK_NAME, UPDATED_NAME);
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setName(UPDATED_NAME);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setName(UPDATED_NAME);
 
-        assertEquals(UPDATED_NAME, deckEntity.getName());
-        assertEquals(DECK_DESCRIPTION, deckEntity.getDescription()); // Description unchanged
+        assertEquals(UPDATED_NAME, deck.getName());
+        assertEquals(DECK_DESCRIPTION, deck.getDescription()); // Description unchanged
 
         logger.debug("Test passed: Name edited successfully");
     }
@@ -359,11 +359,11 @@ class DeckEntityTest {
     void testEditDescription() {
         logger.debug("Test: Editing deck description");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setDescription(UPDATED_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setDescription(UPDATED_DESCRIPTION);
 
-        assertEquals(DECK_NAME, deckEntity.getName()); // Name unchanged
-        assertEquals(UPDATED_DESCRIPTION, deckEntity.getDescription());
+        assertEquals(DECK_NAME, deck.getName()); // Name unchanged
+        assertEquals(UPDATED_DESCRIPTION, deck.getDescription());
 
         logger.debug("Test passed: Description edited successfully");
     }
@@ -376,11 +376,11 @@ class DeckEntityTest {
     void testClearDescription() {
         logger.debug("Test: Clearing deck description");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        assertEquals(DECK_DESCRIPTION, deckEntity.getDescription());
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        assertEquals(DECK_DESCRIPTION, deck.getDescription());
 
-        deckEntity.setDescription(null);
-        assertNull(deckEntity.getDescription());
+        deck.setDescription(null);
+        assertNull(deck.getDescription());
 
         logger.debug("Test passed: Description cleared successfully");
     }
@@ -393,13 +393,13 @@ class DeckEntityTest {
     void testEditAllFields() {
         logger.debug("Test: Editing all deck fields");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
-        deckEntity.setName(UPDATED_NAME);
-        deckEntity.setDescription(UPDATED_DESCRIPTION);
+        deck.setName(UPDATED_NAME);
+        deck.setDescription(UPDATED_DESCRIPTION);
 
-        assertEquals(UPDATED_NAME, deckEntity.getName());
-        assertEquals(UPDATED_DESCRIPTION, deckEntity.getDescription());
+        assertEquals(UPDATED_NAME, deck.getName());
+        assertEquals(UPDATED_DESCRIPTION, deck.getDescription());
 
         logger.debug("Test passed: All fields edited successfully");
     }
@@ -414,14 +414,14 @@ class DeckEntityTest {
     void testChangeOwner() {
         logger.debug("Test: Changing deck owner");
 
-        UserEntity newUserEntity = new UserEntity("other@example.com", PASSWORD_HASH);
-        newUserEntity.setId(2L);
+        User newUser = new User("other@example.com", PASSWORD_HASH);
+        newUser.setId(2L);
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        assertEquals(testUserEntity, deckEntity.getUser());
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        assertEquals(testUser, deck.getUser());
 
-        deckEntity.setUser(newUserEntity);
-        assertEquals(newUserEntity, deckEntity.getUser());
+        deck.setUser(newUser);
+        assertEquals(newUser, deck.getUser());
 
         logger.debug("Test passed: Owner changed successfully");
     }
@@ -436,20 +436,20 @@ class DeckEntityTest {
     void testDeckEquality() {
         logger.debug("Test: Testing deck equality");
 
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity1.setId(1L);
+        Deck deck1 = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck1.setId(1L);
 
-        DeckEntity deckEntity2 = new DeckEntity(testUserEntity, DECK_NAME, "Different description");
-        deckEntity2.setId(1L);
+        Deck deck2 = new Deck(testUser, DECK_NAME, "Different description");
+        deck2.setId(1L);
 
-        DeckEntity deckEntity3 = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity3.setId(2L);
+        Deck deck3 = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck3.setId(2L);
 
         // Same ID and name = equal
-        assertEquals(deckEntity1, deckEntity2);
+        assertEquals(deck1, deck2);
 
         // Different ID = not equal
-        assertNotEquals(deckEntity1, deckEntity3);
+        assertNotEquals(deck1, deck3);
 
         logger.debug("Test passed: Equality based on ID and name works correctly");
     }
@@ -462,10 +462,10 @@ class DeckEntityTest {
     void testEqualityReflexive() {
         logger.debug("Test: Testing reflexive equality");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setId(1L);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setId(1L);
 
-        assertEquals(deckEntity, deckEntity);
+        assertEquals(deck, deck);
 
         logger.debug("Test passed: Deck equals itself");
     }
@@ -478,10 +478,10 @@ class DeckEntityTest {
     void testEqualityNull() {
         logger.debug("Test: Testing equality with null");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setId(1L);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setId(1L);
 
-        assertNotEquals(null, deckEntity);
+        assertNotEquals(null, deck);
 
         logger.debug("Test passed: Deck not equal to null");
     }
@@ -494,10 +494,10 @@ class DeckEntityTest {
     void testEqualityDifferentClass() {
         logger.debug("Test: Testing equality with different class");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setId(1L);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setId(1L);
 
-        assertNotEquals(deckEntity, "Not a Deck");
+        assertNotEquals(deck, "Not a Deck");
 
         logger.debug("Test passed: Deck not equal to different class");
     }
@@ -510,14 +510,14 @@ class DeckEntityTest {
     void testEqualityWithoutIds() {
         logger.debug("Test: Testing equality for decks without IDs");
 
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        DeckEntity deckEntity2 = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck1 = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck2 = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
         // Same instance
-        assertEquals(deckEntity1, deckEntity1);
+        assertEquals(deck1, deck1);
 
         // Different instances without IDs are not equal
-        assertNotEquals(deckEntity1, deckEntity2);
+        assertNotEquals(deck1, deck2);
 
         logger.debug("Test passed: Decks without IDs handled correctly");
     }
@@ -530,13 +530,13 @@ class DeckEntityTest {
     void testHashCodeConsistency() {
         logger.debug("Test: Testing hash code consistency");
 
-        DeckEntity deckEntity1 = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity1.setId(1L);
+        Deck deck1 = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck1.setId(1L);
 
-        DeckEntity deckEntity2 = new DeckEntity(testUserEntity, DECK_NAME, "Different description");
-        deckEntity2.setId(1L);
+        Deck deck2 = new Deck(testUser, DECK_NAME, "Different description");
+        deck2.setId(1L);
 
-        assertEquals(deckEntity1.hashCode(), deckEntity2.hashCode());
+        assertEquals(deck1.hashCode(), deck2.hashCode());
 
         logger.debug("Test passed: Hash code consistent with equals");
     }
@@ -551,10 +551,10 @@ class DeckEntityTest {
     void testToStringIncludesDetails() {
         logger.debug("Test: Testing toString includes details");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        deckEntity.setId(1L);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        deck.setId(1L);
 
-        String deckString = deckEntity.toString();
+        String deckString = deck.toString();
 
         assertTrue(deckString.contains(DECK_NAME));
         assertTrue(deckString.contains(DECK_DESCRIPTION));
@@ -571,11 +571,11 @@ class DeckEntityTest {
     void testToStringDoesNotExposeSensitiveData() {
         logger.debug("Test: Testing toString does not expose sensitive data");
 
-        UserEntity sensitiveUserEntity = new UserEntity("secret@example.com", "secretPassword");
-        sensitiveUserEntity.setId(1L);
-        DeckEntity deckEntity = new DeckEntity(sensitiveUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        User sensitiveUser = new User("secret@example.com", "secretPassword");
+        sensitiveUser.setId(1L);
+        Deck deck = new Deck(sensitiveUser, DECK_NAME, DECK_DESCRIPTION);
 
-        String deckString = deckEntity.toString();
+        String deckString = deck.toString();
 
         assertTrue(deckString.contains(DECK_NAME));
         assertTrue(deckString.contains("userId=1")); // Shows ID only
@@ -595,12 +595,12 @@ class DeckEntityTest {
     void testVersionGetterSetter() {
         logger.debug("Test: Testing version getter and setter");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
-        assertNull(deckEntity.getVersion());
+        assertNull(deck.getVersion());
 
-        deckEntity.setVersion(1L);
-        assertEquals(1L, deckEntity.getVersion());
+        deck.setVersion(1L);
+        assertEquals(1L, deck.getVersion());
 
         logger.debug("Test passed: Version getter and setter work");
     }
@@ -613,12 +613,12 @@ class DeckEntityTest {
     void testIdGetterSetter() {
         logger.debug("Test: Testing ID getter and setter");
 
-        DeckEntity deckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
+        Deck deck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
 
-        assertNull(deckEntity.getId());
+        assertNull(deck.getId());
 
-        deckEntity.setId(100L);
-        assertEquals(100L, deckEntity.getId());
+        deck.setId(100L);
+        assertEquals(100L, deck.getId());
 
         logger.debug("Test passed: ID getter and setter work");
     }

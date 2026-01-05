@@ -4,7 +4,7 @@ import com.kioku.api.dto.request.LoginRequest;
 import com.kioku.api.dto.request.RegisterRequest;
 import com.kioku.api.dto.response.AuthResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.User;
 import com.kioku.api.security.JwtUtil;
 import com.kioku.api.service.UserService;
 import jakarta.validation.Valid;
@@ -117,7 +117,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         logger.debug("Registration attempt for email: {}", request.getEmail());
 
-        UserEntity user = userService.registerUser(request.getEmail(), request.getPassword());
+        User user = userService.registerUser(request.getEmail(), request.getPassword());
         String token = jwtUtil.generateToken(user.getId(), user.getEmail());
 
         AuthResponse response = new AuthResponse(token, user.getId(), user.getEmail());
@@ -164,7 +164,7 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         logger.debug("Login attempt for email: {}", request.getEmail());
 
-        Optional<UserEntity> userOptional = userService.authenticateUser(request.getEmail(), request.getPassword());
+        Optional<User> userOptional = userService.authenticateUser(request.getEmail(), request.getPassword());
 
         if (userOptional.isEmpty()) {
             logger.warn("Login failed for email: {}", request.getEmail());
@@ -172,7 +172,7 @@ public class AuthController {
                     .body(new ErrorResponse("Invalid email or password"));
         }
 
-        UserEntity user = userOptional.get();
+        User user = userOptional.get();
         String token = jwtUtil.generateToken(user.getId(), user.getEmail());
 
         AuthResponse response = new AuthResponse(token, user.getId(), user.getEmail());

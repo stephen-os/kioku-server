@@ -2,8 +2,8 @@ package com.kioku.api.dto.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,8 +42,8 @@ class DeckResponseTest {
     private static final String TEST_DECK_NAME = "Japanese Verbs";
     private static final String TEST_DECK_DESCRIPTION = "Common Japanese verbs for JLPT N5 level";
 
-    private DeckEntity testDeck;
-    private UserEntity testUser;
+    private Deck testDeck;
+    private User testUser;
     
     @BeforeEach
     void setUp() {
@@ -52,10 +52,10 @@ class DeckResponseTest {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        testUser = new UserEntity("user@example.com", "hashedPassword");
+        testUser = new User("user@example.com", "hashedPassword");
         testUser.setId(1L);
 
-        testDeck = new DeckEntity(testUser, TEST_DECK_NAME, TEST_DECK_DESCRIPTION);
+        testDeck = new Deck(testUser, TEST_DECK_NAME, TEST_DECK_DESCRIPTION);
         testDeck.setId(TEST_DECK_ID);
      }
 
@@ -79,7 +79,7 @@ class DeckResponseTest {
     }
 
     @Test
-    @DisplayName("Should create response from DeckEntity")
+    @DisplayName("Should create response from Deck")
     void testEntityConstructor() {
         logger.debug("Test: Entity constructor");
 

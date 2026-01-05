@@ -1,6 +1,6 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Tag;
 
 /**
  * Data Transfer Object for tag response.
@@ -57,11 +57,11 @@ public class TagResponse {
     }
 
     /**
-     * Constructs a TagResponse from a TagEntity.
+     * Constructs a TagResponse from a Tag.
      *
-     * @param tag the TagEntity to convert
+     * @param tag the Tag to convert
      */
-    public TagResponse(TagEntity tag) {
+    public TagResponse(Tag tag) {
         this.id = tag.getId();
         this.name = tag.getName();
     }

@@ -1,6 +1,6 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.CardEntity;
+import com.kioku.api.entity.Card;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -90,12 +90,12 @@ public class CardResponse {
     public CardResponse() {}
 
     /**
-     * Constructs a CardResponse from a CardEntity.
+     * Constructs a CardResponse from a Card.
      * Automatically converts associated tags to TagResponse objects.
      *
-     * @param card the CardEntity to convert
+     * @param card the Card to convert
      */
-    public CardResponse(CardEntity card) {
+    public CardResponse(Card card) {
         this.id = card.getId();
         this.front = card.getFront();
         this.back = card.getBack();

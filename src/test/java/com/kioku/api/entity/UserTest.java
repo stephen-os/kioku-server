@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 1.0
  */
 @DisplayName("User Entity Tests")
-class UserEntityTest {
+class UserTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserEntityTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserTest.class);
 
     // Test data constants
     private static final String TEST_EMAIL = "test@example.com";
@@ -43,7 +43,7 @@ class UserEntityTest {
     private static final String VERIFICATION_TOKEN = "verification-token-uuid-12345";
     private static final String RESET_TOKEN = "reset-token-uuid-67890";
 
-    private UserEntity userEntity;
+    private User user;
 
     /**
      * Set up test fixtures before each test.
@@ -52,8 +52,8 @@ class UserEntityTest {
     @BeforeEach
     void setUp() {
         logger.debug("Setting up test: Creating user with email={}", TEST_EMAIL);
-        userEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        userEntity.setId(1L); // Simulate persisted entity
+        user = new User(TEST_EMAIL, PASSWORD_HASH);
+        user.setId(1L); // Simulate persisted entity
     }
 
     // Constructor Tests
@@ -66,15 +66,15 @@ class UserEntityTest {
     void testUserCreation() {
         logger.debug("Test: Creating user with email={}, passwordHash={}", TEST_EMAIL, PASSWORD_HASH);
 
-        UserEntity newUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
+        User newUser = new User(TEST_EMAIL, PASSWORD_HASH);
 
-        assertEquals(TEST_EMAIL, newUserEntity.getEmail());
-        assertEquals(PASSWORD_HASH, newUserEntity.getPasswordHash());
-        assertNull(newUserEntity.getId());
-        assertNull(newUserEntity.getCreatedAt());
-        assertEquals(UserEntity.UserStatus.ACTIVE, newUserEntity.getStatus());
-        assertFalse(newUserEntity.isEmailVerified());
-        assertEquals(0, newUserEntity.getFailedLoginAttempts());
+        assertEquals(TEST_EMAIL, newUser.getEmail());
+        assertEquals(PASSWORD_HASH, newUser.getPasswordHash());
+        assertNull(newUser.getId());
+        assertNull(newUser.getCreatedAt());
+        assertEquals(User.UserStatus.ACTIVE, newUser.getStatus());
+        assertFalse(newUser.isEmailVerified());
+        assertEquals(0, newUser.getFailedLoginAttempts());
 
         logger.debug("Test passed: User created successfully");
     }
@@ -87,13 +87,13 @@ class UserEntityTest {
     void testNoArgsConstructor() {
         logger.debug("Test: Creating user with no-args constructor");
 
-        UserEntity emptyUserEntity = new UserEntity();
+        User emptyUser = new User();
 
-        assertNotNull(emptyUserEntity);
-        assertNull(emptyUserEntity.getEmail());
-        assertNull(emptyUserEntity.getPasswordHash());
-        assertNull(emptyUserEntity.getId());
-        assertEquals(UserEntity.UserStatus.ACTIVE, emptyUserEntity.getStatus());
+        assertNotNull(emptyUser);
+        assertNull(emptyUser.getEmail());
+        assertNull(emptyUser.getPasswordHash());
+        assertNull(emptyUser.getId());
+        assertEquals(User.UserStatus.ACTIVE, emptyUser.getStatus());
 
         logger.debug("Test passed: Empty user created successfully");
     }
@@ -108,11 +108,11 @@ class UserEntityTest {
     void testEmailNormalizationToLowercase() {
         logger.debug("Test: Normalizing email {} to lowercase", TEST_EMAIL_UPPERCASE);
 
-        UserEntity upperCaseUserEntity = new UserEntity(TEST_EMAIL_UPPERCASE, PASSWORD_HASH);
+        User upperCaseUser = new User(TEST_EMAIL_UPPERCASE, PASSWORD_HASH);
 
-        assertEquals(TEST_EMAIL, upperCaseUserEntity.getEmail());
+        assertEquals(TEST_EMAIL, upperCaseUser.getEmail());
 
-        logger.debug("Test passed: Email normalized to {}", upperCaseUserEntity.getEmail());
+        logger.debug("Test passed: Email normalized to {}", upperCaseUser.getEmail());
     }
 
     /**
@@ -123,11 +123,11 @@ class UserEntityTest {
     void testEmailTrimming() {
         logger.debug("Test: Trimming email '{}'", TEST_EMAIL_WITH_SPACES);
 
-        UserEntity spacedUserEntity = new UserEntity(TEST_EMAIL_WITH_SPACES, PASSWORD_HASH);
+        User spacedUser = new User(TEST_EMAIL_WITH_SPACES, PASSWORD_HASH);
 
-        assertEquals(TEST_EMAIL, spacedUserEntity.getEmail());
+        assertEquals(TEST_EMAIL, spacedUser.getEmail());
 
-        logger.debug("Test passed: Email trimmed to {}", spacedUserEntity.getEmail());
+        logger.debug("Test passed: Email trimmed to {}", spacedUser.getEmail());
     }
 
     /**
@@ -138,9 +138,9 @@ class UserEntityTest {
     void testSetEmailNormalization() {
         logger.debug("Test: Setting email to {} via setter", TEST_EMAIL_UPPERCASE);
 
-        userEntity.setEmail(TEST_EMAIL_UPPERCASE);
+        user.setEmail(TEST_EMAIL_UPPERCASE);
 
-        assertEquals(TEST_EMAIL, userEntity.getEmail());
+        assertEquals(TEST_EMAIL, user.getEmail());
 
         logger.debug("Test passed: Email normalized via setter");
     }
@@ -155,8 +155,8 @@ class UserEntityTest {
     void testNewUserIsNotLocked() {
         logger.debug("Test: Checking if new user is locked");
 
-        assertFalse(userEntity.isLocked());
-        assertNull(userEntity.getLockedUntil());
+        assertFalse(user.isLocked());
+        assertNull(user.getLockedUntil());
 
         logger.debug("Test passed: New user is not locked");
     }
@@ -169,16 +169,16 @@ class UserEntityTest {
     void testRecordFailedLoginAttempt() {
         logger.debug("Test: Recording failed login attempts");
 
-        assertEquals(0, userEntity.getFailedLoginAttempts());
+        assertEquals(0, user.getFailedLoginAttempts());
 
-        userEntity.recordFailedLoginAttempt();
-        assertEquals(1, userEntity.getFailedLoginAttempts());
+        user.recordFailedLoginAttempt();
+        assertEquals(1, user.getFailedLoginAttempts());
 
-        userEntity.recordFailedLoginAttempt();
-        assertEquals(2, userEntity.getFailedLoginAttempts());
+        user.recordFailedLoginAttempt();
+        assertEquals(2, user.getFailedLoginAttempts());
 
         logger.debug("Test passed: Failed login attempts incremented to {}",
-                userEntity.getFailedLoginAttempts());
+                user.getFailedLoginAttempts());
     }
 
     /**
@@ -190,15 +190,15 @@ class UserEntityTest {
         logger.debug("Test: Locking account after 5 failed attempts");
 
         for (int i = 0; i < 5; i++) {
-            userEntity.recordFailedLoginAttempt();
+            user.recordFailedLoginAttempt();
         }
 
-        assertTrue(userEntity.isLocked());
-        assertNotNull(userEntity.getLockedUntil());
-        assertTrue(userEntity.getLockedUntil().isAfter(LocalDateTime.now()));
-        assertEquals(5, userEntity.getFailedLoginAttempts());
+        assertTrue(user.isLocked());
+        assertNotNull(user.getLockedUntil());
+        assertTrue(user.getLockedUntil().isAfter(LocalDateTime.now()));
+        assertEquals(5, user.getFailedLoginAttempts());
 
-        logger.debug("Test passed: Account locked until {}", userEntity.getLockedUntil());
+        logger.debug("Test passed: Account locked until {}", user.getLockedUntil());
     }
 
     /**
@@ -211,17 +211,17 @@ class UserEntityTest {
 
         // Lock the account
         for (int i = 0; i < 5; i++) {
-            userEntity.recordFailedLoginAttempt();
+            user.recordFailedLoginAttempt();
         }
-        assertTrue(userEntity.isLocked());
+        assertTrue(user.isLocked());
 
         // Successful login
-        userEntity.recordSuccessfulLogin();
+        user.recordSuccessfulLogin();
 
-        assertEquals(0, userEntity.getFailedLoginAttempts());
-        assertNull(userEntity.getLockedUntil());
-        assertFalse(userEntity.isLocked());
-        assertNotNull(userEntity.getLastLoginAt());
+        assertEquals(0, user.getFailedLoginAttempts());
+        assertNull(user.getLockedUntil());
+        assertFalse(user.isLocked());
+        assertNotNull(user.getLastLoginAt());
 
         logger.debug("Test passed: Failed attempts reset, lock cleared, lastLoginAt set");
     }
@@ -235,9 +235,9 @@ class UserEntityTest {
         logger.debug("Test: Account unlock after lock period");
 
         // Set lock time in the past
-        userEntity.setLockedUntil(LocalDateTime.now().minusMinutes(1));
+        user.setLockedUntil(LocalDateTime.now().minusMinutes(1));
 
-        assertFalse(userEntity.isLocked());
+        assertFalse(user.isLocked());
 
         logger.debug("Test passed: Account unlocked after lock period");
     }
@@ -252,8 +252,8 @@ class UserEntityTest {
     void testNewUserIsActive() {
         logger.debug("Test: Checking if new user is active");
 
-        assertTrue(userEntity.isActive());
-        assertEquals(UserEntity.UserStatus.ACTIVE, userEntity.getStatus());
+        assertTrue(user.isActive());
+        assertEquals(User.UserStatus.ACTIVE, user.getStatus());
 
         logger.debug("Test passed: New user is active");
     }
@@ -267,10 +267,10 @@ class UserEntityTest {
         logger.debug("Test: Checking if locked user is active");
 
         for (int i = 0; i < 5; i++) {
-            userEntity.recordFailedLoginAttempt();
+            user.recordFailedLoginAttempt();
         }
 
-        assertFalse(userEntity.isActive());
+        assertFalse(user.isActive());
 
         logger.debug("Test passed: Locked user is not active");
     }
@@ -283,9 +283,9 @@ class UserEntityTest {
     void testSuspendedUserIsNotActive() {
         logger.debug("Test: Checking if suspended user is active");
 
-        userEntity.setStatus(UserEntity.UserStatus.SUSPENDED);
+        user.setStatus(User.UserStatus.SUSPENDED);
 
-        assertFalse(userEntity.isActive());
+        assertFalse(user.isActive());
 
         logger.debug("Test passed: Suspended user is not active");
     }
@@ -298,9 +298,9 @@ class UserEntityTest {
     void testDeletedUserIsNotActive() {
         logger.debug("Test: Checking if deleted user is active");
 
-        userEntity.softDelete();
+        user.softDelete();
 
-        assertFalse(userEntity.isActive());
+        assertFalse(user.isActive());
 
         logger.debug("Test passed: Deleted user is not active");
     }
@@ -313,18 +313,18 @@ class UserEntityTest {
     @Test
     @DisplayName("Should soft delete user and set deletedAt timestamp")
     void testSoftDelete() {
-        logger.debug("Test: Soft deleting user id={}", userEntity.getId());
+        logger.debug("Test: Soft deleting user id={}", user.getId());
 
-        assertFalse(userEntity.isDeleted());
-        assertNull(userEntity.getDeletedAt());
+        assertFalse(user.isDeleted());
+        assertNull(user.getDeletedAt());
 
-        userEntity.softDelete();
+        user.softDelete();
 
-        assertTrue(userEntity.isDeleted());
-        assertNotNull(userEntity.getDeletedAt());
-        assertEquals(UserEntity.UserStatus.DELETED, userEntity.getStatus());
+        assertTrue(user.isDeleted());
+        assertNotNull(user.getDeletedAt());
+        assertEquals(User.UserStatus.DELETED, user.getStatus());
 
-        logger.debug("Test passed: User soft deleted at {}", userEntity.getDeletedAt());
+        logger.debug("Test passed: User soft deleted at {}", user.getDeletedAt());
     }
 
     /**
@@ -333,16 +333,16 @@ class UserEntityTest {
     @Test
     @DisplayName("Should restore soft-deleted user")
     void testRestore() {
-        logger.debug("Test: Restoring soft-deleted user id={}", userEntity.getId());
+        logger.debug("Test: Restoring soft-deleted user id={}", user.getId());
 
-        userEntity.softDelete();
-        assertTrue(userEntity.isDeleted());
+        user.softDelete();
+        assertTrue(user.isDeleted());
 
-        userEntity.restore();
+        user.restore();
 
-        assertFalse(userEntity.isDeleted());
-        assertNull(userEntity.getDeletedAt());
-        assertEquals(UserEntity.UserStatus.ACTIVE, userEntity.getStatus());
+        assertFalse(user.isDeleted());
+        assertNull(user.getDeletedAt());
+        assertEquals(User.UserStatus.ACTIVE, user.getStatus());
 
         logger.debug("Test passed: User restored successfully");
     }
@@ -357,7 +357,7 @@ class UserEntityTest {
     void testNewUserEmailNotVerified() {
         logger.debug("Test: Checking email verification status for new user");
 
-        assertFalse(userEntity.isEmailVerified());
+        assertFalse(user.isEmailVerified());
 
         logger.debug("Test passed: New user email not verified");
     }
@@ -370,10 +370,10 @@ class UserEntityTest {
     void testSetEmailVerificationToken() {
         logger.debug("Test: Setting email verification token");
 
-        userEntity.setEmailVerificationToken(VERIFICATION_TOKEN);
+        user.setEmailVerificationToken(VERIFICATION_TOKEN);
 
-        assertEquals(VERIFICATION_TOKEN, userEntity.getEmailVerificationToken());
-        assertNotNull(userEntity.getEmailVerificationSentAt());
+        assertEquals(VERIFICATION_TOKEN, user.getEmailVerificationToken());
+        assertNotNull(user.getEmailVerificationSentAt());
 
         logger.debug("Test passed: Email verification token set");
     }
@@ -384,15 +384,15 @@ class UserEntityTest {
     @Test
     @DisplayName("Should verify email and clear token")
     void testVerifyEmail() {
-        logger.debug("Test: Verifying email for user id={}", userEntity.getId());
+        logger.debug("Test: Verifying email for user id={}", user.getId());
 
-        userEntity.setEmailVerificationToken(VERIFICATION_TOKEN);
+        user.setEmailVerificationToken(VERIFICATION_TOKEN);
 
-        userEntity.verifyEmail();
+        user.verifyEmail();
 
-        assertTrue(userEntity.isEmailVerified());
-        assertNull(userEntity.getEmailVerificationToken());
-        assertNull(userEntity.getEmailVerificationSentAt());
+        assertTrue(user.isEmailVerified());
+        assertNull(user.getEmailVerificationToken());
+        assertNull(user.getEmailVerificationSentAt());
 
         logger.debug("Test passed: Email verified and token cleared");
     }
@@ -406,11 +406,11 @@ class UserEntityTest {
         logger.debug("Test: Checking email verification token expiration");
 
         // Token is expired when not set
-        assertTrue(userEntity.isEmailVerificationTokenExpired());
+        assertTrue(user.isEmailVerificationTokenExpired());
 
         // Set fresh token
-        userEntity.setEmailVerificationToken(VERIFICATION_TOKEN);
-        assertFalse(userEntity.isEmailVerificationTokenExpired());
+        user.setEmailVerificationToken(VERIFICATION_TOKEN);
+        assertFalse(user.isEmailVerificationTokenExpired());
 
         logger.debug("Test passed: Token expiration detected correctly");
     }
@@ -425,10 +425,10 @@ class UserEntityTest {
     void testSetPasswordResetToken() {
         logger.debug("Test: Setting password reset token");
 
-        userEntity.setPasswordResetToken(RESET_TOKEN);
+        user.setPasswordResetToken(RESET_TOKEN);
 
-        assertEquals(RESET_TOKEN, userEntity.getPasswordResetToken());
-        assertNotNull(userEntity.getPasswordResetSentAt());
+        assertEquals(RESET_TOKEN, user.getPasswordResetToken());
+        assertNotNull(user.getPasswordResetSentAt());
 
         logger.debug("Test passed: Password reset token set");
     }
@@ -441,13 +441,13 @@ class UserEntityTest {
     void testClearPasswordResetToken() {
         logger.debug("Test: Clearing password reset token");
 
-        userEntity.setPasswordResetToken(RESET_TOKEN);
-        assertNotNull(userEntity.getPasswordResetToken());
+        user.setPasswordResetToken(RESET_TOKEN);
+        assertNotNull(user.getPasswordResetToken());
 
-        userEntity.clearPasswordResetToken();
+        user.clearPasswordResetToken();
 
-        assertNull(userEntity.getPasswordResetToken());
-        assertNull(userEntity.getPasswordResetSentAt());
+        assertNull(user.getPasswordResetToken());
+        assertNull(user.getPasswordResetSentAt());
 
         logger.debug("Test passed: Password reset token cleared");
     }
@@ -461,11 +461,11 @@ class UserEntityTest {
         logger.debug("Test: Checking password reset token expiration");
 
         // Token is expired when not set
-        assertTrue(userEntity.isPasswordResetTokenExpired());
+        assertTrue(user.isPasswordResetTokenExpired());
 
         // Set fresh token
-        userEntity.setPasswordResetToken(RESET_TOKEN);
-        assertFalse(userEntity.isPasswordResetTokenExpired());
+        user.setPasswordResetToken(RESET_TOKEN);
+        assertFalse(user.isPasswordResetTokenExpired());
 
         logger.debug("Test passed: Token expiration detected correctly");
     }
@@ -480,13 +480,13 @@ class UserEntityTest {
     void testUserEquality() {
         logger.debug("Test: Checking user equality with matching IDs");
 
-        UserEntity userEntity1 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        userEntity1.setId(1L);
+        User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
+        user1.setId(1L);
 
-        UserEntity userEntity2 = new UserEntity(OTHER_EMAIL, OTHER_PASSWORD_HASH);
-        userEntity2.setId(1L);
+        User user2 = new User(OTHER_EMAIL, OTHER_PASSWORD_HASH);
+        user2.setId(1L);
 
-        assertEquals(userEntity1, userEntity2);
+        assertEquals(user1, user2);
 
         logger.debug("Test passed: Users with same ID are equal");
     }
@@ -499,13 +499,13 @@ class UserEntityTest {
     void testUserInequality() {
         logger.debug("Test: Checking user inequality with different IDs");
 
-        UserEntity userEntity1 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        userEntity1.setId(1L);
+        User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
+        user1.setId(1L);
 
-        UserEntity userEntity2 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        userEntity2.setId(2L);
+        User user2 = new User(TEST_EMAIL, PASSWORD_HASH);
+        user2.setId(2L);
 
-        assertNotEquals(userEntity1, userEntity2);
+        assertNotEquals(user1, user2);
 
         logger.debug("Test passed: Users with different IDs are not equal");
     }
@@ -518,13 +518,13 @@ class UserEntityTest {
     void testUserHashCode() {
         logger.debug("Test: Checking hash code for users with matching IDs");
 
-        UserEntity userEntity1 = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        userEntity1.setId(1L);
+        User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
+        user1.setId(1L);
 
-        UserEntity userEntity2 = new UserEntity(OTHER_EMAIL, OTHER_PASSWORD_HASH);
-        userEntity2.setId(1L);
+        User user2 = new User(OTHER_EMAIL, OTHER_PASSWORD_HASH);
+        user2.setId(1L);
 
-        assertEquals(userEntity1.hashCode(), userEntity2.hashCode());
+        assertEquals(user1.hashCode(), user2.hashCode());
 
         logger.debug("Test passed: Users with same ID have same hash code");
     }
@@ -537,7 +537,7 @@ class UserEntityTest {
     void testEqualityReflexive() {
         logger.debug("Test: Checking reflexive property of equals");
 
-        assertEquals(userEntity, userEntity);
+        assertEquals(user, user);
 
         logger.debug("Test passed: User equals itself");
     }
@@ -550,7 +550,7 @@ class UserEntityTest {
     void testEqualityWithNull() {
         logger.debug("Test: Checking equality with null");
 
-        assertNotEquals(userEntity, null);
+        assertNotEquals(user, null);
 
         logger.debug("Test passed: User not equal to null");
     }
@@ -563,7 +563,7 @@ class UserEntityTest {
     void testEqualityWithDifferentClass() {
         logger.debug("Test: Checking equality with different class");
 
-        assertNotEquals(userEntity, "not a user");
+        assertNotEquals(user, "not a user");
 
         logger.debug("Test passed: User not equal to different class");
     }
@@ -578,7 +578,7 @@ class UserEntityTest {
     void testToStringDoesNotExposePassword() {
         logger.debug("Test: Checking toString does not expose password");
 
-        String userString = userEntity.toString();
+        String userString = user.toString();
 
         assertFalse(userString.contains(PASSWORD_HASH));
 
@@ -593,7 +593,7 @@ class UserEntityTest {
     void testToStringDoesNotExposeEmail() {
         logger.debug("Test: Checking toString does not expose email");
 
-        String userString = userEntity.toString();
+        String userString = user.toString();
 
         assertFalse(userString.contains(TEST_EMAIL));
 
@@ -608,11 +608,11 @@ class UserEntityTest {
     void testToStringIncludesBasicInfo() {
         logger.debug("Test: Checking toString includes basic info");
 
-        String userString = userEntity.toString();
+        String userString = user.toString();
 
         assertTrue(userString.contains("User{"));
-        assertTrue(userString.contains("id=" + userEntity.getId()));
-        assertTrue(userString.contains("status=" + userEntity.getStatus()));
+        assertTrue(userString.contains("id=" + user.getId()));
+        assertTrue(userString.contains("status=" + user.getStatus()));
 
         logger.debug("Test passed: toString includes basic info");
     }
@@ -626,7 +626,7 @@ class UserEntityTest {
         logger.debug("Test: Accessing password hash (package-private)");
 
         // This works because test is in same package
-        String hash = userEntity.getPasswordHash();
+        String hash = user.getPasswordHash();
 
         assertEquals(PASSWORD_HASH, hash);
 
@@ -642,9 +642,9 @@ class UserEntityTest {
         logger.debug("Test: Setting password hash (package-private)");
 
         String newHash = "newHashedPassword789";
-        userEntity.setPasswordHash(newHash);
+        user.setPasswordHash(newHash);
 
-        assertEquals(newHash, userEntity.getPasswordHash());
+        assertEquals(newHash, user.getPasswordHash());
 
         logger.debug("Test passed: Password hash set successfully");
     }
@@ -659,9 +659,9 @@ class UserEntityTest {
     void testNullEmailInConstructor() {
         logger.debug("Test: Creating user with null email");
 
-        UserEntity nullEmailUserEntity = new UserEntity(null, PASSWORD_HASH);
+        User nullEmailUser = new User(null, PASSWORD_HASH);
 
-        assertNull(nullEmailUserEntity.getEmail());
+        assertNull(nullEmailUser.getEmail());
 
         logger.debug("Test passed: Null email handled");
     }
@@ -674,9 +674,9 @@ class UserEntityTest {
     void testNullEmailInSetter() {
         logger.debug("Test: Setting email to null");
 
-        userEntity.setEmail(null);
+        user.setEmail(null);
 
-        assertNull(userEntity.getEmail());
+        assertNull(user.getEmail());
 
         logger.debug("Test passed: Null email handled in setter");
     }
@@ -689,9 +689,9 @@ class UserEntityTest {
     void testEmptyStringEmail() {
         logger.debug("Test: Setting empty string email");
 
-        userEntity.setEmail("");
+        user.setEmail("");
 
-        assertEquals("", userEntity.getEmail());
+        assertEquals("", user.getEmail());
 
         logger.debug("Test passed: Empty string normalized");
     }
@@ -704,17 +704,17 @@ class UserEntityTest {
     void testAllStatusTransitions() {
         logger.debug("Test: Testing all status transitions");
 
-        userEntity.setStatus(UserEntity.UserStatus.ACTIVE);
-        assertEquals(UserEntity.UserStatus.ACTIVE, userEntity.getStatus());
+        user.setStatus(User.UserStatus.ACTIVE);
+        assertEquals(User.UserStatus.ACTIVE, user.getStatus());
 
-        userEntity.setStatus(UserEntity.UserStatus.PENDING_VERIFICATION);
-        assertEquals(UserEntity.UserStatus.PENDING_VERIFICATION, userEntity.getStatus());
+        user.setStatus(User.UserStatus.PENDING_VERIFICATION);
+        assertEquals(User.UserStatus.PENDING_VERIFICATION, user.getStatus());
 
-        userEntity.setStatus(UserEntity.UserStatus.SUSPENDED);
-        assertEquals(UserEntity.UserStatus.SUSPENDED, userEntity.getStatus());
+        user.setStatus(User.UserStatus.SUSPENDED);
+        assertEquals(User.UserStatus.SUSPENDED, user.getStatus());
 
-        userEntity.setStatus(UserEntity.UserStatus.DELETED);
-        assertEquals(UserEntity.UserStatus.DELETED, userEntity.getStatus());
+        user.setStatus(User.UserStatus.DELETED);
+        assertEquals(User.UserStatus.DELETED, user.getStatus());
 
         logger.debug("Test passed: All status transitions work");
     }

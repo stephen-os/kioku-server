@@ -1,6 +1,6 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.DeckEntity;
+import com.kioku.api.entity.Deck;
 
 import java.time.LocalDateTime;
 
@@ -68,11 +68,11 @@ public class DeckResponse {
     public DeckResponse() {}
 
     /**
-     * Constructs a DeckResponse from a DeckEntity.
+     * Constructs a DeckResponse from a Deck.
      *
-     * @param deck the DeckEntity to convert
+     * @param deck the Deck to convert
      */
-    public DeckResponse(DeckEntity deck) {
+    public DeckResponse(Deck deck) {
         this.id = deck.getId();
         this.name = deck.getName();
         this.description = deck.getDescription();

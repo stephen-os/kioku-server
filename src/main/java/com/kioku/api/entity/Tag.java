@@ -22,9 +22,9 @@ import java.util.Set;
  *
  * <p><strong>Bidirectional Relationships:</strong>
  * <ul>
- *   <li>Many-to-One with {@link DeckEntity} (each tag belongs to one deck)</li>
- *   <li>Many-to-One with {@link UserEntity} (for ownership tracking)</li>
- *   <li>Many-to-Many with {@link CardEntity} (tags can be applied to multiple cards)</li>
+ *   <li>Many-to-One with {@link Deck} (each tag belongs to one deck)</li>
+ *   <li>Many-to-One with {@link User} (for ownership tracking)</li>
+ *   <li>Many-to-Many with {@link Card} (tags can be applied to multiple cards)</li>
  * </ul>
  *
  * @author Stephen Watson
@@ -41,7 +41,7 @@ import java.util.Set;
                 @Index(name = "idx_tag_user_id", columnList = "user_id")
         }
 )
-public class TagEntity {
+public class Tag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,7 +53,7 @@ public class TagEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    private User user;
 
     /**
      * The deck this tag belongs to.
@@ -61,7 +61,7 @@ public class TagEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deck_id", nullable = false)
-    private DeckEntity deck;
+    private Deck deck;
 
     /**
      * The tag name (e.g., "verbs", "N5", "important").
@@ -75,12 +75,12 @@ public class TagEntity {
      * Bidirectional many-to-many relationship.
      */
     @ManyToMany(mappedBy = "tags")
-    private Set<CardEntity> cards = new HashSet<>();
+    private Set<Card> cards = new HashSet<>();
 
     /**
      * Default constructor for JPA.
      */
-    public TagEntity() {
+    public Tag() {
     }
 
     /**
@@ -90,7 +90,7 @@ public class TagEntity {
      * @param name the tag name
      * @throws IllegalArgumentException if deck or name is null/empty
      */
-    public TagEntity(DeckEntity deck, String name) {
+    public Tag(Deck deck, String name) {
         if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
@@ -128,7 +128,7 @@ public class TagEntity {
      *
      * @return the owner user
      */
-    public UserEntity getUser() {
+    public User getUser() {
         return user;
     }
 
@@ -141,7 +141,7 @@ public class TagEntity {
      * @param user the owner user
      * @throws IllegalArgumentException if user is null
      */
-    public void setUser(UserEntity user) {
+    public void setUser(User user) {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
@@ -153,7 +153,7 @@ public class TagEntity {
      *
      * @return the parent deck
      */
-    public DeckEntity getDeck() {
+    public Deck getDeck() {
         return deck;
     }
 
@@ -166,7 +166,7 @@ public class TagEntity {
      * @param deck the parent deck
      * @throws IllegalArgumentException if deck is null
      */
-    public void setDeck(DeckEntity deck) {
+    public void setDeck(Deck deck) {
         if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
@@ -200,7 +200,7 @@ public class TagEntity {
      *
      * @return the set of cards with this tag
      */
-    public Set<CardEntity> getCards() {
+    public Set<Card> getCards() {
         return cards;
     }
 
@@ -208,11 +208,11 @@ public class TagEntity {
      * Sets the cards that have this tag.
      *
      * <p><strong>Warning:</strong> This replaces all existing cards.
-     * Use {@link CardEntity#addTag(TagEntity)} to manage individual card-tag associations.
+     * Use {@link Card#addTag(Tag)} to manage individual card-tag associations.
      *
      * @param cards the set of cards
      */
-    public void setCards(Set<CardEntity> cards) {
+    public void setCards(Set<Card> cards) {
         this.cards = cards != null ? cards : new HashSet<>();
     }
 
@@ -229,8 +229,8 @@ public class TagEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TagEntity tagEntity = (TagEntity) o;
-        return id != null && Objects.equals(id, tagEntity.id) && Objects.equals(name, tagEntity.name);
+        Tag tag = (Tag) o;
+        return id != null && Objects.equals(id, tag.id) && Objects.equals(name, tag.name);
     }
 
     /**

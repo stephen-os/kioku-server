@@ -4,7 +4,7 @@ import com.kioku.api.dto.request.CreateTagRequest;
 import com.kioku.api.dto.request.UpdateTagRequest;
 import com.kioku.api.dto.response.ErrorResponse;
 import com.kioku.api.dto.response.TagResponse;
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Tag;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.service.TagService;
 import jakarta.validation.Valid;
@@ -116,7 +116,7 @@ public class TagController {
 
         logger.debug("Creating tag '{}' in deck {} for user {}", request.getName(), deckId, userId);
 
-        TagEntity tag = tagService.createTag(userId, deckId, request.getName());
+        Tag tag = tagService.createTag(userId, deckId, request.getName());
 
         logger.info("Tag {} created successfully in deck {}", tag.getId(), deckId);
         return ResponseEntity.status(HttpStatus.CREATED).body(new TagResponse(tag));
@@ -146,7 +146,7 @@ public class TagController {
 
         logger.debug("Retrieving tags for deck {} by user {}", deckId, userId);
 
-        List<TagEntity> tags = tagService.getDeckTags(userId, deckId);
+        List<Tag> tags = tagService.getDeckTags(userId, deckId);
         List<TagResponse> response = tags.stream()
                 .map(TagResponse::new)
                 .collect(Collectors.toList());
@@ -174,7 +174,7 @@ public class TagController {
 
         logger.debug("Retrieving all tags for user {}", userId);
 
-        List<TagEntity> tags = tagService.getAllUserTags(userId);
+        List<Tag> tags = tagService.getAllUserTags(userId);
         List<TagResponse> response = tags.stream()
                 .map(TagResponse::new)
                 .collect(Collectors.toList());
@@ -210,7 +210,7 @@ public class TagController {
 
         logger.debug("Retrieving tag {} from deck {} for user {}", tagId, deckId, userId);
 
-        Optional<TagEntity> tagOptional = tagService.getTag(userId, deckId, tagId);
+        Optional<Tag> tagOptional = tagService.getTag(userId, deckId, tagId);
 
         if (tagOptional.isEmpty()) {
             logger.warn("Tag {} not found or access denied in deck {}", tagId, deckId);
@@ -218,7 +218,7 @@ public class TagController {
                     .body(new ErrorResponse("Tag not found or access denied"));
         }
 
-        TagEntity tag = tagOptional.get();
+        Tag tag = tagOptional.get();
         logger.debug("Tag {} retrieved successfully", tagId);
         return ResponseEntity.ok(new TagResponse(tag));
     }
@@ -260,7 +260,7 @@ public class TagController {
 
         logger.debug("Updating tag {} in deck {} for user {}", tagId, deckId, userId);
 
-        TagEntity tag = tagService.updateTag(userId, deckId, tagId, request.getName());
+        Tag tag = tagService.updateTag(userId, deckId, tagId, request.getName());
 
         logger.info("Tag {} updated successfully", tagId);
         return ResponseEntity.ok(new TagResponse(tag));

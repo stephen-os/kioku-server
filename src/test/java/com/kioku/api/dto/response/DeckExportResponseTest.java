@@ -1,9 +1,9 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,15 +41,15 @@ class DeckExportResponseTest {
     private static final String DECK_NAME = "Japanese N5";
     private static final String DECK_DESCRIPTION = "JLPT N5 vocabulary";
 
-    private UserEntity testUser;
-    private DeckEntity testDeck;
+    private User testUser;
+    private Deck testDeck;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up DeckExportResponse test");
 
-        testUser = new UserEntity("test@example.com", "hashedPassword");
-        testDeck = new DeckEntity(testUser, DECK_NAME, DECK_DESCRIPTION);
+        testUser = new User("test@example.com", "hashedPassword");
+        testDeck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
         testDeck.setId(DECK_ID);
     }
 
@@ -76,8 +76,8 @@ class DeckExportResponseTest {
     void testEntityConstructorEmpty() {
         logger.debug("Test: Entity constructor without cards or tags");
 
-        List<CardEntity> cards = Arrays.asList();
-        List<TagEntity> tags = Arrays.asList();
+        List<Card> cards = Arrays.asList();
+        List<Tag> tags = Arrays.asList();
 
         DeckExportResponse response = new DeckExportResponse(testDeck, cards, tags);
 
@@ -100,13 +100,13 @@ class DeckExportResponseTest {
     void testEntityConstructorWithCards() {
         logger.debug("Test: Entity constructor with cards");
 
-        CardEntity card1 = new CardEntity(testDeck, "食べる", "to eat");
+        Card card1 = new Card(testDeck, "食べる", "to eat");
         card1.setId(1L);
-        CardEntity card2 = new CardEntity(testDeck, "飲む", "to drink");
+        Card card2 = new Card(testDeck, "飲む", "to drink");
         card2.setId(2L);
 
-        List<CardEntity> cards = Arrays.asList(card1, card2);
-        List<TagEntity> tags = Arrays.asList();
+        List<Card> cards = Arrays.asList(card1, card2);
+        List<Tag> tags = Arrays.asList();
 
         DeckExportResponse response = new DeckExportResponse(testDeck, cards, tags);
 
@@ -125,13 +125,13 @@ class DeckExportResponseTest {
     void testEntityConstructorWithTags() {
         logger.debug("Test: Entity constructor with tags");
 
-        TagEntity tag1 = new TagEntity(testDeck, "verbs");
+        Tag tag1 = new Tag(testDeck, "verbs");
         tag1.setId(1L);
-        TagEntity tag2 = new TagEntity(testDeck, "food");
+        Tag tag2 = new Tag(testDeck, "food");
         tag2.setId(2L);
 
-        List<CardEntity> cards = Arrays.asList();
-        List<TagEntity> tags = Arrays.asList(tag1, tag2);
+        List<Card> cards = Arrays.asList();
+        List<Tag> tags = Arrays.asList(tag1, tag2);
 
         DeckExportResponse response = new DeckExportResponse(testDeck, cards, tags);
 
@@ -150,23 +150,23 @@ class DeckExportResponseTest {
     void testEntityConstructorWithCardsAndTags() {
         logger.debug("Test: Entity constructor with cards and tags");
 
-        TagEntity verbTag = new TagEntity(testDeck, "verbs");
+        Tag verbTag = new Tag(testDeck, "verbs");
         verbTag.setId(1L);
-        TagEntity foodTag = new TagEntity(testDeck, "food");
+        Tag foodTag = new Tag(testDeck, "food");
         foodTag.setId(2L);
 
-        CardEntity card1 = new CardEntity(testDeck, "食べる", "to eat");
+        Card card1 = new Card(testDeck, "食べる", "to eat");
         card1.setId(1L);
         card1.addTag(verbTag);
         card1.addTag(foodTag);
 
-        CardEntity card2 = new CardEntity(testDeck, "飲む", "to drink");
+        Card card2 = new Card(testDeck, "飲む", "to drink");
         card2.setId(2L);
         card2.addTag(verbTag);
         card2.addTag(foodTag);
 
-        List<CardEntity> cards = Arrays.asList(card1, card2);
-        List<TagEntity> tags = Arrays.asList(verbTag, foodTag);
+        List<Card> cards = Arrays.asList(card1, card2);
+        List<Tag> tags = Arrays.asList(verbTag, foodTag);
 
         DeckExportResponse response = new DeckExportResponse(testDeck, cards, tags);
 
@@ -192,11 +192,11 @@ class DeckExportResponseTest {
     void testEntityConstructorWithNullDescription() {
         logger.debug("Test: Entity constructor with null description");
 
-        DeckEntity deckNoDesc = new DeckEntity(testUser, DECK_NAME, null);
+        Deck deckNoDesc = new Deck(testUser, DECK_NAME, null);
         deckNoDesc.setId(DECK_ID);
 
-        List<CardEntity> cards = Arrays.asList();
-        List<TagEntity> tags = Arrays.asList();
+        List<Card> cards = Arrays.asList();
+        List<Tag> tags = Arrays.asList();
 
         DeckExportResponse response = new DeckExportResponse(deckNoDesc, cards, tags);
 
@@ -415,17 +415,17 @@ class DeckExportResponseTest {
         logger.debug("Test: Large deck export");
 
         // Create 100 cards
-        List<CardEntity> cards = new java.util.ArrayList<>();
+        List<Card> cards = new java.util.ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            CardEntity card = new CardEntity(testDeck, "Front " + i, "Back " + i);
+            Card card = new Card(testDeck, "Front " + i, "Back " + i);
             card.setId((long) i);
             cards.add(card);
         }
 
         // Create 20 tags
-        List<TagEntity> tags = new java.util.ArrayList<>();
+        List<Tag> tags = new java.util.ArrayList<>();
         for (int i = 0; i < 20; i++) {
-            TagEntity tag = new TagEntity(testDeck, "tag" + i);
+            Tag tag = new Tag(testDeck, "tag" + i);
             tag.setId((long) i);
             tags.add(tag);
         }

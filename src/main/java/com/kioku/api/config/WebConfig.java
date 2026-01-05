@@ -25,7 +25,7 @@ import java.util.List;
  * {@code @GetMapping("/api/decks")}
  * public ResponseEntity{@code <List<DeckResponse>>} getUserDecks({@code @CurrentUser} Long userId) {
  *     // userId is automatically resolved from JWT token
- *     List{@code <DeckEntity>} decks = deckService.getUserDecks(userId);
+ *     List{@code <Deck>} decks = deckService.getUserDecks(userId);
  *     return ResponseEntity.ok(decks.stream().map(DeckResponse::new).toList());
  * }
  * </pre>

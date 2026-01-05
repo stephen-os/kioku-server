@@ -7,30 +7,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * Entity representing a user in the Kioku application.
+ * User entity.
  *
- * <p>This entity includes security features such as:
- * <ul>
- *   <li>Email verification</li>
- *   <li>Password reset tokens</li>
- *   <li>Account locking after failed login attempts</li>
- *   <li>Soft delete capability</li>
- *   <li>Account status management</li>
- * </ul>
- *
- * <p>Email addresses are automatically normalized to lowercase and trimmed
- * to ensure case-insensitive uniqueness.
- *
- * <p><strong>Logging:</strong> This class uses SLF4J for debug-level logging.
- * Only non-PII information (user IDs, status changes, timestamps) is logged.
- * Sensitive information (emails, passwords, tokens) is never logged.
+ * <p>This entity owns all security- and lifecycle-related state for a user,
+ * including authentication credentials, verification status, account locking,
+ * and soft deletion. State transitions are enforced through domain methods
+ * to preserve invariants and prevent invalid account states.
  *
  * @author Stephen Watson
- * @version 2.0
- * @since 1.0
  */
 @Entity
 @Table(
@@ -41,63 +30,116 @@ import java.util.Objects;
                 @Index(name = "idx_user_created_at", columnList = "created_at")
         }
 )
-public class UserEntity {
+public class User {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserEntity.class);
+    private static final Logger logger = LoggerFactory.getLogger(User.class);
 
+    /**
+     * The unique identifier for this user.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * The email address of this user.
+     */
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     @Column(unique = true, nullable = false)
     private String email;
 
+    /**
+     * Whether this user's email address has been verified.
+     */
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
+    /**
+     * The token used to verify this user's email address, if any.
+     */
     @Column(name = "email_verification_token")
     private String emailVerificationToken;
 
+    /**
+     * The timestamp when this user's email verification was sent, if any.
+     */
     @Column(name = "email_verification_sent_at")
     private LocalDateTime emailVerificationSentAt;
 
+    /**
+     * The hashed password for this user.
+     */
     @NotBlank(message = "Password hash is required")
     @Column(name = "password_hash", nullable = false, length = 60)
     private String passwordHash;
 
+    /**
+     * The token used to reset this user's password, if any.
+     */
     @Column(name = "password_reset_token")
     private String passwordResetToken;
 
+    /**
+     * The timestamp when this user account was reset, if any.
+     */
     @Column(name = "password_reset_sent_at")
     private LocalDateTime passwordResetSentAt;
 
+    /**
+     * The status of this user account.
+     */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVE;
 
+    /**
+     * The number of failed login attempts for this user.
+     */
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts = 0;
 
+    /**
+     * The timestamp when this user account was locked, if any.
+     */
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
+    /**
+     * The timestamp when this user last logged in.
+     */
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    /**
+     * The timestamp when this user was created.
+     */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /**
+     * The timestamp when this user was last updated.
+     */
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    /**
+     * The timestamp when this user was deleted, if any.
+     */
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    @SuppressWarnings("unused")
+    /**
+     * The version of this entity, used for optimistic locking.
+     */
     @Version
     private Long version;
+
+    /**
+     * The decks owned by this user.
+     */
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Deck> decks = new HashSet<>();
 
     /**
      * JPA lifecycle callback executed before persisting a new user.
@@ -144,23 +186,23 @@ public class UserEntity {
     /**
      * Default constructor required by JPA.
      */
-    public UserEntity() {
-        logger.debug("Creating new UserEntity instance (no-args constructor)");
+    public User() {
+        logger.debug("Creating new User instance (no-args constructor)");
     }
 
     /**
-     * Constructs a new UserEntity with the specified email and password hash.
+     * Constructs a new User with the specified email and password hash.
      *
      * <p>The email is automatically normalized to lowercase and trimmed.
      *
      * @param email the user's email address (will be normalized)
      * @param passwordHash the bcrypt hashed password (should be 60 characters)
      */
-    public UserEntity(String email, String passwordHash) {
+    public User(String email, String passwordHash) {
         this.email = email != null ? email.toLowerCase().trim() : null;
         this.passwordHash = passwordHash;
 
-        logger.debug("Creating new UserEntity with constructor");
+        logger.debug("Creating new User with constructor");
     }
 
     /**
@@ -173,7 +215,7 @@ public class UserEntity {
      */
     public boolean isLocked() {
         boolean locked = lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
-        logger.debug("UserEntity id={} lock status checked: locked={}, lockedUntil={}",
+        logger.debug("User id={} lock status checked: locked={}, lockedUntil={}",
                 id, locked, lockedUntil);
         return locked;
     }
@@ -188,7 +230,7 @@ public class UserEntity {
      */
     public boolean isDeleted() {
         boolean deleted = deletedAt != null;
-        logger.debug("UserEntity id={} deletion status checked: deleted={}, deletedAt={}",
+        logger.debug("User id={} deletion status checked: deleted={}, deletedAt={}",
                 id, deleted, deletedAt);
         return deleted;
     }
@@ -207,7 +249,7 @@ public class UserEntity {
      */
     public boolean isActive() {
         boolean active = status == UserStatus.ACTIVE && !isLocked() && !isDeleted();
-        logger.debug("UserEntity id={} active status checked: active={}, status={}",
+        logger.debug("User id={} active status checked: active={}, status={}",
                 id, active, status);
         return active;
     }
@@ -227,10 +269,10 @@ public class UserEntity {
 
         if (failedLoginAttempts >= 5) {
             lockedUntil = LocalDateTime.now().plusMinutes(15);
-            logger.debug("UserEntity id={} account locked after {} failed login attempts, lockedUntil={}",
+            logger.debug("User id={} account locked after {} failed login attempts, lockedUntil={}",
                     id, failedLoginAttempts, lockedUntil);
         } else {
-            logger.debug("UserEntity id={} failed login attempt recorded: {} -> {}",
+            logger.debug("User id={} failed login attempt recorded: {} -> {}",
                     id, previousAttempts, failedLoginAttempts);
         }
     }
@@ -251,7 +293,7 @@ public class UserEntity {
         lockedUntil = null;
         lastLoginAt = LocalDateTime.now();
 
-        logger.debug("UserEntity id={} successful login recorded: failedAttempts {} -> 0, lastLoginAt={}",
+        logger.debug("User id={} successful login recorded: failedAttempts {} -> 0, lastLoginAt={}",
                 id, previousAttempts, lastLoginAt);
     }
 
@@ -269,7 +311,7 @@ public class UserEntity {
         deletedAt = LocalDateTime.now();
         status = UserStatus.DELETED;
 
-        logger.debug("UserEntity id={} soft deleted: status {} -> {}, deletedAt={}",
+        logger.debug("User id={} soft deleted: status {} -> {}, deletedAt={}",
                 id, previousStatus, status, deletedAt);
     }
 
@@ -286,7 +328,7 @@ public class UserEntity {
         deletedAt = null;
         status = UserStatus.ACTIVE;
 
-        logger.debug("UserEntity id={} restored: status {} -> {}, deletedAt cleared",
+        logger.debug("User id={} restored: status {} -> {}, deletedAt cleared",
                 id, previousStatus, status);
     }
 
@@ -302,7 +344,7 @@ public class UserEntity {
         this.emailVerificationToken = token;
         this.emailVerificationSentAt = LocalDateTime.now();
 
-        logger.debug("UserEntity id={} email verification token set, sentAt={}",
+        logger.debug("User id={} email verification token set, sentAt={}",
                 id, emailVerificationSentAt);
     }
 
@@ -322,7 +364,7 @@ public class UserEntity {
         this.emailVerificationToken = null;
         this.emailVerificationSentAt = null;
 
-        logger.debug("UserEntity id={} email verified: emailVerified {} -> true, token cleared",
+        logger.debug("User id={} email verified: emailVerified {} -> true, token cleared",
                 id, previouslyVerified);
     }
 
@@ -338,7 +380,7 @@ public class UserEntity {
         this.passwordResetToken = token;
         this.passwordResetSentAt = LocalDateTime.now();
 
-        logger.debug("UserEntity id={} password reset token set, sentAt={}",
+        logger.debug("User id={} password reset token set, sentAt={}",
                 id, passwordResetSentAt);
     }
 
@@ -352,7 +394,7 @@ public class UserEntity {
         this.passwordResetToken = null;
         this.passwordResetSentAt = null;
 
-        logger.debug("UserEntity id={} password reset token cleared", id);
+        logger.debug("User id={} password reset token cleared", id);
     }
 
     /**
@@ -364,12 +406,12 @@ public class UserEntity {
      */
     public boolean isPasswordResetTokenExpired() {
         if (passwordResetSentAt == null) {
-            logger.debug("UserEntity id={} password reset token check: no token sent", id);
+            logger.debug("User id={} password reset token check: no token sent", id);
             return true;
         }
 
         boolean expired = passwordResetSentAt.plusHours(24).isBefore(LocalDateTime.now());
-        logger.debug("UserEntity id={} password reset token expired: {}, sentAt={}, expiresAt={}",
+        logger.debug("User id={} password reset token expired: {}, sentAt={}, expiresAt={}",
                 id, expired, passwordResetSentAt, passwordResetSentAt.plusHours(24));
 
         return expired;
@@ -384,12 +426,12 @@ public class UserEntity {
      */
     public boolean isEmailVerificationTokenExpired() {
         if (emailVerificationSentAt == null) {
-            logger.debug("UserEntity id={} email verification token check: no token sent", id);
+            logger.debug("User id={} email verification token check: no token sent", id);
             return true;
         }
 
         boolean expired = emailVerificationSentAt.plusHours(24).isBefore(LocalDateTime.now());
-        logger.debug("UserEntity id={} email verification token expired: {}, sentAt={}, expiresAt={}",
+        logger.debug("User id={} email verification token expired: {}, sentAt={}, expiresAt={}",
                 id, expired, emailVerificationSentAt, emailVerificationSentAt.plusHours(24));
 
         return expired;
@@ -438,7 +480,7 @@ public class UserEntity {
      */
     public void setEmail(String email) {
         this.email = email != null ? email.toLowerCase().trim() : null;
-        logger.debug("UserEntity id={} email updated", id);
+        logger.debug("User id={} email updated", id);
     }
 
     /**
@@ -461,7 +503,7 @@ public class UserEntity {
     public void setEmailVerified(boolean emailVerified) {
         boolean previous = this.emailVerified;
         this.emailVerified = emailVerified;
-        logger.debug("UserEntity id={} emailVerified changed: {} -> {}", id, previous, emailVerified);
+        logger.debug("User id={} emailVerified changed: {} -> {}", id, previous, emailVerified);
     }
 
     /**
@@ -556,7 +598,7 @@ public class UserEntity {
     public void setStatus(UserStatus status) {
         UserStatus previous = this.status;
         this.status = status;
-        logger.debug("UserEntity id={} status changed: {} -> {}", id, previous, status);
+        logger.debug("User id={} status changed: {} -> {}", id, previous, status);
     }
 
     /**
@@ -579,7 +621,7 @@ public class UserEntity {
     public void setFailedLoginAttempts(int failedLoginAttempts) {
         int previous = this.failedLoginAttempts;
         this.failedLoginAttempts = failedLoginAttempts;
-        logger.debug("UserEntity id={} failedLoginAttempts changed: {} -> {}",
+        logger.debug("User id={} failedLoginAttempts changed: {} -> {}",
                 id, previous, failedLoginAttempts);
     }
 
@@ -600,7 +642,7 @@ public class UserEntity {
     public void setLockedUntil(LocalDateTime lockedUntil) {
         LocalDateTime previous = this.lockedUntil;
         this.lockedUntil = lockedUntil;
-        logger.debug("UserEntity id={} lockedUntil changed: {} -> {}", id, previous, lockedUntil);
+        logger.debug("User id={} lockedUntil changed: {} -> {}", id, previous, lockedUntil);
     }
 
     /**
@@ -623,7 +665,7 @@ public class UserEntity {
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         LocalDateTime previous = this.lastLoginAt;
         this.lastLoginAt = lastLoginAt;
-        logger.debug("UserEntity id={} lastLoginAt changed: {} -> {}", id, previous, lastLoginAt);
+        logger.debug("User id={} lastLoginAt changed: {} -> {}", id, previous, lastLoginAt);
     }
 
     /**
@@ -666,6 +708,52 @@ public class UserEntity {
     }
 
     /**
+     * Gets all decks owned by this user.
+     *
+     * @return the set of decks (never null)
+     */
+    public Set<Deck> getDecks() {
+        return decks;
+    }
+
+    /**
+     * Adds a deck to this user's collection.
+     *
+     * <p>Maintains bidirectional relationship by also setting this user
+     * as the deck's owner.
+     *
+     * @param deck the deck to add
+     * @throws IllegalArgumentException if deck is null
+     */
+    public void addDeck(Deck deck) {
+        if (deck == null) {
+            throw new IllegalArgumentException("Deck cannot be null");
+        }
+        this.decks.add(deck);
+        deck.setUser(this);
+
+        logger.debug("UserEntity id={} added deck id={}", id, deck.getId());
+    }
+
+    /**
+     * Removes a deck from this user's collection.
+     *
+     * <p>Maintains bidirectional relationship. Due to orphanRemoval=true,
+     * the removed deck will be deleted from the database.
+     *
+     * @param deck the deck to remove
+     * @throws IllegalArgumentException if deck is null
+     */
+    public void removeDeck(Deck deck) {
+        if (deck == null) {
+            throw new IllegalArgumentException("Deck cannot be null");
+        }
+        this.decks.remove(deck);
+
+        logger.debug("UserEntity id={} removed deck id={}", id, deck.getId());
+    }
+
+    /**
      * Compares this user to another object for equality.
      *
      * <p>Two users are considered equal if they have the same ID.
@@ -677,7 +765,7 @@ public class UserEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        UserEntity user = (UserEntity) o;
+        User user = (User) o;
         return Objects.equals(id, user.id);
     }
 

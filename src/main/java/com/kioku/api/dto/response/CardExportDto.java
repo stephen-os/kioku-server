@@ -1,7 +1,7 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Tag;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -80,17 +80,17 @@ public class CardExportDto {
     }
 
     /**
-     * Creates a CardExportDto from a CardEntity.
+     * Creates a CardExportDto from a Card.
      *
      * @param card the card entity to export
      */
-    public CardExportDto(CardEntity card) {
+    public CardExportDto(Card card) {
         this.id = card.getId();
         this.front = card.getFront();
         this.back = card.getBack();
         this.notes = card.getNotes();
         this.tags = card.getTags().stream()
-                .map(TagEntity::getName)
+                .map(Tag::getName)
                 .collect(Collectors.toList());
         this.createdAt = card.getCreatedAt();
         this.updatedAt = card.getUpdatedAt();

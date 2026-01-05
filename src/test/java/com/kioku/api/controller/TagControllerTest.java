@@ -4,9 +4,9 @@ import com.kioku.api.dto.request.CreateTagRequest;
 import com.kioku.api.dto.request.UpdateTagRequest;
 import com.kioku.api.dto.response.ErrorResponse;
 import com.kioku.api.dto.response.TagResponse;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.security.JwtAuthenticationFilter;
 import com.kioku.api.service.TagService;
@@ -86,9 +86,9 @@ class TagControllerTest {
     private TagService tagService;
 
     RestTestClient client;
-    private UserEntity testUser;
-    private DeckEntity testDeck;
-    private TagEntity testTag;
+    private User testUser;
+    private Deck testDeck;
+    private Tag testTag;
 
     @TestConfiguration
     static class ControllerTestConfig implements WebMvcConfigurer {
@@ -116,13 +116,13 @@ class TagControllerTest {
     void setUp() {
         logger.debug("Setting up TagController test");
 
-        testUser = new UserEntity("test@example.com", "hashedPassword");
+        testUser = new User("test@example.com", "hashedPassword");
         testUser.setId(TEST_USER_ID);
 
-        testDeck = new DeckEntity(testUser, "Test Deck", "Test Description");
+        testDeck = new Deck(testUser, "Test Deck", "Test Description");
         testDeck.setId(TEST_DECK_ID);
 
-        testTag = new TagEntity(testDeck, TEST_NAME);
+        testTag = new Tag(testDeck, TEST_NAME);
         testTag.setId(TEST_TAG_ID);
 
         client = RestTestClient.bindTo(mockMvc).build();
@@ -285,10 +285,10 @@ class TagControllerTest {
     void testGetDeckTagsSuccess() {
         logger.debug("Test: Successful retrieval of deck tags");
 
-        TagEntity tag2 = new TagEntity(testDeck, "adjectives");
+        Tag tag2 = new Tag(testDeck, "adjectives");
         tag2.setId(2L);
 
-        List<TagEntity> tags = Arrays.asList(testTag, tag2);
+        List<Tag> tags = Arrays.asList(testTag, tag2);
 
         when(tagService.getDeckTags(TEST_USER_ID, TEST_DECK_ID)).thenReturn(tags);
 
@@ -365,13 +365,13 @@ class TagControllerTest {
     void testGetAllUserTagsSuccess() {
         logger.debug("Test: Successful retrieval of all user tags");
 
-        DeckEntity deck2 = new DeckEntity(testUser, "Deck 2", "Description 2");
+        Deck deck2 = new Deck(testUser, "Deck 2", "Description 2");
         deck2.setId(2L);
 
-        TagEntity tag2 = new TagEntity(deck2, "adjectives");
+        Tag tag2 = new Tag(deck2, "adjectives");
         tag2.setId(2L);
 
-        List<TagEntity> tags = Arrays.asList(testTag, tag2);
+        List<Tag> tags = Arrays.asList(testTag, tag2);
 
         when(tagService.getAllUserTags(TEST_USER_ID)).thenReturn(tags);
 
@@ -480,7 +480,7 @@ class TagControllerTest {
 
         UpdateTagRequest request = new UpdateTagRequest(UPDATED_NAME);
 
-        TagEntity updatedTag = new TagEntity(testDeck, UPDATED_NAME);
+        Tag updatedTag = new Tag(testDeck, UPDATED_NAME);
         updatedTag.setId(TEST_TAG_ID);
 
         when(tagService.updateTag(TEST_USER_ID, TEST_DECK_ID, TEST_TAG_ID, UPDATED_NAME))

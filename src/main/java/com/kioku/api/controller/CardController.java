@@ -4,7 +4,7 @@ import com.kioku.api.dto.request.CreateCardRequest;
 import com.kioku.api.dto.request.UpdateCardRequest;
 import com.kioku.api.dto.response.CardResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.CardEntity;
+import com.kioku.api.entity.Card;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.service.CardService;
 import jakarta.validation.Valid;
@@ -121,7 +121,7 @@ public class CardController {
 
         logger.debug("Creating card in deck {} for user {}", deckId, userId);
 
-        CardEntity card = cardService.createCard(
+        Card card = cardService.createCard(
                 userId,
                 deckId,
                 request.getFront(),
@@ -169,7 +169,7 @@ public class CardController {
 
         logger.debug("Retrieving cards for deck {} (search: {}, tagId: {})", deckId, search, tagId);
 
-        List<CardEntity> cards;
+        List<Card> cards;
 
         // Priority: search > tagId > all
         if (search != null && !search.isBlank()) {
@@ -218,7 +218,7 @@ public class CardController {
 
         logger.debug("Retrieving card {} from deck {} for user {}", cardId, deckId, userId);
 
-        Optional<CardEntity> cardOptional = cardService.getCard(userId, deckId, cardId);
+        Optional<Card> cardOptional = cardService.getCard(userId, deckId, cardId);
 
         if (cardOptional.isEmpty()) {
             logger.warn("Card {} not found in deck {}", cardId, deckId);
@@ -226,7 +226,7 @@ public class CardController {
                     .body(new ErrorResponse("Card not found or access denied"));
         }
 
-        CardEntity card = cardOptional.get();
+        Card card = cardOptional.get();
         logger.debug("Card {} retrieved successfully", cardId);
         return ResponseEntity.ok(new CardResponse(card));
     }
@@ -270,7 +270,7 @@ public class CardController {
 
         logger.debug("Updating card {} in deck {} for user {}", cardId, deckId, userId);
 
-        CardEntity card = cardService.updateCard(
+        Card card = cardService.updateCard(
                 userId,
                 deckId,
                 cardId,
@@ -349,7 +349,7 @@ public class CardController {
 
         logger.debug("Adding tag {} to card {} in deck {}", tagId, cardId, deckId);
 
-        CardEntity card = cardService.addTagToCard(userId, deckId, cardId, tagId);
+        Card card = cardService.addTagToCard(userId, deckId, cardId, tagId);
 
         logger.info("Tag {} added to card {} successfully", tagId, cardId);
         return ResponseEntity.ok(new CardResponse(card));
@@ -384,7 +384,7 @@ public class CardController {
 
         logger.debug("Removing tag {} from card {} in deck {}", tagId, cardId, deckId);
 
-        CardEntity card = cardService.removeTagFromCard(userId, deckId, cardId, tagId);
+        Card card = cardService.removeTagFromCard(userId, deckId, cardId, tagId);
 
         logger.info("Tag {} removed from card {} successfully", tagId, cardId);
         return ResponseEntity.ok(new CardResponse(card));

@@ -1,6 +1,6 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.DeckEntity;
+import com.kioku.api.entity.Deck;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,14 +11,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository interface for DeckEntity entity database operations.
+ * Repository interface for Deck entity database operations.
  *
  * <p>This repository provides methods for:
  * <ul>
  *   <li>Finding decks by user (user ownership)</li>
  *   <li>Finding decks by ID within a user's collection</li>
  *   <li>Checking for duplicate deck names per user</li>
- *   <li>DeckEntity analytics and statistics</li>
+ *   <li>Deck analytics and statistics</li>
  * </ul>
  *
  * <p><strong>Ownership Model:</strong> Decks belong to users. Each user has their
@@ -33,7 +33,7 @@ import java.util.Optional;
  * @since 1.0
  */
 @Repository
-public interface DeckRepository extends JpaRepository<DeckEntity, Long> {
+public interface DeckRepository extends JpaRepository<Deck, Long> {
 
     /**
      * Finds all decks belonging to a specific user.
@@ -43,7 +43,7 @@ public interface DeckRepository extends JpaRepository<DeckEntity, Long> {
      * @param userId the user ID
      * @return list of user's decks
      */
-    List<DeckEntity> findByUserId(Long userId);
+    List<Deck> findByUserId(Long userId);
 
     /**
      * Finds a specific deck belonging to a specific user.
@@ -58,7 +58,7 @@ public interface DeckRepository extends JpaRepository<DeckEntity, Long> {
      * @param userId the user ID
      * @return an Optional containing the deck if found and owned, empty otherwise
      */
-    Optional<DeckEntity> findByIdAndUserId(Long id, Long userId);
+    Optional<Deck> findByIdAndUserId(Long id, Long userId);
 
     /**
      * Checks if a user owns a specific deck.
@@ -75,7 +75,7 @@ public interface DeckRepository extends JpaRepository<DeckEntity, Long> {
      * Checks if a deck with the given name exists for a user.
      *
      * <p>Used to prevent duplicate deck names within a user's collection.
-     * DeckEntity names must be unique per user but different users can have
+     * Deck names must be unique per user but different users can have
      * decks with the same name.
      *
      * @param userId the user ID
@@ -93,7 +93,7 @@ public interface DeckRepository extends JpaRepository<DeckEntity, Long> {
      * @param name the deck name
      * @return an Optional containing the deck if found, empty otherwise
      */
-    Optional<DeckEntity> findByUserIdAndName(Long userId, String name);
+    Optional<Deck> findByUserIdAndName(Long userId, String name);
 
     /**
      * Counts the number of decks a user has.
@@ -113,7 +113,7 @@ public interface DeckRepository extends JpaRepository<DeckEntity, Long> {
      * @return list of decks created after the date
      */
     @Query("SELECT d FROM DeckEntity d WHERE d.user.id = :userId AND d.createdAt > :date ORDER BY d.createdAt DESC")
-    List<DeckEntity> findByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("date") LocalDateTime date);
+    List<Deck> findByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("date") LocalDateTime date);
 
     /**
      * Finds recently updated decks for a user.
@@ -126,7 +126,7 @@ public interface DeckRepository extends JpaRepository<DeckEntity, Long> {
      * @return list of recently updated decks
      */
     @Query(value = "SELECT d FROM DeckEntity d WHERE d.user.id = :userId ORDER BY d.updatedAt DESC LIMIT :limit")
-    List<DeckEntity> findRecentlyUpdatedDecks(@Param("userId") Long userId, @Param("limit") int limit);
+    List<Deck> findRecentlyUpdatedDecks(@Param("userId") Long userId, @Param("limit") int limit);
 
     /**
      * Deletes all decks belonging to a user.

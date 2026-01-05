@@ -1,9 +1,9 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -68,8 +68,8 @@ class CardRepositoryTest {
     @Autowired
     private TagRepository tagRepository;
 
-    private UserEntity testUserEntity;
-    private DeckEntity testDeckEntity;
+    private User testUser;
+    private Deck testDeck;
 
     /**
      * Sets up test fixtures before each test.
@@ -83,13 +83,13 @@ class CardRepositoryTest {
         deckRepository.deleteAll();
         userRepository.deleteAll();
 
-        testUserEntity = new UserEntity(TEST_EMAIL, PASSWORD_HASH);
-        testUserEntity = userRepository.save(testUserEntity);
+        testUser = new User(TEST_EMAIL, PASSWORD_HASH);
+        testUser = userRepository.save(testUser);
 
-        testDeckEntity = new DeckEntity(testUserEntity, DECK_NAME, DECK_DESCRIPTION);
-        testDeckEntity = deckRepository.save(testDeckEntity);
+        testDeck = new Deck(testUser, DECK_NAME, DECK_DESCRIPTION);
+        testDeck = deckRepository.save(testDeck);
 
-        logger.debug("Test setup complete: user id={}, deck id={}", testUserEntity.getId(), testDeckEntity.getId());
+        logger.debug("Test setup complete: user id={}, deck id={}", testUser.getId(), testDeck.getId());
     }
 
     // Basic CRUD Tests
@@ -100,10 +100,10 @@ class CardRepositoryTest {
     @Test
     @DisplayName("Should save a card")
     void testSaveCard() {
-        logger.debug("Test: Saving card to deck id={}", testDeckEntity.getId());
+        logger.debug("Test: Saving card to deck id={}", testDeck.getId());
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity savedCard = cardRepository.save(card);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card savedCard = cardRepository.save(card);
 
         assertNotNull(savedCard.getId());
         assertEquals(CARD_FRONT_1, savedCard.getFront());
@@ -122,10 +122,10 @@ class CardRepositoryTest {
     void testFindById() {
         logger.debug("Test: Finding card by ID");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity savedCard = cardRepository.save(card);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card savedCard = cardRepository.save(card);
 
-        Optional<CardEntity> found = cardRepository.findById(savedCard.getId());
+        Optional<Card> found = cardRepository.findById(savedCard.getId());
 
         assertTrue(found.isPresent());
         assertEquals(CARD_FRONT_1, found.get().getFront());
@@ -141,8 +141,8 @@ class CardRepositoryTest {
     void testDeleteCard() {
         logger.debug("Test: Deleting card");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity savedCard = cardRepository.save(card);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card savedCard = cardRepository.save(card);
         Long cardId = savedCard.getId();
 
         cardRepository.delete(savedCard);
@@ -160,14 +160,14 @@ class CardRepositoryTest {
     @Test
     @DisplayName("Should find cards by deck ID")
     void testFindByDeckId() {
-        logger.debug("Test: Finding cards by deck id={}", testDeckEntity.getId());
+        logger.debug("Test: Finding cards by deck id={}", testDeck.getId());
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity card2 = new CardEntity(testDeckEntity, CARD_FRONT_2, CARD_BACK_2);
+        Card card1 = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card card2 = new Card(testDeck, CARD_FRONT_2, CARD_BACK_2);
         cardRepository.save(card1);
         cardRepository.save(card2);
 
-        List<CardEntity> cards = cardRepository.findByDeckId(testDeckEntity.getId());
+        List<Card> cards = cardRepository.findByDeckId(testDeck.getId());
 
         assertEquals(2, cards.size());
 
@@ -182,7 +182,7 @@ class CardRepositoryTest {
     void testFindByNonExistentDeck() {
         logger.debug("Test: Finding cards in non-existent deck");
 
-        List<CardEntity> cards = cardRepository.findByDeckId(999L);
+        List<Card> cards = cardRepository.findByDeckId(999L);
 
         assertTrue(cards.isEmpty());
 
@@ -197,10 +197,10 @@ class CardRepositoryTest {
     void testFindByIdAndDeckId() {
         logger.debug("Test: Finding card by ID and deck ID");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity savedCard = cardRepository.save(card);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card savedCard = cardRepository.save(card);
 
-        Optional<CardEntity> found = cardRepository.findByIdAndDeckId(savedCard.getId(), testDeckEntity.getId());
+        Optional<Card> found = cardRepository.findByIdAndDeckId(savedCard.getId(), testDeck.getId());
 
         assertTrue(found.isPresent());
         assertEquals(CARD_FRONT_1, found.get().getFront());
@@ -216,10 +216,10 @@ class CardRepositoryTest {
     void testFindByIdAndWrongDeckId() {
         logger.debug("Test: Finding card with wrong deck ID");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity savedCard = cardRepository.save(card);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card savedCard = cardRepository.save(card);
 
-        Optional<CardEntity> found = cardRepository.findByIdAndDeckId(savedCard.getId(), 999L);
+        Optional<Card> found = cardRepository.findByIdAndDeckId(savedCard.getId(), 999L);
 
         assertFalse(found.isPresent());
 
@@ -236,11 +236,11 @@ class CardRepositoryTest {
     void testExistsByDeckIdAndFrontAndBack() {
         logger.debug("Test: Detecting duplicate cards");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
         cardRepository.save(card);
 
         boolean exists = cardRepository.existsByDeckIdAndFrontAndBack(
-                testDeckEntity.getId(), CARD_FRONT_1, CARD_BACK_1);
+                testDeck.getId(), CARD_FRONT_1, CARD_BACK_1);
 
         assertTrue(exists);
 
@@ -255,11 +255,11 @@ class CardRepositoryTest {
     void testNoDuplicate() {
         logger.debug("Test: Checking non-duplicate");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
         cardRepository.save(card);
 
         boolean exists = cardRepository.existsByDeckIdAndFrontAndBack(
-                testDeckEntity.getId(), CARD_FRONT_2, CARD_BACK_2);
+                testDeck.getId(), CARD_FRONT_2, CARD_BACK_2);
 
         assertFalse(exists);
 
@@ -274,11 +274,11 @@ class CardRepositoryTest {
     void testDuplicateDetectionCaseSensitive() {
         logger.debug("Test: Testing case-sensitive duplicate detection");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
         cardRepository.save(card);
 
         boolean exists = cardRepository.existsByDeckIdAndFrontAndBack(
-                testDeckEntity.getId(), CARD_FRONT_1.toUpperCase(), CARD_BACK_1);
+                testDeck.getId(), CARD_FRONT_1.toUpperCase(), CARD_BACK_1);
 
         assertTrue(exists);
 
@@ -293,18 +293,18 @@ class CardRepositoryTest {
     void testSameCardDifferentDecks() {
         logger.debug("Test: Same card in different decks");
 
-        DeckEntity otherDeckEntity = new DeckEntity(testUserEntity, "Other Deck", "Description");
-        otherDeckEntity = deckRepository.save(otherDeckEntity);
+        Deck otherDeck = new Deck(testUser, "Other Deck", "Description");
+        otherDeck = deckRepository.save(otherDeck);
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity card2 = new CardEntity(otherDeckEntity, CARD_FRONT_1, CARD_BACK_1);
+        Card card1 = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card card2 = new Card(otherDeck, CARD_FRONT_1, CARD_BACK_1);
         cardRepository.save(card1);
         cardRepository.save(card2);
 
         boolean deck1HasCard = cardRepository.existsByDeckIdAndFrontAndBack(
-                testDeckEntity.getId(), CARD_FRONT_1, CARD_BACK_1);
+                testDeck.getId(), CARD_FRONT_1, CARD_BACK_1);
         boolean deck2HasCard = cardRepository.existsByDeckIdAndFrontAndBack(
-                otherDeckEntity.getId(), CARD_FRONT_1, CARD_BACK_1);
+                otherDeck.getId(), CARD_FRONT_1, CARD_BACK_1);
 
         assertTrue(deck1HasCard);
         assertTrue(deck2HasCard);
@@ -322,14 +322,14 @@ class CardRepositoryTest {
     void testSearchByFront() {
         logger.debug("Test: Searching cards by front text");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, "食べる", "to eat");
-        CardEntity card2 = new CardEntity(testDeckEntity, "飲む", "to drink");
-        CardEntity card3 = new CardEntity(testDeckEntity, "食事", "meal");
+        Card card1 = new Card(testDeck, "食べる", "to eat");
+        Card card2 = new Card(testDeck, "飲む", "to drink");
+        Card card3 = new Card(testDeck, "食事", "meal");
         cardRepository.save(card1);
         cardRepository.save(card2);
         cardRepository.save(card3);
 
-        List<CardEntity> results = cardRepository.searchByDeckId(testDeckEntity.getId(), "食べ");
+        List<Card> results = cardRepository.searchByDeckId(testDeck.getId(), "食べ");
 
         assertEquals(1, results.size());
         assertEquals("食べる", results.get(0).getFront());
@@ -345,14 +345,14 @@ class CardRepositoryTest {
     void testSearchByBack() {
         logger.debug("Test: Searching cards by back text");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, "食べる", "to eat");
-        CardEntity card2 = new CardEntity(testDeckEntity, "飲む", "to drink");
-        CardEntity card3 = new CardEntity(testDeckEntity, "読む", "to read");
+        Card card1 = new Card(testDeck, "食べる", "to eat");
+        Card card2 = new Card(testDeck, "飲む", "to drink");
+        Card card3 = new Card(testDeck, "読む", "to read");
         cardRepository.save(card1);
         cardRepository.save(card2);
         cardRepository.save(card3);
 
-        List<CardEntity> results = cardRepository.searchByDeckId(testDeckEntity.getId(), "eat");
+        List<Card> results = cardRepository.searchByDeckId(testDeck.getId(), "eat");
 
         assertEquals(1, results.size());
         assertEquals("to eat", results.get(0).getBack());
@@ -368,10 +368,10 @@ class CardRepositoryTest {
     void testSearchCaseInsensitive() {
         logger.debug("Test: Case-insensitive search");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, "To Eat");
+        Card card = new Card(testDeck, CARD_FRONT_1, "To Eat");
         cardRepository.save(card);
 
-        List<CardEntity> results = cardRepository.searchByDeckId(testDeckEntity.getId(), "EAT");
+        List<Card> results = cardRepository.searchByDeckId(testDeck.getId(), "EAT");
 
         assertEquals(1, results.size());
 
@@ -386,10 +386,10 @@ class CardRepositoryTest {
     void testSearchPartialMatch() {
         logger.debug("Test: Partial text search");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, "to eat something");
+        Card card = new Card(testDeck, CARD_FRONT_1, "to eat something");
         cardRepository.save(card);
 
-        List<CardEntity> results = cardRepository.searchByDeckId(testDeckEntity.getId(), "eat");
+        List<Card> results = cardRepository.searchByDeckId(testDeck.getId(), "eat");
 
         assertEquals(1, results.size());
 
@@ -404,10 +404,10 @@ class CardRepositoryTest {
     void testSearchNoMatches() {
         logger.debug("Test: Search with no matches");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
         cardRepository.save(card);
 
-        List<CardEntity> results = cardRepository.searchByDeckId(testDeckEntity.getId(), "xyz");
+        List<Card> results = cardRepository.searchByDeckId(testDeck.getId(), "xyz");
 
         assertTrue(results.isEmpty());
 
@@ -424,22 +424,22 @@ class CardRepositoryTest {
     void testFindByDeckIdAndTagId() {
         logger.debug("Test: Finding cards by tag");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity = tagRepository.save(tagEntity);
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag = tagRepository.save(tag);
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity card2 = new CardEntity(testDeckEntity, CARD_FRONT_2, CARD_BACK_2);
-        CardEntity card3 = new CardEntity(testDeckEntity, CARD_FRONT_3, CARD_BACK_3);
+        Card card1 = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card card2 = new Card(testDeck, CARD_FRONT_2, CARD_BACK_2);
+        Card card3 = new Card(testDeck, CARD_FRONT_3, CARD_BACK_3);
 
-        card1.addTag(tagEntity);
-        card2.addTag(tagEntity);
+        card1.addTag(tag);
+        card2.addTag(tag);
         // card3 has no tag
 
         cardRepository.save(card1);
         cardRepository.save(card2);
         cardRepository.save(card3);
 
-        List<CardEntity> cardsWithTag = cardRepository.findByDeckIdAndTagId(testDeckEntity.getId(), tagEntity.getId());
+        List<Card> cardsWithTag = cardRepository.findByDeckIdAndTagId(testDeck.getId(), tag.getId());
 
         assertEquals(2, cardsWithTag.size());
 
@@ -454,10 +454,10 @@ class CardRepositoryTest {
     void testFindByNonExistentTag() {
         logger.debug("Test: Finding cards by non-existent tag");
 
-        CardEntity card = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
+        Card card = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
         cardRepository.save(card);
 
-        List<CardEntity> cardsWithTag = cardRepository.findByDeckIdAndTagId(testDeckEntity.getId(), 999L);
+        List<Card> cardsWithTag = cardRepository.findByDeckIdAndTagId(testDeck.getId(), 999L);
 
         assertTrue(cardsWithTag.isEmpty());
 
@@ -472,17 +472,17 @@ class CardRepositoryTest {
     void testFindByTagExcludesUntagged() {
         logger.debug("Test: Ensuring untagged cards are excluded");
 
-        TagEntity tagEntity = new TagEntity(testDeckEntity, TAG_NAME);
-        tagEntity = tagRepository.save(tagEntity);
+        Tag tag = new Tag(testDeck, TAG_NAME);
+        tag = tagRepository.save(tag);
 
-        CardEntity cardWithTag = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity cardWithoutTag = new CardEntity(testDeckEntity, CARD_FRONT_2, CARD_BACK_2);
+        Card cardWithTag = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card cardWithoutTag = new Card(testDeck, CARD_FRONT_2, CARD_BACK_2);
 
-        cardWithTag.addTag(tagEntity);
+        cardWithTag.addTag(tag);
         cardRepository.save(cardWithTag);
         cardRepository.save(cardWithoutTag);
 
-        List<CardEntity> cardsWithTag = cardRepository.findByDeckIdAndTagId(testDeckEntity.getId(), tagEntity.getId());
+        List<Card> cardsWithTag = cardRepository.findByDeckIdAndTagId(testDeck.getId(), tag.getId());
 
         assertEquals(1, cardsWithTag.size());
         assertEquals(CARD_FRONT_1, cardsWithTag.get(0).getFront());
@@ -499,36 +499,36 @@ class CardRepositoryTest {
         logger.debug("Test: Testing deck-specific tag isolation");
 
         // Create second deck
-        DeckEntity otherDeckEntity = new DeckEntity(testUserEntity, "Spanish Vocabulary", "Spanish vocab");
-        otherDeckEntity = deckRepository.save(otherDeckEntity);
+        Deck otherDeck = new Deck(testUser, "Spanish Vocabulary", "Spanish vocab");
+        otherDeck = deckRepository.save(otherDeck);
 
         // Create tags with same name in different decks
-        TagEntity japaneseVerbsTagEntity = new TagEntity(testDeckEntity, "verbs");
-        japaneseVerbsTagEntity = tagRepository.save(japaneseVerbsTagEntity);
+        Tag japaneseVerbsTag = new Tag(testDeck, "verbs");
+        japaneseVerbsTag = tagRepository.save(japaneseVerbsTag);
 
-        TagEntity spanishVerbsTagEntity = new TagEntity(otherDeckEntity, "verbs");
-        spanishVerbsTagEntity = tagRepository.save(spanishVerbsTagEntity);
+        Tag spanishVerbsTag = new Tag(otherDeck, "verbs");
+        spanishVerbsTag = tagRepository.save(spanishVerbsTag);
 
         // Create cards in both decks
-        CardEntity japaneseCard = new CardEntity(testDeckEntity, "食べる", "to eat");
-        japaneseCard.addTag(japaneseVerbsTagEntity);
+        Card japaneseCard = new Card(testDeck, "食べる", "to eat");
+        japaneseCard.addTag(japaneseVerbsTag);
         cardRepository.save(japaneseCard);
 
-        CardEntity spanishCard = new CardEntity(otherDeckEntity, "comer", "to eat");
-        spanishCard.addTag(spanishVerbsTagEntity);
+        Card spanishCard = new Card(otherDeck, "comer", "to eat");
+        spanishCard.addTag(spanishVerbsTag);
         cardRepository.save(spanishCard);
 
         // Search for cards with Japanese "verbs" tag
-        List<CardEntity> japaneseCards = cardRepository.findByDeckIdAndTagId(
-                testDeckEntity.getId(), japaneseVerbsTagEntity.getId());
+        List<Card> japaneseCards = cardRepository.findByDeckIdAndTagId(
+                testDeck.getId(), japaneseVerbsTag.getId());
 
         // Should only find Japanese card
         assertEquals(1, japaneseCards.size());
         assertEquals("食べる", japaneseCards.get(0).getFront());
 
         // Search for cards with Spanish "verbs" tag
-        List<CardEntity> spanishCards = cardRepository.findByDeckIdAndTagId(
-                otherDeckEntity.getId(), spanishVerbsTagEntity.getId());
+        List<Card> spanishCards = cardRepository.findByDeckIdAndTagId(
+                otherDeck.getId(), spanishVerbsTag.getId());
 
         // Should only find Spanish card
         assertEquals(1, spanishCards.size());
@@ -547,14 +547,14 @@ class CardRepositoryTest {
     void testCountByDeckId() {
         logger.debug("Test: Counting cards in deck");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity card2 = new CardEntity(testDeckEntity, CARD_FRONT_2, CARD_BACK_2);
-        CardEntity card3 = new CardEntity(testDeckEntity, CARD_FRONT_3, CARD_BACK_3);
+        Card card1 = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card card2 = new Card(testDeck, CARD_FRONT_2, CARD_BACK_2);
+        Card card3 = new Card(testDeck, CARD_FRONT_3, CARD_BACK_3);
         cardRepository.save(card1);
         cardRepository.save(card2);
         cardRepository.save(card3);
 
-        long count = cardRepository.countByDeckId(testDeckEntity.getId());
+        long count = cardRepository.countByDeckId(testDeck.getId());
 
         assertEquals(3, count);
 
@@ -569,7 +569,7 @@ class CardRepositoryTest {
     void testCountEmptyDeck() {
         logger.debug("Test: Counting cards in empty deck");
 
-        long count = cardRepository.countByDeckId(testDeckEntity.getId());
+        long count = cardRepository.countByDeckId(testDeck.getId());
 
         assertEquals(0, count);
 
@@ -601,12 +601,12 @@ class CardRepositoryTest {
     void testFindAll() {
         logger.debug("Test: Finding all cards");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity card2 = new CardEntity(testDeckEntity, CARD_FRONT_2, CARD_BACK_2);
+        Card card1 = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card card2 = new Card(testDeck, CARD_FRONT_2, CARD_BACK_2);
         cardRepository.save(card1);
         cardRepository.save(card2);
 
-        List<CardEntity> allCards = cardRepository.findAll();
+        List<Card> allCards = cardRepository.findAll();
 
         assertEquals(2, allCards.size());
 
@@ -621,8 +621,8 @@ class CardRepositoryTest {
     void testDeleteAll() {
         logger.debug("Test: Deleting all cards");
 
-        CardEntity card1 = new CardEntity(testDeckEntity, CARD_FRONT_1, CARD_BACK_1);
-        CardEntity card2 = new CardEntity(testDeckEntity, CARD_FRONT_2, CARD_BACK_2);
+        Card card1 = new Card(testDeck, CARD_FRONT_1, CARD_BACK_1);
+        Card card2 = new Card(testDeck, CARD_FRONT_2, CARD_BACK_2);
         cardRepository.save(card1);
         cardRepository.save(card2);
 

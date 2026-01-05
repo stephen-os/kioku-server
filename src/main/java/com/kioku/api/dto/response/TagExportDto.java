@@ -1,6 +1,6 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Tag;
 
 /**
  * DTO for exporting a tag as part of a deck export.
@@ -42,11 +42,11 @@ public class TagExportDto {
     }
 
     /**
-     * Creates a TagExportDto from a TagEntity.
+     * Creates a TagExportDto from a Tag.
      *
      * @param tag the tag entity to export
      */
-    public TagExportDto(TagEntity tag) {
+    public TagExportDto(Tag tag) {
         this.id = tag.getId();
         this.name = tag.getName();
     }

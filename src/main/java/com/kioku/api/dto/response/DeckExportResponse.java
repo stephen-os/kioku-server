@@ -1,8 +1,8 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -113,13 +113,13 @@ public class DeckExportResponse {
     }
 
     /**
-     * Creates a DeckExportResponse from a DeckEntity with cards and tags.
+     * Creates a DeckExportResponse from a Deck with cards and tags.
      *
      * @param deck the deck entity to export
      * @param cards the list of cards in the deck
      * @param tags the list of tags in the deck
      */
-    public DeckExportResponse(DeckEntity deck, List<CardEntity> cards, List<TagEntity> tags) {
+    public DeckExportResponse(Deck deck, List<Card> cards, List<Tag> tags) {
         this.id = deck.getId();
         this.name = deck.getName();
         this.description = deck.getDescription();

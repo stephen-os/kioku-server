@@ -6,7 +6,7 @@ import com.kioku.api.dto.request.UpdateDeckRequest;
 import com.kioku.api.dto.response.DeckExportResponse;
 import com.kioku.api.dto.response.DeckResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.DeckEntity;
+import com.kioku.api.entity.Deck;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.service.DeckExportService;
 import com.kioku.api.service.DeckImportService;
@@ -118,7 +118,7 @@ public class DeckController {
 
         logger.debug("Creating deck '{}' for user {}", request.getName(), userId);
 
-        DeckEntity deck = deckService.createDeck(userId, request.getName(), request.getDescription());
+        Deck deck = deckService.createDeck(userId, request.getName(), request.getDescription());
 
         logger.info("Deck {} created successfully for user {}", deck.getId(), userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(new DeckResponse(deck));
@@ -139,7 +139,7 @@ public class DeckController {
 
         logger.debug("Retrieving all decks for user {}", userId);
 
-        List<DeckEntity> decks = deckService.getUserDecks(userId);
+        List<Deck> decks = deckService.getUserDecks(userId);
         List<DeckResponse> response = decks.stream()
                 .map(DeckResponse::new)
                 .collect(Collectors.toList());
@@ -173,7 +173,7 @@ public class DeckController {
 
         logger.debug("Retrieving deck {} for user {}", deckId, userId);
 
-        Optional<DeckEntity> deckOptional = deckService.getDeck(deckId, userId);
+        Optional<Deck> deckOptional = deckService.getDeck(deckId, userId);
 
         if (deckOptional.isEmpty()) {
             logger.warn("Deck {} not found or access denied for user {}", deckId, userId);
@@ -181,7 +181,7 @@ public class DeckController {
                     .body(new ErrorResponse("Deck not found or access denied"));
         }
 
-        DeckEntity deck = deckOptional.get();
+        Deck deck = deckOptional.get();
         logger.debug("Deck {} retrieved successfully", deckId);
         return ResponseEntity.ok(new DeckResponse(deck));
     }
@@ -222,7 +222,7 @@ public class DeckController {
 
         logger.debug("Updating deck {} for user {}", deckId, userId);
 
-        DeckEntity deck = deckService.updateDeck(deckId, userId, request.getName(), request.getDescription());
+        Deck deck = deckService.updateDeck(deckId, userId, request.getName(), request.getDescription());
 
         logger.info("Deck {} updated successfully", deckId);
         return ResponseEntity.ok(new DeckResponse(deck));
@@ -300,7 +300,7 @@ public class DeckController {
         logger.debug("Import deck request from user id={}: name={}, {} cards, {} tags",
                 userId, request.getName(), request.getCardCount(), request.getTagCount());
 
-        DeckEntity deck = deckImportService.importDeck(userId, request);
+        Deck deck = deckImportService.importDeck(userId, request);
         DeckResponse response = new DeckResponse(deck);
 
         logger.info("Deck imported successfully: deckId={}, name='{}'", deck.getId(), deck.getName());

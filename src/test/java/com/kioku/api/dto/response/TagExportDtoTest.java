@@ -1,8 +1,8 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
+import com.kioku.api.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>These tests verify:
  * <ul>
- *   <li>Construction from TagEntity</li>
+ *   <li>Construction from Tag</li>
  *   <li>Constructor behavior with all fields</li>
  *   <li>Getter and setter functionality</li>
  * </ul>
@@ -33,15 +33,15 @@ class TagExportDtoTest {
     private static final Long TAG_ID = 456L;
     private static final String TAG_NAME = "verbs";
 
-    private UserEntity testUser;
-    private DeckEntity testDeck;
+    private User testUser;
+    private Deck testDeck;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up TagExportDto test");
 
-        testUser = new UserEntity("test@example.com", "hashedPassword");
-        testDeck = new DeckEntity(testUser, "Test Deck", "Description");
+        testUser = new User("test@example.com", "hashedPassword");
+        testDeck = new Deck(testUser, "Test Deck", "Description");
     }
 
     // Constructor Tests
@@ -61,11 +61,11 @@ class TagExportDtoTest {
     }
 
     @Test
-    @DisplayName("Should create TagExportDto from TagEntity")
+    @DisplayName("Should create TagExportDto from Tag")
     void testEntityConstructor() {
         logger.debug("Test: Entity constructor");
 
-        TagEntity tag = new TagEntity(testDeck, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
         tag.setId(TAG_ID);
 
         TagExportDto dto = new TagExportDto(tag);
@@ -96,7 +96,7 @@ class TagExportDtoTest {
     void testEntityConstructorWithNullId() {
         logger.debug("Test: Entity constructor with null ID");
 
-        TagEntity tag = new TagEntity(testDeck, TAG_NAME);
+        Tag tag = new Tag(testDeck, TAG_NAME);
         // ID not set (null)
 
         TagExportDto dto = new TagExportDto(tag);
@@ -115,7 +115,7 @@ class TagExportDtoTest {
         String[] tagNames = {"verbs", "nouns", "adjectives", "jlpt-n5", "food"};
 
         for (String tagName : tagNames) {
-            TagEntity tag = new TagEntity(testDeck, tagName);
+            Tag tag = new Tag(testDeck, tagName);
             tag.setId(TAG_ID);
 
             TagExportDto dto = new TagExportDto(tag);
@@ -132,7 +132,7 @@ class TagExportDtoTest {
     void testEntityConstructorWithUnicode() {
         logger.debug("Test: Entity constructor with unicode");
 
-        TagEntity tag = new TagEntity(testDeck, "動詞");
+        Tag tag = new Tag(testDeck, "動詞");
         tag.setId(TAG_ID);
 
         TagExportDto dto = new TagExportDto(tag);
@@ -156,7 +156,7 @@ class TagExportDtoTest {
         };
 
         for (String tagName : specialNames) {
-            TagEntity tag = new TagEntity(testDeck, tagName);
+            Tag tag = new Tag(testDeck, tagName);
             tag.setId(TAG_ID);
 
             TagExportDto dto = new TagExportDto(tag);

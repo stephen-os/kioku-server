@@ -1,8 +1,8 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.CardEntity;
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Card;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.Tag;
 import com.kioku.api.repository.CardRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -74,9 +74,9 @@ class CardServiceTest {
     @InjectMocks
     private CardService cardService;
 
-    private DeckEntity testDeckEntity;
-    private CardEntity testCard;
-    private TagEntity testTagEntity;
+    private Deck testDeck;
+    private Card testCard;
+    private Tag testTag;
 
     /**
      * Sets up test fixtures before each test.
@@ -85,18 +85,18 @@ class CardServiceTest {
     void setUp() {
         logger.debug("Setting up CardService test");
 
-        testDeckEntity = mock(DeckEntity.class);
-        when(testDeckEntity.getId()).thenReturn(DECK_ID);
+        testDeck = mock(Deck.class);
+        when(testDeck.getId()).thenReturn(DECK_ID);
 
-        testCard = mock(CardEntity.class);
+        testCard = mock(Card.class);
         when(testCard.getId()).thenReturn(CARD_ID);
         when(testCard.getFront()).thenReturn(CARD_FRONT);
         when(testCard.getBack()).thenReturn(CARD_BACK);
-        when(testCard.getDeck()).thenReturn(testDeckEntity);
+        when(testCard.getDeck()).thenReturn(testDeck);
 
-        testTagEntity = mock(TagEntity.class);
-        when(testTagEntity.getId()).thenReturn(TAG_ID);
-        when(testTagEntity.getName()).thenReturn(TAG_NAME);
+        testTag = mock(Tag.class);
+        when(testTag.getId()).thenReturn(TAG_ID);
+        when(testTag.getName()).thenReturn(TAG_NAME);
     }
 
     // Card Creation Tests
@@ -109,16 +109,16 @@ class CardServiceTest {
     void testCreateCard() {
         logger.debug("Test: Creating card");
 
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeckEntity);
+        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
         when(cardRepository.existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK)).thenReturn(false);
-        when(cardRepository.save(any(CardEntity.class))).thenReturn(testCard);
+        when(cardRepository.save(any(Card.class))).thenReturn(testCard);
 
-        CardEntity created = cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
+        Card created = cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
 
         assertNotNull(created);
         verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
         verify(cardRepository).existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK);
-        verify(cardRepository).save(any(CardEntity.class));
+        verify(cardRepository).save(any(Card.class));
 
         logger.debug("Test passed: Card created successfully");
     }
@@ -138,7 +138,7 @@ class CardServiceTest {
             cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
         });
 
-        verify(cardRepository, never()).save(any(CardEntity.class));
+        verify(cardRepository, never()).save(any(Card.class));
 
         logger.debug("Test passed: Exception thrown for unauthorized access");
     }
@@ -151,14 +151,14 @@ class CardServiceTest {
     void testCreateCardDuplicate() {
         logger.debug("Test: Creating duplicate card");
 
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeckEntity);
+        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
         when(cardRepository.existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK)).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> {
             cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
         });
 
-        verify(cardRepository, never()).save(any(CardEntity.class));
+        verify(cardRepository, never()).save(any(Card.class));
 
         logger.debug("Test passed: Exception thrown for duplicate card");
     }
@@ -173,11 +173,11 @@ class CardServiceTest {
     void testGetDeckCards() {
         logger.debug("Test: Getting all cards in deck");
 
-        List<CardEntity> expectedCards = Arrays.asList(testCard, mock(CardEntity.class));
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeckEntity);
+        List<Card> expectedCards = Arrays.asList(testCard, mock(Card.class));
+        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
         when(cardRepository.findByDeckId(DECK_ID)).thenReturn(expectedCards);
 
-        List<CardEntity> cards = cardService.getDeckCards(USER_ID, DECK_ID);
+        List<Card> cards = cardService.getDeckCards(USER_ID, DECK_ID);
 
         assertEquals(2, cards.size());
         verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
@@ -217,7 +217,7 @@ class CardServiceTest {
         when(deckService.userOwnsDeck(DECK_ID, USER_ID)).thenReturn(true);
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
 
-        Optional<CardEntity> card = cardService.getCard(USER_ID, DECK_ID, CARD_ID);
+        Optional<Card> card = cardService.getCard(USER_ID, DECK_ID, CARD_ID);
 
         assertTrue(card.isPresent());
         assertEquals(testCard, card.get());
@@ -237,7 +237,7 @@ class CardServiceTest {
 
         when(deckService.userOwnsDeck(DECK_ID, USER_ID)).thenReturn(false);
 
-        Optional<CardEntity> card = cardService.getCard(USER_ID, DECK_ID, CARD_ID);
+        Optional<Card> card = cardService.getCard(USER_ID, DECK_ID, CARD_ID);
 
         assertFalse(card.isPresent());
         verify(cardRepository, never()).findByIdAndDeckId(anyLong(), anyLong());
@@ -256,7 +256,7 @@ class CardServiceTest {
         when(deckService.userOwnsDeck(DECK_ID, USER_ID)).thenReturn(true);
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
 
-        Optional<CardEntity> card = cardService.getCard(USER_ID, DECK_ID, CARD_ID);
+        Optional<Card> card = cardService.getCard(USER_ID, DECK_ID, CARD_ID);
 
         assertNotNull(card.isPresent());
         assertEquals(testCard, card);
@@ -299,7 +299,7 @@ class CardServiceTest {
         when(cardRepository.existsByDeckIdAndFrontAndBack(DECK_ID, UPDATED_FRONT, UPDATED_BACK)).thenReturn(false);
         when(cardRepository.save(testCard)).thenReturn(testCard);
 
-        CardEntity updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES);
+        Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES);
 
         assertNotNull(updated);
         verify(testCard).setFront(UPDATED_FRONT);
@@ -328,7 +328,7 @@ class CardServiceTest {
             cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES);
         });
 
-        verify(cardRepository, never()).save(any(CardEntity.class));
+        verify(cardRepository, never()).save(any(Card.class));
 
         logger.debug("Test passed: Exception thrown for duplicate");
     }
@@ -348,7 +348,7 @@ class CardServiceTest {
         when(cardRepository.save(testCard)).thenReturn(testCard);
 
         // Update to same front/back but different notes
-        CardEntity updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, CARD_FRONT, CARD_BACK, "New notes");
+        Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, CARD_FRONT, CARD_BACK, "New notes");
 
         assertNotNull(updated);
         verify(cardRepository, never()).existsByDeckIdAndFrontAndBack(anyLong(), anyString(), anyString());
@@ -392,7 +392,7 @@ class CardServiceTest {
             cardService.deleteCard(USER_ID, DECK_ID, CARD_ID);
         });
 
-        verify(cardRepository, never()).delete(any(CardEntity.class));
+        verify(cardRepository, never()).delete(any(Card.class));
 
         logger.debug("Test passed: Exception thrown for not found");
     }
@@ -407,11 +407,11 @@ class CardServiceTest {
     void testSearchCards() {
         logger.debug("Test: Searching cards");
 
-        List<CardEntity> expectedCards = Arrays.asList(testCard);
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeckEntity);
+        List<Card> expectedCards = Arrays.asList(testCard);
+        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
         when(cardRepository.searchByDeckId(DECK_ID, SEARCH_TERM)).thenReturn(expectedCards);
 
-        List<CardEntity> results = cardService.searchCards(USER_ID, DECK_ID, SEARCH_TERM);
+        List<Card> results = cardService.searchCards(USER_ID, DECK_ID, SEARCH_TERM);
 
         assertEquals(1, results.size());
         verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
@@ -450,12 +450,12 @@ class CardServiceTest {
     void testGetCardsByTag() {
         logger.debug("Test: Getting cards by tag");
 
-        List<CardEntity> expectedCards = Arrays.asList(testCard);
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeckEntity);
-        when(tagService.getTagOrThrow(USER_ID, TAG_ID)).thenReturn(testTagEntity);
+        List<Card> expectedCards = Arrays.asList(testCard);
+        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
+        when(tagService.getTagOrThrow(USER_ID, TAG_ID)).thenReturn(testTag);
         when(cardRepository.findByDeckIdAndTagId(DECK_ID, TAG_ID)).thenReturn(expectedCards);
 
-        List<CardEntity> results = cardService.getCardsByTag(USER_ID, DECK_ID, TAG_ID);
+        List<Card> results = cardService.getCardsByTag(USER_ID, DECK_ID, TAG_ID);
 
         assertEquals(1, results.size());
         verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
@@ -493,7 +493,7 @@ class CardServiceTest {
     void testGetCardsByTagUnownedTag() {
         logger.debug("Test: Getting cards by unowned tag");
 
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeckEntity);
+        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
         when(tagService.getTagOrThrow(USER_ID, TAG_ID))
                 .thenThrow(new IllegalArgumentException("Tag not found or access denied"));
 
@@ -516,13 +516,13 @@ class CardServiceTest {
 
         when(deckService.userOwnsDeck(DECK_ID, USER_ID)).thenReturn(true);
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
-        when(tagService.getTagOrThrow(USER_ID, TAG_ID)).thenReturn(testTagEntity);
+        when(tagService.getTagOrThrow(USER_ID, TAG_ID)).thenReturn(testTag);
         when(cardRepository.save(testCard)).thenReturn(testCard);
 
-        CardEntity result = cardService.addTagToCard(USER_ID, DECK_ID, CARD_ID, TAG_ID);
+        Card result = cardService.addTagToCard(USER_ID, DECK_ID, CARD_ID, TAG_ID);
 
         assertNotNull(result);
-        verify(testCard).addTag(testTagEntity);
+        verify(testCard).addTag(testTag);
         verify(cardRepository).save(testCard);
 
         logger.debug("Test passed: Tag added to card");
@@ -538,13 +538,13 @@ class CardServiceTest {
 
         when(deckService.userOwnsDeck(DECK_ID, USER_ID)).thenReturn(true);
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
-        when(tagService.getTagOrThrow(USER_ID, TAG_ID)).thenReturn(testTagEntity);
+        when(tagService.getTagOrThrow(USER_ID, TAG_ID)).thenReturn(testTag);
         when(cardRepository.save(testCard)).thenReturn(testCard);
 
-        CardEntity result = cardService.removeTagFromCard(USER_ID, DECK_ID, CARD_ID, TAG_ID);
+        Card result = cardService.removeTagFromCard(USER_ID, DECK_ID, CARD_ID, TAG_ID);
 
         assertNotNull(result);
-        verify(testCard).removeTag(testTagEntity);
+        verify(testCard).removeTag(testTag);
         verify(cardRepository).save(testCard);
 
         logger.debug("Test passed: Tag removed from card");

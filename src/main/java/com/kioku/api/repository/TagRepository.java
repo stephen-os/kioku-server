@@ -1,6 +1,6 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.TagEntity;
+import com.kioku.api.entity.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -29,7 +29,7 @@ import java.util.Optional;
  * @since 1.0
  */
 @Repository
-public interface TagRepository extends JpaRepository<TagEntity, Long> {
+public interface TagRepository extends JpaRepository<Tag, Long> {
 
     /**
      * Finds all tags in a specific deck.
@@ -40,7 +40,7 @@ public interface TagRepository extends JpaRepository<TagEntity, Long> {
      * @param deckId the deck ID
      * @return list of tags in the deck
      */
-    List<TagEntity> findByDeckId(Long deckId);
+    List<Tag> findByDeckId(Long deckId);
 
     /**
      * Finds a specific tag within a specific deck.
@@ -55,7 +55,7 @@ public interface TagRepository extends JpaRepository<TagEntity, Long> {
      * @param deckId the deck ID
      * @return an Optional containing the tag if found in the deck, empty otherwise
      */
-    Optional<TagEntity> findByIdAndDeckId(Long id, Long deckId);
+    Optional<Tag> findByIdAndDeckId(Long id, Long deckId);
 
     /**
      * Checks if a tag with the given name exists in a specific deck.
@@ -78,7 +78,7 @@ public interface TagRepository extends JpaRepository<TagEntity, Long> {
      * @param userId the user ID
      * @return list of all tags created by the user
      */
-    List<TagEntity> findByUserId(Long userId);
+    List<Tag> findByUserId(Long userId);
 
     /**
      * Counts the number of tags in a deck.

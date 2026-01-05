@@ -1,7 +1,7 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.User;
 import com.kioku.api.repository.DeckRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,17 +76,17 @@ public class DeckService {
      * @return the created deck
      * @throws IllegalArgumentException if user doesn't exist or duplicate name exists
      */
-    public DeckEntity createDeck(Long userId, String name, String description) {
+    public Deck createDeck(Long userId, String name, String description) {
         logger.debug("Creating deck '{}' for user id={}", name, userId);
 
-        UserEntity userEntity = userService.findById(userId)
+        User user = userService.findById(userId)
                 .orElseThrow(() -> {
                     logger.warn("User not found: {}", userId);
                     return new IllegalArgumentException("User not found: " + userId);
                 });
 
         // Check for duplicate name
-        List<DeckEntity> existingDeckEntities = deckRepository.findByUserId(userId);
+        List<Deck> existingDeckEntities = deckRepository.findByUserId(userId);
         boolean nameExists = existingDeckEntities.stream()
                 .anyMatch(d -> d.getName().equals(name));
 
@@ -95,8 +95,8 @@ public class DeckService {
             throw new IllegalArgumentException("Deck with name '" + name + "' already exists");
         }
 
-        DeckEntity deckEntity = new DeckEntity(userEntity, name, description);
-        DeckEntity savedDeck = deckRepository.save(deckEntity);
+        Deck deck = new Deck(user, name, description);
+        Deck savedDeck = deckRepository.save(deck);
 
         logger.debug("Deck created successfully with id={}", savedDeck.getId());
         return savedDeck;
@@ -108,10 +108,10 @@ public class DeckService {
      * @param userId the user ID
      * @return list of user's decks
      */
-    public List<DeckEntity> getUserDecks(Long userId) {
+    public List<Deck> getUserDecks(Long userId) {
         logger.debug("Getting all decks for user id={}", userId);
 
-        List<DeckEntity> decks = deckRepository.findByUserId(userId);
+        List<Deck> decks = deckRepository.findByUserId(userId);
         logger.debug("Found {} decks for user id={}", decks.size(), userId);
 
         return decks;
@@ -126,10 +126,10 @@ public class DeckService {
      * @param userId the user ID
      * @return an Optional containing the deck if found and owned, empty otherwise
      */
-    public Optional<DeckEntity> getDeck(Long deckId, Long userId) {
+    public Optional<Deck> getDeck(Long deckId, Long userId) {
         logger.debug("Getting deck id={} for user id={}", deckId, userId);
 
-        Optional<DeckEntity> deck = deckRepository.findByIdAndUserId(deckId, userId);
+        Optional<Deck> deck = deckRepository.findByIdAndUserId(deckId, userId);
         logger.debug("Deck found: {}", deck.isPresent());
 
         return deck;
@@ -143,7 +143,7 @@ public class DeckService {
      * @return the deck
      * @throws IllegalArgumentException if deck not found or access denied
      */
-    public DeckEntity getDeckOrThrow(Long deckId, Long userId) {
+    public Deck getDeckOrThrow(Long deckId, Long userId) {
         return getDeck(deckId, userId)
                 .orElseThrow(() -> {
                     logger.warn("Deck not found or access denied: deck id={}, user id={}", deckId, userId);
@@ -167,14 +167,14 @@ public class DeckService {
      * @return the updated deck
      * @throws IllegalArgumentException if access denied or update would create duplicate
      */
-    public DeckEntity updateDeck(Long deckId, Long userId, String name, String description) {
+    public Deck updateDeck(Long deckId, Long userId, String name, String description) {
         logger.debug("Updating deck id={} for user id={}", deckId, userId);
 
-        DeckEntity deckEntity = getDeckOrThrow(deckId, userId);
+        Deck deck = getDeckOrThrow(deckId, userId);
 
         // Check if new name conflicts with another deck
-        if (!deckEntity.getName().equals(name)) {
-            List<DeckEntity> userDeckEntities = deckRepository.findByUserId(userId);
+        if (!deck.getName().equals(name)) {
+            List<Deck> userDeckEntities = deckRepository.findByUserId(userId);
             boolean nameExists = userDeckEntities.stream()
                     .anyMatch(d -> !d.getId().equals(deckId) && d.getName().equals(name));
 
@@ -184,9 +184,9 @@ public class DeckService {
             }
         }
 
-        deckEntity.setName(name);
-        deckEntity.setDescription(description);
-        DeckEntity updatedDeck = deckRepository.save(deckEntity);
+        deck.setName(name);
+        deck.setDescription(description);
+        Deck updatedDeck = deckRepository.save(deck);
 
         logger.debug("Deck id={} updated successfully", deckId);
         return updatedDeck;
@@ -204,8 +204,8 @@ public class DeckService {
     public void deleteDeck(Long deckId, Long userId) {
         logger.debug("Deleting deck id={} for user id={}", deckId, userId);
 
-        DeckEntity deckEntity = getDeckOrThrow(deckId, userId);
-        deckRepository.delete(deckEntity);
+        Deck deck = getDeckOrThrow(deckId, userId);
+        deckRepository.delete(deck);
 
         logger.debug("Deck id={} deleted successfully", deckId);
     }

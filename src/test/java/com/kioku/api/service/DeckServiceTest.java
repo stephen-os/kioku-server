@@ -1,7 +1,7 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.DeckEntity;
-import com.kioku.api.entity.UserEntity;
+import com.kioku.api.entity.Deck;
+import com.kioku.api.entity.User;
 import com.kioku.api.repository.DeckRepository;
 import com.kioku.api.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +20,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for DeckService.
@@ -66,8 +65,8 @@ class DeckServiceTest {
     @Autowired
     private UserRepository userRepository;
 
-    private UserEntity testUser;
-    private UserEntity otherUser;
+    private User testUser;
+    private User otherUser;
 
     @BeforeEach
     void setUp() {
@@ -92,7 +91,7 @@ class DeckServiceTest {
     void testCreateDeck() {
         logger.debug("Test: Successful deck creation");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "Japanese Verbs", "JLPT N5");
+        Deck deck = deckService.createDeck(testUser.getId(), "Japanese Verbs", "JLPT N5");
 
         assertThat(deck.getId()).isNotNull();
         assertThat(deck.getName()).isEqualTo("Japanese Verbs");
@@ -109,7 +108,7 @@ class DeckServiceTest {
     void testCreateDeckWithoutDescription() {
         logger.debug("Test: Create deck without description");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "Japanese Verbs", null);
+        Deck deck = deckService.createDeck(testUser.getId(), "Japanese Verbs", null);
 
         assertThat(deck.getId()).isNotNull();
         assertThat(deck.getName()).isEqualTo("Japanese Verbs");
@@ -139,8 +138,8 @@ class DeckServiceTest {
     void testCreateDeckSameNameDifferentUsers() {
         logger.debug("Test: Same deck name for different users");
 
-        DeckEntity deck1 = deckService.createDeck(testUser.getId(), "Japanese Verbs", "User 1 deck");
-        DeckEntity deck2 = deckService.createDeck(otherUser.getId(), "Japanese Verbs", "User 2 deck");
+        Deck deck1 = deckService.createDeck(testUser.getId(), "Japanese Verbs", "User 1 deck");
+        Deck deck2 = deckService.createDeck(otherUser.getId(), "Japanese Verbs", "User 2 deck");
 
         assertThat(deck1.getName()).isEqualTo(deck2.getName());
         assertThat(deck1.getUser().getId()).isNotEqualTo(deck2.getUser().getId());
@@ -173,7 +172,7 @@ class DeckServiceTest {
         deckService.createDeck(testUser.getId(), "Deck 2", "Description 2");
         deckService.createDeck(otherUser.getId(), "Other Deck", "Other description");
 
-        List<DeckEntity> userDecks = deckService.getUserDecks(testUser.getId());
+        List<Deck> userDecks = deckService.getUserDecks(testUser.getId());
 
         assertThat(userDecks).hasSize(2);
         assertThat(userDecks).allMatch(d -> d.getUser().getId().equals(testUser.getId()));
@@ -186,7 +185,7 @@ class DeckServiceTest {
     void testGetUserDecksEmpty() {
         logger.debug("Test: Get decks for user with no decks");
 
-        List<DeckEntity> userDecks = deckService.getUserDecks(testUser.getId());
+        List<Deck> userDecks = deckService.getUserDecks(testUser.getId());
 
         assertThat(userDecks).isEmpty();
 
@@ -198,9 +197,9 @@ class DeckServiceTest {
     void testGetDeck() {
         logger.debug("Test: Get deck by ID");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
 
-        Optional<DeckEntity> found = deckService.getDeck(deck.getId(), testUser.getId());
+        Optional<Deck> found = deckService.getDeck(deck.getId(), testUser.getId());
 
         assertThat(found).isPresent();
         assertThat(found.get().getName()).isEqualTo("My Deck");
@@ -214,9 +213,9 @@ class DeckServiceTest {
     void testGetDeckWithWrongUserReturnsEmpty() {
         logger.debug("Test: Get deck with wrong user");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
 
-        Optional<DeckEntity> found = deckService.getDeck(deck.getId(), otherUser.getId());
+        Optional<Deck> found = deckService.getDeck(deck.getId(), otherUser.getId());
 
         assertThat(found).isEmpty();
 
@@ -228,7 +227,7 @@ class DeckServiceTest {
     void testGetDeckNonExistent() {
         logger.debug("Test: Get non-existent deck");
 
-        Optional<DeckEntity> found = deckService.getDeck(999L, testUser.getId());
+        Optional<Deck> found = deckService.getDeck(999L, testUser.getId());
 
         assertThat(found).isEmpty();
 
@@ -240,9 +239,9 @@ class DeckServiceTest {
     void testGetDeckOrThrow() {
         logger.debug("Test: Get deck or throw");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
 
-        DeckEntity found = deckService.getDeckOrThrow(deck.getId(), testUser.getId());
+        Deck found = deckService.getDeckOrThrow(deck.getId(), testUser.getId());
 
         assertThat(found).isNotNull();
         assertThat(found.getName()).isEqualTo("My Deck");
@@ -255,7 +254,7 @@ class DeckServiceTest {
     void testGetDeckOrThrowWithWrongUserThrowsException() {
         logger.debug("Test: GetDeckOrThrow with wrong user");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             deckService.getDeckOrThrow(deck.getId(), otherUser.getId());
@@ -287,10 +286,10 @@ class DeckServiceTest {
     void testUpdateDeck() {
         logger.debug("Test: Successful deck update");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "Original Name", "Original Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "Original Name", "Original Description");
         Long deckId = deck.getId();
 
-        DeckEntity updated = deckService.updateDeck(
+        Deck updated = deckService.updateDeck(
                 deckId,
                 testUser.getId(),
                 "New Name",
@@ -311,7 +310,7 @@ class DeckServiceTest {
     void testUpdateDeckWithWrongUserThrowsException() {
         logger.debug("Test: Update deck with wrong user");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             deckService.updateDeck(deck.getId(), otherUser.getId(), "New Name", "New Description");
@@ -328,7 +327,7 @@ class DeckServiceTest {
         logger.debug("Test: Update deck to existing name");
 
         deckService.createDeck(testUser.getId(), "Deck A", "Description A");
-        DeckEntity deckB = deckService.createDeck(testUser.getId(), "Deck B", "Description B");
+        Deck deckB = deckService.createDeck(testUser.getId(), "Deck B", "Description B");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             deckService.updateDeck(deckB.getId(), testUser.getId(), "Deck A", "New Description");
@@ -344,9 +343,9 @@ class DeckServiceTest {
     void testUpdateDeckKeepingSameNameSucceeds() {
         logger.debug("Test: Update deck keeping same name");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Original Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Original Description");
 
-        DeckEntity updated = deckService.updateDeck(
+        Deck updated = deckService.updateDeck(
                 deck.getId(),
                 testUser.getId(),
                 "My Deck", // Same name
@@ -364,9 +363,9 @@ class DeckServiceTest {
     void testUpdateDeckToNullDescription() {
         logger.debug("Test: Update deck to null description");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Original Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Original Description");
 
-        DeckEntity updated = deckService.updateDeck(
+        Deck updated = deckService.updateDeck(
                 deck.getId(),
                 testUser.getId(),
                 "My Deck",
@@ -385,7 +384,7 @@ class DeckServiceTest {
     void testDeleteDeck() {
         logger.debug("Test: Successful deck deletion");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "To Delete", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "To Delete", "Description");
         Long deckId = deck.getId();
 
         deckService.deleteDeck(deckId, testUser.getId());
@@ -400,7 +399,7 @@ class DeckServiceTest {
     void testDeleteDeckWithWrongUserThrowsException() {
         logger.debug("Test: Delete deck with wrong user");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             deckService.deleteDeck(deck.getId(), otherUser.getId());
@@ -432,7 +431,7 @@ class DeckServiceTest {
     void testUserOwnsDeck() {
         logger.debug("Test: User owns deck verification");
 
-        DeckEntity deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
 
         assertThat(deckService.userOwnsDeck(deck.getId(), testUser.getId())).isTrue();
         assertThat(deckService.userOwnsDeck(deck.getId(), otherUser.getId())).isFalse();
