@@ -13,34 +13,35 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Service layer for Card entity business logic.
+ * Service for managing flashcards (cards) within decks.
  *
- * <p>This service provides:
+ * <p>This service provides business logic for:
  * <ul>
- *   <li>Card creation with duplicate detection</li>
- *   <li>Card retrieval with ownership verification</li>
- *   <li>Card updates with duplicate prevention</li>
- *   <li>Card deletion</li>
- *   <li>Card search by content</li>
- *   <li>Tag management for cards</li>
+ *   <li>Creating, reading, updating, and deleting cards</li>
+ *   <li>Searching and filtering cards by content</li>
+ *   <li>Filtering cards by tags</li>
+ *   <li>Managing card-tag associations</li>
+ *   <li>Duplicate detection (front/back combination)</li>
  * </ul>
  *
- * <p><strong>Security:</strong> All methods verify that the user owns the deck
- * before performing operations. Methods that accept {@code userId} will check
- * ownership and throw exceptions if access is denied.
+ * <p><strong>Security:</strong>
+ * All methods verify deck ownership before performing operations by calling
+ * {@link DeckService#getDeckOrThrow(Long, Long)}, which throws an exception
+ * if the user doesn't own the deck.
  *
- * <p><strong>Transaction Management:</strong>
- * <ul>
- *   <li>Class is annotated with {@code @Transactional} for write operations</li>
- *   <li>Read-only methods should use {@code @Transactional(readOnly = true)}</li>
- * </ul>
+ * <p><strong>Duplicate Prevention:</strong>
+ * Cards with the same front/back text combination within a deck are not allowed.
+ * The comparison is case-sensitive and exact match.
+ *
+ * <p><strong>Tag Loading:</strong>
+ * All card retrieval methods use eager loading of tags via {@code LEFT JOIN FETCH}
+ * to prevent LazyInitializationException when accessing tags outside of transactions.
  *
  * @author Stephen Watson
  * @version 1.0
  * @since 1.0
  */
 @Service
-@Transactional
 public class CardService {
 
     private static final Logger logger = LoggerFactory.getLogger(CardService.class);
@@ -50,7 +51,7 @@ public class CardService {
     private final TagService tagService;
 
     /**
-     * Constructs a new CardService.
+     * Constructs a CardService with required dependencies.
      *
      * @param cardRepository the card repository
      * @param deckService the deck service for ownership verification
@@ -65,296 +66,325 @@ public class CardService {
     /**
      * Creates a new card in a deck.
      *
-     * <p>Verifies that:
+     * <p><strong>Validation:</strong>
      * <ul>
-     *   <li>The user owns the deck</li>
-     *   <li>No duplicate card exists (same front and back in the deck)</li>
+     *   <li>Verifies user owns the deck</li>
+     *   <li>Checks for duplicate front/back combination</li>
+     *   <li>Ensures front and back are not null or blank</li>
      * </ul>
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param front the front text (question/prompt)
-     * @param back the back text (answer/translation)
-     * @param notes optional notes
+     * @param userId the ID of the user creating the card
+     * @param deckId the ID of the deck to add the card to
+     * @param front the front text of the card
+     * @param back the back text of the card
+     * @param notes optional notes for the card
      * @return the created card
-     * @throws IllegalArgumentException if user doesn't own deck or duplicate exists
+     * @throws IllegalArgumentException if user doesn't own deck or card is duplicate
      */
+    @Transactional
     public CardEntity createCard(Long userId, Long deckId, String front, String back, String notes) {
         logger.debug("Creating card in deck id={} for user id={}", deckId, userId);
 
-        // Verify user owns the deck
-        DeckEntity deckEntity = deckService.getDeckOrThrow(deckId, userId);
+        // Get deck and verify ownership
+        DeckEntity deck = deckService.getDeckOrThrow(deckId, userId);
 
         // Check for duplicate
         if (cardRepository.existsByDeckIdAndFrontAndBack(deckId, front, back)) {
-            logger.warn("Card creation failed: duplicate card in deck id={}", deckId);
-            throw new IllegalArgumentException("Card with same front and back already exists in this deck");
+            logger.warn("Duplicate card detected in deck id={}: front='{}', back='{}'", deckId, front, back);
+            throw new IllegalArgumentException("A card with this front and back already exists in this deck");
         }
 
-        CardEntity card = new CardEntity(deckEntity, front, back, notes);
-        CardEntity savedCard = cardRepository.save(card);
+        // Create card
+        CardEntity card = new CardEntity(deck, front, back);
+        if (notes != null && !notes.isBlank()) {
+            card.setNotes(notes);
+        }
 
-        logger.debug("Card created successfully with id={}", savedCard.getId());
+        CardEntity savedCard = cardRepository.save(card);
+        logger.info("Card created: id={} in deck id={}", savedCard.getId(), deckId);
+
         return savedCard;
     }
 
     /**
-     * Gets all cards in a deck.
+     * Retrieves all cards in a deck with tags eagerly loaded.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @return list of cards in the deck
+     * <p><strong>Security:</strong> Verifies user owns the deck.
+     *
+     * <p><strong>Performance:</strong> Tags are eagerly loaded to prevent
+     * LazyInitializationException when accessing tags in DTOs.
+     *
+     * @param userId the ID of the user requesting the cards
+     * @param deckId the ID of the deck
+     * @return list of cards in the deck with tags loaded
      * @throws IllegalArgumentException if user doesn't own the deck
      */
     @Transactional(readOnly = true)
     public List<CardEntity> getDeckCards(Long userId, Long deckId) {
         logger.debug("Getting cards for deck id={}, user id={}", deckId, userId);
 
-        // Verify user owns the deck
+        // Verify deck ownership
         deckService.getDeckOrThrow(deckId, userId);
 
-        List<CardEntity> cards = cardRepository.findByDeckId(deckId);
-        logger.debug("Found {} cards in deck id={}", cards.size(), deckId);
+        // Fetch cards with tags eagerly loaded
+        List<CardEntity> cards = cardRepository.findByDeckIdWithTags(deckId);
 
+        logger.debug("Found {} cards in deck id={}", cards.size(), deckId);
         return cards;
     }
 
     /**
-     * Gets a specific card.
+     * Retrieves a specific card by ID within a deck with tags eagerly loaded.
      *
-     * <p>Verifies that the user owns the deck and the card exists in that deck.
+     * <p><strong>Security:</strong> Verifies user owns the deck and card exists in that deck.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param cardId the card ID
-     * @return an Optional containing the card if found and owned, empty otherwise
+     * @param userId the ID of the user requesting the card
+     * @param deckId the ID of the deck
+     * @param cardId the ID of the card
+     * @return an Optional containing the card with tags if found, empty otherwise
+     * @throws IllegalArgumentException if user doesn't own the deck
      */
     @Transactional(readOnly = true)
     public Optional<CardEntity> getCard(Long userId, Long deckId, Long cardId) {
         logger.debug("Getting card id={} from deck id={} for user id={}", cardId, deckId, userId);
 
-        // Verify user owns the deck
-        if (!deckService.userOwnsDeck(deckId, userId)) {
-            logger.warn("Access denied: user id={} does not own deck id={}", userId, deckId);
-            return Optional.empty();
-        }
+        // Verify deck ownership
+        deckService.getDeckOrThrow(deckId, userId);
 
-        Optional<CardEntity> card = cardRepository.findByIdAndDeckId(cardId, deckId);
+        // Fetch card with tags eagerly loaded
+        Optional<CardEntity> card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId);
+
         logger.debug("Card found: {}", card.isPresent());
-
         return card;
     }
 
     /**
-     * Gets a card or throws exception if not found or not owned.
+     * Updates an existing card.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param cardId the card ID
-     * @return the card
-     * @throws IllegalArgumentException if card not found or access denied
-     */
-    @Transactional(readOnly = true)
-    public CardEntity getCardOrThrow(Long userId, Long deckId, Long cardId) {
-        return getCard(userId, deckId, cardId)
-                .orElseThrow(() -> {
-                    logger.warn("Card not found or access denied: card id={}, deck id={}, user id={}",
-                            cardId, deckId, userId);
-                    return new IllegalArgumentException("Card not found or access denied: " + cardId);
-                });
-    }
-
-    /**
-     * Updates a card.
-     *
-     * <p>Verifies that:
+     * <p><strong>Validation:</strong>
      * <ul>
-     *   <li>The user owns the deck</li>
-     *   <li>The update doesn't create a duplicate</li>
+     *   <li>Verifies user owns the deck</li>
+     *   <li>Verifies card exists in the deck</li>
+     *   <li>Checks for duplicate front/back (excluding the card being updated)</li>
      * </ul>
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param cardId the card ID
+     * @param userId the ID of the user updating the card
+     * @param deckId the ID of the deck containing the card
+     * @param cardId the ID of the card to update
      * @param front the new front text
      * @param back the new back text
-     * @param notes the new notes (or null to clear)
-     * @return the updated card
-     * @throws IllegalArgumentException if access denied or update would create duplicate
+     * @param notes the new notes (can be null)
+     * @return the updated card with tags loaded
+     * @throws IllegalArgumentException if user doesn't own deck, card not found, or duplicate
      */
+    @Transactional
     public CardEntity updateCard(Long userId, Long deckId, Long cardId, String front, String back, String notes) {
         logger.debug("Updating card id={} in deck id={} for user id={}", cardId, deckId, userId);
 
-        CardEntity card = getCardOrThrow(userId, deckId, cardId);
+        // Verify deck ownership
+        deckService.getDeckOrThrow(deckId, userId);
 
-        // Check if update would create duplicate (only if front or back changed)
-        if (!card.getFront().equals(front) || !card.getBack().equals(back)) {
-            if (cardRepository.existsByDeckIdAndFrontAndBack(deckId, front, back)) {
-                logger.warn("Card update failed: would create duplicate in deck id={}", deckId);
-                throw new IllegalArgumentException("Card with same front and back already exists in this deck");
-            }
+        // Get existing card
+        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+                .orElseThrow(() -> {
+                    logger.warn("Card id={} not found in deck id={}", cardId, deckId);
+                    return new IllegalArgumentException("Card not found in this deck");
+                });
+
+        // Check for duplicate (excluding this card)
+        if (cardRepository.existsByDeckIdAndFrontAndBackAndIdNot(deckId, front, back, cardId)) {
+            logger.warn("Update would create duplicate in deck id={}: front='{}', back='{}'", deckId, front, back);
+            throw new IllegalArgumentException("A card with this front and back already exists in this deck");
         }
 
+        // Update card
         card.setFront(front);
         card.setBack(back);
         card.setNotes(notes);
 
         CardEntity updatedCard = cardRepository.save(card);
-        logger.debug("Card id={} updated successfully", cardId);
+        logger.info("Card updated: id={} in deck id={}", cardId, deckId);
 
         return updatedCard;
     }
 
     /**
-     * Deletes a card.
+     * Deletes a card from a deck.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param cardId the card ID
-     * @throws IllegalArgumentException if card not found or access denied
+     * <p><strong>Side Effects:</strong>
+     * All tag associations for this card are automatically removed by JPA
+     * cascade settings.
+     *
+     * @param userId the ID of the user deleting the card
+     * @param deckId the ID of the deck containing the card
+     * @param cardId the ID of the card to delete
+     * @throws IllegalArgumentException if user doesn't own deck or card not found
      */
+    @Transactional
     public void deleteCard(Long userId, Long deckId, Long cardId) {
         logger.debug("Deleting card id={} from deck id={} for user id={}", cardId, deckId, userId);
 
-        CardEntity card = getCardOrThrow(userId, deckId, cardId);
-        cardRepository.delete(card);
+        // Verify deck ownership
+        deckService.getDeckOrThrow(deckId, userId);
 
-        logger.debug("Card id={} deleted successfully", cardId);
+        // Verify card exists in deck
+        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+                .orElseThrow(() -> {
+                    logger.warn("Card id={} not found in deck id={}", cardId, deckId);
+                    return new IllegalArgumentException("Card not found in this deck");
+                });
+
+        cardRepository.delete(card);
+        logger.info("Card deleted: id={} from deck id={}", cardId, deckId);
     }
 
     /**
-     * Searches for cards in a deck by text content.
+     * Searches for cards by text content with tags eagerly loaded.
      *
-     * <p>Searches both front and back text using case-insensitive partial matching.
+     * <p>Performs a case-insensitive partial match search on both front and back text.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
+     * @param userId the ID of the user performing the search
+     * @param deckId the ID of the deck to search in
      * @param searchTerm the text to search for
-     * @return list of matching cards
+     * @return list of matching cards with tags loaded
      * @throws IllegalArgumentException if user doesn't own the deck
      */
     @Transactional(readOnly = true)
     public List<CardEntity> searchCards(Long userId, Long deckId, String searchTerm) {
-        logger.debug("Searching cards in deck id={} for term='{}', user id={}", deckId, searchTerm, userId);
+        logger.debug("Searching cards in deck id={} for term: {}", deckId, searchTerm);
 
-        // Verify user owns the deck
+        // Verify deck ownership
         deckService.getDeckOrThrow(deckId, userId);
 
-        List<CardEntity> cards = cardRepository.searchByDeckId(deckId, searchTerm);
-        logger.debug("Found {} cards matching search term", cards.size());
+        // Search with tags eagerly loaded
+        List<CardEntity> cards = cardRepository.searchByDeckIdWithTags(deckId, searchTerm);
 
+        logger.debug("Found {} cards matching search term in deck id={}", cards.size(), deckId);
         return cards;
     }
 
     /**
-     * Gets all cards in a deck that have a specific tag.
+     * Retrieves all cards in a deck that have a specific tag with tags eagerly loaded.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param tagId the tag ID
+     * <p><strong>Security:</strong>
+     * Verifies user owns both the deck and the tag.
+     *
+     * @param userId the ID of the user requesting the cards
+     * @param deckId the ID of the deck
+     * @param tagId the ID of the tag to filter by
      * @return list of cards with the specified tag
      * @throws IllegalArgumentException if user doesn't own deck or tag
      */
     @Transactional(readOnly = true)
     public List<CardEntity> getCardsByTag(Long userId, Long deckId, Long tagId) {
-        logger.debug("Getting cards by tag id={} in deck id={} for user id={}", tagId, deckId, userId);
+        logger.debug("Getting cards in deck id={} with tag id={}", deckId, tagId);
 
-        // Verify user owns the deck
+        // Verify deck ownership
         deckService.getDeckOrThrow(deckId, userId);
 
-        // Verify user owns the tag
-        tagService.getTagOrThrow(userId, tagId);
+        // Verify tag exists and belongs to deck
+        tagService.getTag(userId, deckId, tagId)
+                .orElseThrow(() -> new IllegalArgumentException("Tag not found in this deck"));
 
-        List<CardEntity> cards = cardRepository.findByDeckIdAndTagId(deckId, tagId);
-        logger.debug("Found {} cards with tag id={}", cards.size(), tagId);
+        // Fetch cards with tags eagerly loaded
+        List<CardEntity> cards = cardRepository.findByDeckIdAndTagIdWithTags(deckId, tagId);
 
+        logger.debug("Found {} cards with tag id={} in deck id={}", cards.size(), tagId, deckId);
         return cards;
     }
 
     /**
      * Adds a tag to a card.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param cardId the card ID
-     * @param tagId the tag ID
-     * @return the updated card
-     * @throws IllegalArgumentException if access denied or tag already exists
+     * <p><strong>Validation:</strong>
+     * <ul>
+     *   <li>Verifies user owns the deck</li>
+     *   <li>Verifies card exists in the deck</li>
+     *   <li>Verifies tag exists and belongs to the same deck</li>
+     *   <li>Prevents adding duplicate tags to the same card</li>
+     * </ul>
+     *
+     * @param userId the ID of the user adding the tag
+     * @param deckId the ID of the deck
+     * @param cardId the ID of the card
+     * @param tagId the ID of the tag to add
+     * @return the updated card with tags loaded
+     * @throws IllegalArgumentException if validation fails
      */
+    @Transactional
     public CardEntity addTagToCard(Long userId, Long deckId, Long cardId, Long tagId) {
-        logger.debug("Adding tag id={} to card id={} in deck id={} for user id={}",
-                tagId, cardId, deckId, userId);
+        logger.debug("Adding tag id={} to card id={} in deck id={}", tagId, cardId, deckId);
 
-        CardEntity card = getCardOrThrow(userId, deckId, cardId);
-        TagEntity tag = tagService.getTagOrThrow(userId, tagId);
+        // Verify deck ownership
+        deckService.getDeckOrThrow(deckId, userId);
 
+        // Get card
+        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+                .orElseThrow(() -> {
+                    logger.warn("Card id={} not found in deck id={}", cardId, deckId);
+                    return new IllegalArgumentException("Card not found in this deck");
+                });
+
+        // Get tag and verify it belongs to the same deck
+        TagEntity tag = tagService.getTag(userId, deckId, tagId)
+                .orElseThrow(() -> {
+                    logger.warn("Tag id={} not found in deck id={}", tagId, deckId);
+                    return new IllegalArgumentException("Tag not found in this deck");
+                });
+
+        // Add tag to card (Set prevents duplicates automatically)
         card.addTag(tag);
-        CardEntity updatedCard = cardRepository.save(card);
 
-        logger.debug("Tag id={} added to card id={} successfully", tagId, cardId);
-        return updatedCard;
+        CardEntity savedCard = cardRepository.save(card);
+        logger.info("Tag id={} added to card id={}", tagId, cardId);
+
+        return savedCard;
     }
 
     /**
      * Removes a tag from a card.
      *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param cardId the card ID
-     * @param tagId the tag ID
-     * @return the updated card
-     * @throws IllegalArgumentException if access denied
+     * <p><strong>Validation:</strong>
+     * <ul>
+     *   <li>Verifies user owns the deck</li>
+     *   <li>Verifies card exists in the deck</li>
+     *   <li>Verifies tag exists</li>
+     * </ul>
+     *
+     * @param userId the ID of the user removing the tag
+     * @param deckId the ID of the deck
+     * @param cardId the ID of the card
+     * @param tagId the ID of the tag to remove
+     * @return the updated card with tags loaded
+     * @throws IllegalArgumentException if validation fails
      */
+    @Transactional
     public CardEntity removeTagFromCard(Long userId, Long deckId, Long cardId, Long tagId) {
-        logger.debug("Removing tag id={} from card id={} in deck id={} for user id={}",
-                tagId, cardId, deckId, userId);
+        logger.debug("Removing tag id={} from card id={} in deck id={}", tagId, cardId, deckId);
 
-        CardEntity card = getCardOrThrow(userId, deckId, cardId);
-        TagEntity tag = tagService.getTagOrThrow(userId, tagId);
-
-        card.removeTag(tag);
-        CardEntity updatedCard = cardRepository.save(card);
-
-        logger.debug("Tag id={} removed from card id={} successfully", tagId, cardId);
-        return updatedCard;
-    }
-
-    /**
-     * Checks if a card with the same front and back exists in a deck.
-     *
-     * <p><strong>Note:</strong> This method does NOT verify deck ownership.
-     * It's intended for internal use or public duplicate checking.
-     *
-     * @param deckId the deck ID
-     * @param front the front text
-     * @param back the back text
-     * @return {@code true} if duplicate exists, {@code false} otherwise
-     */
-    @Transactional(readOnly = true)
-    public boolean isDuplicate(Long deckId, String front, String back) {
-        boolean exists = cardRepository.existsByDeckIdAndFrontAndBack(deckId, front, back);
-        logger.debug("Duplicate check for deck id={}: {}", deckId, exists);
-        return exists;
-    }
-
-    /**
-     * Counts the number of cards in a deck.
-     *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @return the number of cards
-     * @throws IllegalArgumentException if user doesn't own the deck
-     */
-    @Transactional(readOnly = true)
-    public long countCards(Long userId, Long deckId) {
-        logger.debug("Counting cards in deck id={} for user id={}", deckId, userId);
-
-        // Verify user owns the deck
+        // Verify deck ownership
         deckService.getDeckOrThrow(deckId, userId);
 
-        long count = cardRepository.countByDeckId(deckId);
-        logger.debug("Deck id={} has {} cards", deckId, count);
+        // Get card
+        CardEntity card = cardRepository.findByIdAndDeckIdWithTags(cardId, deckId)
+                .orElseThrow(() -> {
+                    logger.warn("Card id={} not found in deck id={}", cardId, deckId);
+                    return new IllegalArgumentException("Card not found in this deck");
+                });
 
-        return count;
+        // Get tag
+        TagEntity tag = tagService.getTag(userId, deckId, tagId)
+                .orElseThrow(() -> {
+                    logger.warn("Tag id={} not found in deck id={}", tagId, deckId);
+                    return new IllegalArgumentException("Tag not found in this deck");
+                });
+
+        // Remove tag from card
+        card.removeTag(tag);
+
+        CardEntity savedCard = cardRepository.save(card);
+        logger.info("Tag id={} removed from card id={}", tagId, cardId);
+
+        return savedCard;
     }
 }
