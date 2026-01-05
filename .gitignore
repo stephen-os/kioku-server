@@ -42,8 +42,6 @@ bin/
 .DS_Store
 
 ### Application configuration ###
-application.yml
-application.properties
 application-*.yml
 application-*.properties
 
