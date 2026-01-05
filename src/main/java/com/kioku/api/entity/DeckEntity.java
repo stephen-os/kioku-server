@@ -2,7 +2,9 @@ package com.kioku.api.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Entity representing a flashcard deck.
@@ -97,6 +99,22 @@ public class DeckEntity {
      */
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    /**
+     * Cards belonging to this deck.
+     * Cascade ALL means when deck is deleted, all cards are deleted too.
+     * orphanRemoval ensures cards removed from the collection are also deleted.
+     */
+    @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CardEntity> cards = new HashSet<>();
+
+    /**
+     * Tags belonging to this deck.
+     * Cascade ALL means when deck is deleted, all tags are deleted too.
+     * orphanRemoval ensures tags removed from the collection are also deleted.
+     */
+    @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TagEntity> tags = new HashSet<>();
 
     /**
      * JPA lifecycle callback - sets timestamps on creation.
@@ -276,6 +294,24 @@ public class DeckEntity {
      */
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    /**
+     * Gets the cards in this deck.
+     *
+     * @return the set of cards (never null)
+     */
+    public Set<CardEntity> getCards() {
+        return cards;
+    }
+
+    /**
+     * Gets the tags in this deck.
+     *
+     * @return the set of tags (never null)
+     */
+    public Set<TagEntity> getTags() {
+        return tags;
     }
 
     /**
