@@ -1,12 +1,17 @@
 # Build stage
 FROM eclipse-temurin:25-jdk AS build
-
 WORKDIR /app
 
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle .
+# Copy Gradle files
 COPY settings.gradle .
+COPY build.gradle .
+COPY gradle gradle
+COPY gradlew .
+
+# Fix gradlew permissions
+RUN chmod +x gradlew
+
+# Copy source code
 COPY src src
 
 # Build with native access enabled
@@ -15,15 +20,14 @@ RUN ./gradlew build -x test
 
 # Runtime stage
 FROM eclipse-temurin:25-jre
-
 WORKDIR /app
 
-# Copy the built JAR
+# Copy the built jar from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Enable native access for runtime
-ENV JAVA_TOOL_OPTIONS="--enable-native-access=ALL-UNNAMED"
-
+# Expose port (Railway sets PORT env var)
 EXPOSE 8080
 
-CMD ["java", "-jar", "app.jar"]
+# Run the application
+ENV JAVA_TOOL_OPTIONS="--enable-native-access=ALL-UNNAMED"
+ENTRYPOINT ["java", "-jar", "app.jar"]
