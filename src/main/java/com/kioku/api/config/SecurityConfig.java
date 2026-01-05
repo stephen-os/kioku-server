@@ -1,6 +1,8 @@
 package com.kioku.api.config;
 
 import com.kioku.api.security.JwtAuthenticationFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -42,24 +44,22 @@ import java.util.List;
  *   <li>Stateless sessions (no server-side session storage)</li>
  *   <li>CSRF protection disabled (safe for JWT-based APIs)</li>
  *   <li>BCrypt password hashing with automatic salt generation</li>
- *   <li>CORS configured for cross-origin frontend communication</li>
+ *   <li>Environment-based CORS configuration (development vs production)</li>
  * </ul>
  *
- * <p><strong>⚠️ PRODUCTION DEPLOYMENT REQUIRED CHANGES:</strong>
+ * <p><strong>Environment Variables Required for Production:</strong>
  * <ul>
- *   <li><strong>CORS Origins:</strong> Update {@code setAllowedOriginPatterns}
- *       from "http://localhost:3000" to your production frontend URL(s):
- *       <pre>configuration.setAllowedOriginPatterns(List.of(
- *     "https://yourdomain.com",
- *     "https://www.yourdomain.com"
- * ));</pre>
- *   </li>
- *   <li><strong>HTTPS Only:</strong> Ensure all allowed origins use HTTPS in production</li>
- *   <li><strong>JWT Secret:</strong> Configure {@link com.kioku.api.security.JwtUtil}
- *       with a strong secret key from environment variables (not hardcoded)</li>
- *   <li><strong>Remove Test Endpoints:</strong> Remove or secure "/api/test/**" endpoints:
- *       <pre>.requestMatchers("/api/test/**").denyAll()</pre>
- *   </li>
+ *   <li><strong>FRONTEND_URL:</strong> The exact URL of your frontend application
+ *       (e.g., "https://kioku.vercel.app"). If not set, falls back to localhost.</li>
+ *   <li><strong>JWT_SECRET:</strong> Strong secret key for JWT signing (min 256 bits).
+ *       Generate with: {@code openssl rand -base64 64}</li>
+ *   <li><strong>SPRING_PROFILES_ACTIVE:</strong> Set to "prod" for production deployment</li>
+ * </ul>
+ *
+ * <p><strong>CORS Configuration:</strong>
+ * <ul>
+ *   <li><strong>Development:</strong> Allows http://localhost:3000 when FRONTEND_URL not set</li>
+ *   <li><strong>Production:</strong> Restricts to exact FRONTEND_URL from environment variable</li>
  * </ul>
  *
  * <p><strong>Endpoint Authorization Rules:</strong>
@@ -68,7 +68,6 @@ import java.util.List;
  *       <ul>
  *         <li>/api/auth/register - User registration</li>
  *         <li>/api/auth/login - User login</li>
- *         <li>/api/test/** - Test endpoints (⚠️ REMOVE IN PRODUCTION)</li>
  *       </ul>
  *   </li>
  *   <li><strong>Protected (authentication required):</strong>
@@ -87,6 +86,8 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -115,6 +116,9 @@ public class SecurityConfig {
      * JwtAuthenticationFilter runs before UsernamePasswordAuthenticationFilter
      * to validate JWT tokens before standard Spring Security authentication.
      *
+     * <p><strong>Production Note:</strong>
+     * Test endpoints have been removed for production security.
+     *
      * @param http the HttpSecurity configuration builder
      * @return the configured security filter chain
      * @throws Exception if configuration fails
@@ -128,7 +132,6 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/test/**").permitAll() // ⚠️ REMOVE IN PRODUCTION
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -142,13 +145,19 @@ public class SecurityConfig {
      * <p>CORS allows the frontend application (running on a different origin)
      * to make requests to this backend API.
      *
-     * <p><strong>⚠️ PRODUCTION REQUIRED CHANGE:</strong>
-     * Update {@code setAllowedOriginPatterns} to include your production frontend URL(s).
-     * Current configuration only allows http://localhost:3000 (development).
+     * <p><strong>Environment-Based Configuration:</strong>
+     * <ul>
+     *   <li><strong>Production:</strong> If FRONTEND_URL environment variable is set,
+     *       CORS is restricted to that exact URL only</li>
+     *   <li><strong>Development:</strong> If FRONTEND_URL is not set, falls back to
+     *       http://localhost:3000 for local development</li>
+     * </ul>
+     *
+     * <p><strong>Security:</strong>
+     * Always set FRONTEND_URL in production to prevent unauthorized cross-origin access.
      *
      * <p><strong>Configuration Details:</strong>
      * <ul>
-     *   <li><strong>Allowed Origins:</strong> http://localhost:3000 (⚠️ UPDATE FOR PROD)</li>
      *   <li><strong>Allowed Methods:</strong> GET, POST, PUT, DELETE, OPTIONS, PATCH</li>
      *   <li><strong>Allowed Headers:</strong> All headers (*)</li>
      *   <li><strong>Allow Credentials:</strong> true (allows cookies and Authorization headers)</li>
@@ -156,13 +165,10 @@ public class SecurityConfig {
      *   <li><strong>Max Age:</strong> 3600 seconds (1 hour preflight cache)</li>
      * </ul>
      *
-     * <p><strong>Production Example:</strong>
+     * <p><strong>Example Production Deployment:</strong>
      * <pre>
-     * configuration.setAllowedOriginPatterns(List.of(
-     *     "https://yourdomain.com",
-     *     "https://www.yourdomain.com",
-     *     "https://app.yourdomain.com"
-     * ));
+     * # On Railway/Heroku/etc, set environment variable:
+     * FRONTEND_URL=https://kioku.vercel.app
      * </pre>
      *
      * @return the CORS configuration source
@@ -171,8 +177,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ⚠️ PRODUCTION: Replace with actual frontend URL(s)
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:3000"));
+        // Get frontend URL from environment variable
+        String frontendUrl = System.getenv("FRONTEND_URL");
+
+        if (frontendUrl != null && !frontendUrl.isEmpty()) {
+            logger.info("CORS configured for production frontend: {}", frontendUrl);
+            configuration.setAllowedOriginPatterns(List.of(frontendUrl));
+        } else {
+            logger.warn("FRONTEND_URL not set - using localhost:3000 (development mode only)");
+            logger.warn("⚠️  Set FRONTEND_URL environment variable for production deployment");
+            configuration.setAllowedOriginPatterns(List.of("http://localhost:3000"));
+        }
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
