@@ -1,7 +1,7 @@
 spring:
   # Database
   datasource:
-    url: ${DATABASE_URL}
+    url: jdbc:${DATABASE_URL:postgresql://localhost:5432/kioku_db}
 
   # Hibernate
   jpa:
