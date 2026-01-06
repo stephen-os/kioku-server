@@ -50,7 +50,7 @@ public interface CardRepository extends JpaRepository<Card, Long> {
      */
     @Query("""
         SELECT DISTINCT c
-        FROM CardEntity c
+        FROM Card c
         LEFT JOIN FETCH c.tags
         WHERE c.deck.id = :deckId
         ORDER BY c.createdAt ASC
@@ -72,7 +72,7 @@ public interface CardRepository extends JpaRepository<Card, Long> {
      */
     @Query("""
         SELECT DISTINCT c
-        FROM CardEntity c
+        FROM Card c
         LEFT JOIN FETCH c.tags
         WHERE c.id = :id AND c.deck.id = :deckId
         """)
@@ -121,7 +121,7 @@ public interface CardRepository extends JpaRepository<Card, Long> {
      */
     @Query("""
         SELECT DISTINCT c
-        FROM CardEntity c
+        FROM Card c
         LEFT JOIN FETCH c.tags
         WHERE c.deck.id = :deckId
         AND (LOWER(c.front) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
@@ -145,11 +145,11 @@ public interface CardRepository extends JpaRepository<Card, Long> {
      */
     @Query("""
         SELECT DISTINCT c
-        FROM CardEntity c
+        FROM Card c
         LEFT JOIN FETCH c.tags t
         WHERE c.deck.id = :deckId
         AND EXISTS (
-            SELECT 1 FROM CardEntity c2
+            SELECT 1 FROM Card c2
             JOIN c2.tags t2
             WHERE c2.id = c.id AND t2.id = :tagId
         )

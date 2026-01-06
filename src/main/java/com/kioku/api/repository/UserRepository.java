@@ -40,7 +40,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param email the email address to search for
      * @return an Optional containing the user if found, empty otherwise
      */
-    @Query("SELECT u FROM UserEntity u WHERE LOWER(u.email) = LOWER(:email)")
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)")
     Optional<User> findByEmail(@Param("email") String email);
 
     /**
@@ -52,7 +52,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param email the email address to check
      * @return {@code true} if a user with this email exists, {@code false} otherwise
      */
-    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserEntity u WHERE LOWER(u.email) = LOWER(:email)")
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE LOWER(u.email) = LOWER(:email)")
     boolean existsByEmail(@Param("email") String email);
 
     /**
@@ -93,7 +93,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param now the current timestamp
      * @return a list of locked users
      */
-    @Query("SELECT u FROM UserEntity u WHERE u.lockedUntil > :now")
+    @Query("SELECT u FROM User u WHERE u.lockedUntil > :now")
     List<User> findLockedAccounts(@Param("now") LocalDateTime now);
 
     /**
@@ -103,7 +103,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      *
      * @return a list of soft-deleted users
      */
-    @Query("SELECT u FROM UserEntity u WHERE u.deletedAt IS NOT NULL")
+    @Query("SELECT u FROM User u WHERE u.deletedAt IS NOT NULL")
     List<User> findDeletedAccounts();
 
     /**
@@ -119,7 +119,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param now the current timestamp
      * @return a list of active users
      */
-    @Query("SELECT u FROM UserEntity u WHERE u.status = 'ACTIVE' " +
+    @Query("SELECT u FROM User u WHERE u.status = 'ACTIVE' " +
             "AND u.deletedAt IS NULL " +
             "AND (u.lockedUntil IS NULL OR u.lockedUntil < :now)")
     List<User> findActiveAccounts(@Param("now") LocalDateTime now);
@@ -140,6 +140,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param date the date to count from
      * @return the number of users created after the given date
      */
-    @Query("SELECT COUNT(u) FROM UserEntity u WHERE u.createdAt > :date")
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt > :date")
     long countUsersCreatedAfter(@Param("date") LocalDateTime date);
 }

@@ -112,7 +112,7 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
      * @param date the date to search from
      * @return list of decks created after the date
      */
-    @Query("SELECT d FROM DeckEntity d WHERE d.user.id = :userId AND d.createdAt > :date ORDER BY d.createdAt DESC")
+    @Query("SELECT d FROM Deck d WHERE d.user.id = :userId AND d.createdAt > :date ORDER BY d.createdAt DESC")
     List<Deck> findByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("date") LocalDateTime date);
 
     /**
@@ -125,7 +125,7 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
      * @param limit the maximum number of decks to return
      * @return list of recently updated decks
      */
-    @Query(value = "SELECT d FROM DeckEntity d WHERE d.user.id = :userId ORDER BY d.updatedAt DESC LIMIT :limit")
+    @Query(value = "SELECT d FROM Deck d WHERE d.user.id = :userId ORDER BY d.updatedAt DESC LIMIT :limit")
     List<Deck> findRecentlyUpdatedDecks(@Param("userId") Long userId, @Param("limit") int limit);
 
     /**
