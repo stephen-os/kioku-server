@@ -1,6 +1,9 @@
 package com.kioku.api.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Objects;
@@ -9,26 +12,31 @@ import java.util.Set;
 /**
  * Entity representing a flashcard deck.
  *
- * <p>A deck is a collection of flashcards ({@link Card}) that:
+ * <p>A deck contains:
  * <ul>
- *   <li>Belongs to a single user</li>
- *   <li>Has a unique name per user</li>
- *   <li>Contains cards for studying</li>
- *   <li>Can have deck-specific tags for organization</li>
+ *   <li>Name (unique per user, maximum 255 characters)</li>
+ *   <li>Optional description (maximum 1000 characters)</li>
+ *   <li>Association with owner user</li>
+ *   <li>Collection of flashcards</li>
+ *   <li>Collection of tags for organizing cards</li>
  * </ul>
  *
- * <p><strong>Naming:</strong> Deck names must be unique per user. Different
- * users can have decks with the same name.
- *
- * <p><strong>Relationships:</strong>
+ * <p><strong>Bidirectional Relationships:</strong>
  * <ul>
  *   <li>Many-to-One with {@link User} (each deck belongs to one user)</li>
  *   <li>One-to-Many with {@link Card} (deck contains multiple cards)</li>
- *   <li>One-to-Many with {@link Tag} (deck can have multiple tags)</li>
+ *   <li>One-to-Many with {@link Tag} (deck contains multiple tags)</li>
  * </ul>
  *
+ * <p><strong>Uniqueness Constraints:</strong>
+ * Deck names must be unique per user. Multiple users can have decks with the same name.
+ *
+ * <p><strong>Cascade Operations:</strong>
+ * Deleting a deck cascades to all contained cards and tags.
+ * Removing a card or tag from the deck's collection triggers orphanRemoval.
+ *
  * <p><strong>Edit Support:</strong>
- * Name and description are editable. Use setters to update deck properties.
+ * All fields (name, description) are editable. Use setters to update deck properties.
  * The {@code updatedAt} timestamp is automatically updated on save.
  *
  * <p><strong>Timestamps:</strong>
@@ -76,6 +84,8 @@ public class Deck {
      * The deck name.
      * Must be unique per user, maximum 255 characters.
      */
+    @NotBlank(message = "Deck name is required")
+    @Size(max = 255, message = "Deck name must not exceed 255 characters")
     @Column(nullable = false, length = 255)
     private String name;
 
@@ -83,6 +93,7 @@ public class Deck {
      * Optional description of the deck's purpose or contents.
      * Maximum 1000 characters.
      */
+    @Size(max = 1000, message = "Deck description must not exceed 1000 characters")
     @Column(length = 1000)
     private String description;
 
@@ -318,7 +329,8 @@ public class Deck {
      * Checks if this deck equals another object.
      *
      * <p>Two decks are equal if they have the same ID and name.
-     * Decks without IDs are only equal to themselves.
+     * Decks without IDs are only equal to themselves and decks
+     * with the same name but different IDs are not equal.
      *
      * @param o the object to compare
      * @return {@code true} if equal, {@code false} otherwise

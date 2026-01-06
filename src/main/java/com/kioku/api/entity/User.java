@@ -3,6 +3,7 @@ package com.kioku.api.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,14 +13,47 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * User entity.
+ * Entity representing a user account.
  *
- * <p>This entity owns all security- and lifecycle-related state for a user,
- * including authentication credentials, verification status, account locking,
- * and soft deletion. State transitions are enforced through domain methods
- * to preserve invariants and prevent invalid account states.
+ * <p>A user account contains:
+ * <ul>
+ *   <li>Email address (unique, normalized to lowercase)</li>
+ *   <li>Password hash (bcrypt, 60 characters)</li>
+ *   <li>Email verification status and tokens</li>
+ *   <li>Password reset tokens</li>
+ *   <li>Account status (ACTIVE, SUSPENDED, DELETED, PENDING_VERIFICATION)</li>
+ *   <li>Security features (failed login tracking, account locking)</li>
+ *   <li>Ownership of multiple decks</li>
+ * </ul>
+ *
+ * <p><strong>Bidirectional Relationships:</strong>
+ * <ul>
+ *   <li>One-to-Many with {@link Deck} (user owns multiple decks)</li>
+ * </ul>
+ *
+ * <p><strong>Security Features:</strong>
+ * <ul>
+ *   <li>Account locking after 5 failed login attempts (15 minute duration)</li>
+ *   <li>Email verification token (expires after 24 hours)</li>
+ *   <li>Password reset token (expires after 24 hours)</li>
+ *   <li>Soft delete support (preserves data, marks as deleted)</li>
+ * </ul>
+ *
+ * <p><strong>Cascade Operations:</strong>
+ * Deleting a user cascades to all owned decks, which cascade to their cards and tags.
+ * Removing a deck from the user's collection triggers orphanRemoval.
+ *
+ * <p><strong>Timestamps:</strong>
+ * <ul>
+ *   <li>{@code createdAt}: Set automatically on first save (immutable)</li>
+ *   <li>{@code updatedAt}: Updated automatically on every save</li>
+ *   <li>{@code lastLoginAt}: Updated via {@link #recordSuccessfulLogin()}</li>
+ *   <li>{@code deletedAt}: Set via {@link #softDelete()}, cleared via {@link #restore()}</li>
+ * </ul>
  *
  * @author Stephen Watson
+ * @version 1.0
+ * @since 1.0
  */
 @Entity
 @Table(
@@ -46,6 +80,7 @@ public class User {
      */
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
+    @Size(max = 255, message = "Email must not exceed 255 characters")
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -59,6 +94,7 @@ public class User {
      * The token used to verify this user's email address, if any.
      */
     @Column(name = "email_verification_token")
+    @Size(max = 255, message = "Email verification token must not exceed 255 characters")
     private String emailVerificationToken;
 
     /**
@@ -78,6 +114,7 @@ public class User {
      * The token used to reset this user's password, if any.
      */
     @Column(name = "password_reset_token")
+    @Size(max = 255, message = "Password reset token must not exceed 255 characters")
     private String passwordResetToken;
 
     /**
@@ -724,14 +761,19 @@ public class User {
      *
      * @param deck the deck to add
      * @throws IllegalArgumentException if deck is null
+     * @throws IllegalStateException if deck already belongs to another user
      */
     public void addDeck(Deck deck) {
         if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
+        if (deck.getUser() != null && deck.getUser() != this) {
+            throw new IllegalStateException("Deck already belongs to another user");
+        }
         this.decks.add(deck);
-        deck.setUser(this);
-
+        if (deck.getUser() != this) {
+            deck.setUser(this);
+        }
         logger.debug("UserEntity id={} added deck id={}", id, deck.getId());
     }
 
@@ -766,7 +808,7 @@ public class User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(id, user.id);
+        return id != null && Objects.equals(id, user.id);
     }
 
     /**

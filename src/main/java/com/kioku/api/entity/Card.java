@@ -1,6 +1,9 @@
 package com.kioku.api.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Objects;
@@ -11,18 +14,23 @@ import java.util.Set;
  *
  * <p>A card contains:
  * <ul>
- *   <li>Front text (question/prompt)</li>
- *   <li>Back text (answer/translation)</li>
- *   <li>Optional notes for additional context</li>
+ *   <li>Front text (question/prompt, maximum 500 characters)</li>
+ *   <li>Back text (answer/translation, maximum 500 characters)</li>
+ *   <li>Optional notes for additional context (maximum 1000 characters)</li>
  *   <li>Association with a parent deck</li>
- *   <li>Optional tags for organization</li>
+ *   <li>Multiple tags for organization (deck-specific)</li>
  * </ul>
  *
  * <p><strong>Bidirectional Relationships:</strong>
  * <ul>
  *   <li>Many-to-One with {@link Deck} (each card belongs to one deck)</li>
- *   <li>Many-to-Many with {@link Tag} (cards can have multiple tags)</li>
+ *   <li>Many-to-Many with {@link Tag} (cards can have multiple tags, tags can apply to multiple cards)</li>
  * </ul>
+ *
+ * <p><strong>Tag Management:</strong>
+ * Use {@link #addTag(Tag)} and {@link #removeTag(Tag)} to manage card tags.
+ * These methods maintain bidirectional consistency automatically.
+ * Tags must belong to the same deck as the card.
  *
  * <p><strong>Edit Support:</strong>
  * All content fields (front, back, notes) are editable. Use setters to update
@@ -68,6 +76,8 @@ public class Card {
      * Front of the card (question/prompt).
      * Maximum 500 characters.
      */
+    @NotBlank(message = "Front text is required")
+    @Size(max = 500, message = "Front text must not exceed 500 characters")
     @Column(nullable = false, length = 500)
     private String front;
 
@@ -75,6 +85,8 @@ public class Card {
      * Back of the card (answer/translation).
      * Maximum 500 characters.
      */
+    @NotBlank(message = "Back text is required")
+    @Size(max = 500, message = "Back text must not exceed 500 characters")
     @Column(nullable = false, length = 500)
     private String back;
 
@@ -82,6 +94,7 @@ public class Card {
      * Optional notes for additional context.
      * Maximum 1000 characters.
      */
+    @Size(max = 1000, message = "Notes must not exceed 1000 characters")
     @Column(length = 1000)
     private String notes;
 
@@ -389,7 +402,8 @@ public class Card {
      * Checks if this card equals another object.
      *
      * <p>Two cards are equal if they have the same ID.
-     * Cards without IDs are only equal to themselves.
+     * Cards without IDs are only equal to themselves and
+     * other cards without IDs.
      *
      * @param o the object to compare
      * @return {@code true} if equal, {@code false} otherwise

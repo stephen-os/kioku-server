@@ -1,6 +1,9 @@
 package com.kioku.api.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -8,24 +11,36 @@ import java.util.Set;
 /**
  * Entity representing a tag for organizing cards within a deck.
  *
- * <p>Tags are deck-specific organizational tools that:
+ * <p>A tag contains:
  * <ul>
- *   <li>Belong to a single deck (not shared across decks)</li>
- *   <li>Can be applied to multiple cards within that deck</li>
- *   <li>Have unique names within their deck</li>
- *   <li>Are owned by a user (inherited from deck ownership)</li>
+ *   <li>Name (unique within deck, maximum 100 characters)</li>
+ *   <li>Association with a parent deck</li>
+ *   <li>User reference (inherited from deck for query optimization)</li>
+ *   <li>Collection of cards that have this tag applied</li>
  * </ul>
  *
- * <p><strong>Deck Isolation:</strong> Tags created in one deck cannot be used
- * in another deck. For example, "verbs" tags in a Japanese deck are separate
- * from "verbs" tags in a Spanish deck.
+ * <p><strong>Deck-Specific Tags:</strong>
+ * Tags are scoped to a specific deck and cannot be shared across decks.
+ * Multiple decks can have tags with the same name, but they are separate entities.
+ * This design ensures tags remain organized and isolated per deck.
  *
  * <p><strong>Bidirectional Relationships:</strong>
  * <ul>
  *   <li>Many-to-One with {@link Deck} (each tag belongs to one deck)</li>
- *   <li>Many-to-One with {@link User} (for ownership tracking)</li>
- *   <li>Many-to-Many with {@link Card} (tags can be applied to multiple cards)</li>
+ *   <li>Many-to-One with {@link User} (inherited from deck, for query optimization)</li>
+ *   <li>Many-to-Many with {@link Card} (tags can apply to multiple cards)</li>
  * </ul>
+ *
+ * <p><strong>User Inheritance:</strong>
+ * The user field is automatically set from the deck's user during construction.
+ * This provides query optimization but requires manual update if the deck's owner changes.
+ *
+ * <p><strong>Uniqueness Constraints:</strong>
+ * Tag names must be unique within a deck. The same tag name can exist in different decks.
+ *
+ * <p><strong>Edit Support:</strong>
+ * Tag name is editable. Use {@link #setName(String)} to update the tag name.
+ * Changing the deck is possible but requires careful management of the user field.
  *
  * @author Stephen Watson
  * @version 1.0
@@ -67,6 +82,8 @@ public class Tag {
      * The tag name (e.g., "verbs", "N5", "important").
      * Must be unique within the deck.
      */
+    @NotBlank(message = "Tag name is required")
+    @Size(max = 100, message = "Tag name must not exceed 100 characters")
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -220,7 +237,8 @@ public class Tag {
      * Checks if this tag equals another object.
      *
      * <p>Two tags are equal if they have the same ID and name.
-     * Tags without IDs are only equal to themselves.
+     * Tags without IDs are only equal to themselves and tags
+     * with the same name but different IDs are not equal.
      *
      * @param o the object to compare
      * @return {@code true} if equal, {@code false} otherwise
