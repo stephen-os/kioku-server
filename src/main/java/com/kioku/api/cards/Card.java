@@ -1,5 +1,6 @@
-package com.kioku.api.entity;
+package com.kioku.api.cards;
 
+import com.kioku.api.tags.Tag;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,67 +11,20 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Entity representing a flashcard within a deck.
- *
- * <p>A card contains:
- * <ul>
- *   <li>Front text (question/prompt, maximum 500 characters)</li>
- *   <li>Back text (answer/translation, maximum 500 characters)</li>
- *   <li>Optional notes for additional context (maximum 1000 characters)</li>
- *   <li>Association with a parent deck</li>
- *   <li>Multiple tags for organization (deck-specific)</li>
- * </ul>
- *
- * <p><strong>Bidirectional Relationships:</strong>
- * <ul>
- *   <li>Many-to-One with {@link Deck} (each card belongs to one deck)</li>
- *   <li>Many-to-Many with {@link Tag} (cards can have multiple tags, tags can apply to multiple cards)</li>
- * </ul>
- *
- * <p><strong>Tag Management:</strong>
- * Use {@link #addTag(Tag)} and {@link #removeTag(Tag)} to manage card tags.
- * These methods maintain bidirectional consistency automatically.
- * Tags must belong to the same deck as the card.
- *
- * <p><strong>Edit Support:</strong>
- * All content fields (front, back, notes) are editable. Use setters to update
- * card content. The {@code updatedAt} timestamp is automatically updated on save.
- *
- * <p><strong>Timestamps:</strong>
- * <ul>
- *   <li>{@code createdAt}: Set automatically on first save (immutable)</li>
- *   <li>{@code updatedAt}: Updated automatically on every save</li>
- * </ul>
+ * This class represents a flashcard within a deck.
  *
  * @author Stephen Watson
- * @version 1.0
- * @since 1.0
  */
 @Entity
-@Table(name = "cards", indexes = {
-        @Index(name = "idx_card_deck_id", columnList = "deck_id"),
-        @Index(name = "idx_card_created_at", columnList = "created_at")
-})
 public class Card {
 
+    /**
+     * The unique identifier for this card.
+     * Generated automatically by the database.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    /**
-     * Version field for optimistic locking.
-     * Prevents concurrent modification conflicts.
-     */
-    @Version
-    private Long version;
-
-    /**
-     * The deck this card belongs to.
-     * Cannot be null - every card must belong to a deck.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "deck_id", nullable = false)
-    private Deck deck;
 
     /**
      * Front of the card (question/prompt).
@@ -142,116 +96,31 @@ public class Card {
     }
 
     /**
-     * Default constructor for JPA.
-     */
-    public Card() {
-    }
-
-    /**
-     * Creates a new card with required fields.
+     * Create a new card with required front and back text.
      *
-     * @param deck the deck this card belongs to
-     * @param front the front text (question/prompt)
-     * @param back the back text (answer/translation)
-     * @throws IllegalArgumentException if deck, front, or back is null
+     * @param front  the front text (question/prompt)
+     * @param back   the back text (answer/translation)
+     * @throws IllegalArgumentException if front or back is null/empty
      */
-    public Card(Deck deck, String front, String back) {
-        if (deck == null) {
-            throw new IllegalArgumentException("Deck cannot be null");
-        }
-        if (front == null || front.trim().isEmpty()) {
-            throw new IllegalArgumentException("Front text cannot be null or empty");
-        }
-        if (back == null || back.trim().isEmpty()) {
-            throw new IllegalArgumentException("Back text cannot be null or empty");
-        }
-        this.deck = deck;
-        this.front = front;
-        this.back = back;
-    }
+    public Card(String front, String back) {
+        if (front == null || front.trim().isEmpty()) throw new IllegalArgumentException("Front text cannot be null or empty");
+        if (back == null || back.trim().isEmpty()) throw new IllegalArgumentException("Back text cannot be null or empty");
 
-    /**
-     * Creates a new card with optional notes.
-     *
-     * @param deck the deck this card belongs to
-     * @param front the front text (question/prompt)
-     * @param back the back text (answer/translation)
-     * @param notes optional notes for additional context
-     * @throws IllegalArgumentException if deck, front, or back is null
-     */
-    public Card(Deck deck, String front, String back, String notes) {
-        this(deck, front, back);
-        this.notes = notes;
+        this.front = front.trim();
+        this.back = back.trim();
     }
-
-    // Getters and Setters
 
     /**
      * Gets the card's unique identifier.
      *
      * @return the card ID, or {@code null} if not yet persisted
      */
-    public Long getId() {
+    public Long getCardId() {
         return id;
     }
 
     /**
-     * Sets the card's unique identifier.
-     * Should only be used by JPA.
-     *
-     * @param id the card ID
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * Gets the version for optimistic locking.
-     *
-     * @return the version number
-     */
-    public Long getVersion() {
-        return version;
-    }
-
-    /**
-     * Sets the version for optimistic locking.
-     * Should only be used by JPA.
-     *
-     * @param version the version number
-     */
-    public void setVersion(Long version) {
-        this.version = version;
-    }
-
-    /**
-     * Gets the deck this card belongs to.
-     *
-     * @return the parent deck
-     */
-    public Deck getDeck() {
-        return deck;
-    }
-
-    /**
-     * Sets the deck this card belongs to.
-     *
-     * <p><strong>Note:</strong> Changing the deck does not automatically
-     * update the old deck's card collection. Manage both sides of the
-     * relationship manually.
-     *
-     * @param deck the parent deck
-     * @throws IllegalArgumentException if deck is null
-     */
-    public void setDeck(Deck deck) {
-        if (deck == null) {
-            throw new IllegalArgumentException("Deck cannot be null");
-        }
-        this.deck = deck;
-    }
-
-    /**
-     * Gets the front text (question/prompt).
+     * Gets the front text of the card.
      *
      * @return the front text
      */
@@ -260,20 +129,18 @@ public class Card {
     }
 
     /**
-     * Sets the front text (question/prompt).
+     * Sets the front text of the card.
      *
      * @param front the front text
      * @throws IllegalArgumentException if front is null or empty
      */
     public void setFront(String front) {
-        if (front == null || front.trim().isEmpty()) {
-            throw new IllegalArgumentException("Front text cannot be null or empty");
-        }
-        this.front = front;
+        if (front == null || front.trim().isEmpty()) throw new IllegalArgumentException("Front text cannot be null or empty");
+        this.front = front.trim();
     }
 
     /**
-     * Gets the back text (answer/translation).
+     * Gets the back text of the card.
      *
      * @return the back text
      */
@@ -282,16 +149,14 @@ public class Card {
     }
 
     /**
-     * Sets the back text (answer/translation).
+     * Sets the back text of the card.
      *
      * @param back the back text
      * @throws IllegalArgumentException if back is null or empty
      */
     public void setBack(String back) {
-        if (back == null || back.trim().isEmpty()) {
-            throw new IllegalArgumentException("Back text cannot be null or empty");
-        }
-        this.back = back;
+        if (back == null || back.trim().isEmpty()) throw new IllegalArgumentException("Back text cannot be null or empty");
+        this.back = back.trim();
     }
 
     /**
@@ -319,19 +184,6 @@ public class Card {
      */
     public Set<Tag> getTags() {
         return tags;
-    }
-
-    /**
-     * Sets the tags for this card.
-     *
-     * <p><strong>Warning:</strong> This replaces all existing tags.
-     * Use {@link #addTag(Tag)} or {@link #removeTag(Tag)} to modify
-     * individual tags while maintaining bidirectional consistency.
-     *
-     * @param tags the new set of tags
-     */
-    public void setTags(Set<Tag> tags) {
-        this.tags = tags != null ? tags : new HashSet<>();
     }
 
     /**
@@ -444,7 +296,6 @@ public class Card {
                 ", back='" + back + '\'' +
                 ", notes='" + notes + '\'' +
                 ", tagCount=" + (tags != null ? tags.size() : 0) +
-                ", version=" + version +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';
