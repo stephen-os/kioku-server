@@ -117,6 +117,56 @@ tasks.register('dockerRestart', Exec) {
     commandLine 'docker-compose', 'restart'
 }
 
+// Docker Dev Tasks
+tasks.register('dockerDevUp', Exec) {
+    group = 'docker-dev'
+    description = 'Start dev environment with debug logging (preserves database)'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'up', '--build'
+}
+
+tasks.register('dockerDevUpDetached', Exec) {
+    group = 'docker-dev'
+    description = 'Start dev environment in background'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'up', '--build', '-d'
+}
+
+tasks.register('dockerDevDown', Exec) {
+    group = 'docker-dev'
+    description = 'Stop dev containers'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'down'
+}
+
+tasks.register('dockerDevClean', Exec) {
+    group = 'docker-dev'
+    description = 'Stop dev containers and remove volumes (fresh database)'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'down', '-v'
+}
+
+tasks.register('dockerDevLogs', Exec) {
+    group = 'docker-dev'
+    description = 'Show dev container logs (follow mode)'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'logs', '-f'
+}
+
+tasks.register('dockerDevPs', Exec) {
+    group = 'docker-dev'
+    description = 'Show running dev containers'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'ps'
+}
+
+tasks.register('dockerDevRestart', Exec) {
+    group = 'docker-dev'
+    description = 'Restart dev containers'
+    workingDir projectDir
+    commandLine 'docker-compose', '-f', 'docker-compose.dev.yml', 'restart'
+}
+
 tasks.register('testAll') {
     group = 'verification'
     description = 'Run all tests with Testcontainers (one command)'
