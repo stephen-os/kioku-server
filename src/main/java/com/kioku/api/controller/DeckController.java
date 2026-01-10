@@ -8,8 +8,6 @@ import com.kioku.api.dto.response.DeckResponse;
 import com.kioku.api.dto.response.ErrorResponse;
 import com.kioku.api.model.Deck;
 import com.kioku.api.security.CurrentUser;
-import com.kioku.api.service.DeckExportService;
-import com.kioku.api.service.DeckImportService;
 import com.kioku.api.service.DeckService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -71,18 +69,14 @@ public class DeckController {
     private static final Logger logger = LoggerFactory.getLogger(DeckController.class);
 
     private final DeckService deckService;
-    private final DeckImportService deckImportService;
-    private final DeckExportService deckExportService;
 
     /**
      * Constructs a DeckController with required dependencies.
      *
      * @param deckService the deck service for business logic
      */
-    public DeckController(DeckService deckService, DeckImportService deckImportService, DeckExportService deckExportService) {
+    public DeckController(DeckService deckService) {
         this.deckService = deckService;
-        this.deckImportService = deckImportService;
-        this.deckExportService = deckExportService;
     }
 
     /**
@@ -300,7 +294,7 @@ public class DeckController {
         logger.debug("Import deck request from user id={}: name={}, {} cards, {} tags",
                 userId, request.getName(), request.getCardCount(), request.getTagCount());
 
-        Deck deck = deckImportService.importDeck(userId, request);
+        Deck deck = deckService.importDeck(userId, request);
         DeckResponse response = new DeckResponse(deck);
 
         logger.info("Deck imported successfully: deckId={}, name='{}'", deck.getId(), deck.getName());
@@ -344,7 +338,7 @@ public class DeckController {
 
         logger.debug("Export deck request from user id={} for deck id={}", userId, deckId);
 
-        DeckExportResponse response = deckExportService.exportDeck(userId, deckId);
+        DeckExportResponse response = deckService.exportDeck(userId, deckId);
 
         logger.info("Deck exported successfully: deckId={}, name='{}'", deckId, response.getName());
 

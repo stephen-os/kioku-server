@@ -9,8 +9,6 @@ import com.kioku.api.dto.response.TagExportDto;
 import com.kioku.api.model.Deck;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.security.JwtAuthenticationFilter;
-import com.kioku.api.service.DeckExportService;
-import com.kioku.api.service.DeckImportService;
 import com.kioku.api.service.DeckService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -89,12 +87,6 @@ class DeckControllerTests {
 
     @MockitoBean
     private DeckService deckService;
-
-    @MockitoBean
-    private DeckImportService deckImportService;
-
-    @MockitoBean
-    private DeckExportService deckExportService;
 
     RestTestClient client;
     private Deck testDeck;
@@ -603,7 +595,7 @@ class DeckControllerTests {
         when(deck.getName()).thenReturn("Japanese N5");
         when(deck.getDescription()).thenReturn("JLPT N5 vocabulary");
 
-        when(deckImportService.importDeck(eq(TEST_USER_ID), any(DeckImportRequest.class))).thenReturn(deck);
+        when(deckService.importDeck(eq(TEST_USER_ID), any(DeckImportRequest.class))).thenReturn(deck);
 
         DeckResponse response = client.post()
                 .uri("/api/decks/import")
@@ -620,7 +612,7 @@ class DeckControllerTests {
         assertThat(response.getName()).isEqualTo("Japanese N5");
         assertThat(response.getDescription()).isEqualTo("JLPT N5 vocabulary");
 
-        verify(deckImportService).importDeck(eq(TEST_USER_ID), any(DeckImportRequest.class));
+        verify(deckService).importDeck(eq(TEST_USER_ID), any(DeckImportRequest.class));
 
         logger.debug("Test passed: Deck imported successfully");
     }
@@ -644,7 +636,7 @@ class DeckControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(deckImportService, never()).importDeck(anyLong(), any());
+        verify(deckService, never()).importDeck(anyLong(), any());
 
         logger.debug("Test passed: Blank name rejected");
     }
@@ -668,7 +660,7 @@ class DeckControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(deckImportService, never()).importDeck(anyLong(), any());
+        verify(deckService, never()).importDeck(anyLong(), any());
 
         logger.debug("Test passed: No cards rejected");
     }
@@ -685,7 +677,7 @@ class DeckControllerTests {
                 Arrays.asList(new CardImportDto("Front", "Back"))
         );
 
-        when(deckImportService.importDeck(eq(TEST_USER_ID), any(DeckImportRequest.class)))
+        when(deckService.importDeck(eq(TEST_USER_ID), any(DeckImportRequest.class)))
                 .thenThrow(new IllegalArgumentException("A deck with this name already exists"));
 
         ErrorResponse response = client.post()
@@ -732,7 +724,7 @@ class DeckControllerTests {
         DeckExportResponse.ExportMetadata metadata = new DeckExportResponse.ExportMetadata(1, 1);
         mockResponse.setMetadata(metadata);
 
-        when(deckExportService.exportDeck(TEST_USER_ID, 1L)).thenReturn(mockResponse);
+        when(deckService.exportDeck(TEST_USER_ID, 1L)).thenReturn(mockResponse);
 
         // Just verify the response without deserializing
         client.get()
@@ -755,7 +747,7 @@ class DeckControllerTests {
                 .jsonPath("$.metadata.cardCount").isEqualTo(1)
                 .jsonPath("$.metadata.tagCount").isEqualTo(1);
 
-        verify(deckExportService).exportDeck(TEST_USER_ID, 1L);
+        verify(deckService).exportDeck(TEST_USER_ID, 1L);
 
         logger.debug("Test passed: Deck exported successfully");
     }
@@ -766,7 +758,7 @@ class DeckControllerTests {
     void testExportDeckNotFound() {
         logger.debug("Test: Export deck not found");
 
-        when(deckExportService.exportDeck(TEST_USER_ID, 999L))
+        when(deckService.exportDeck(TEST_USER_ID, 999L))
                 .thenThrow(new IllegalArgumentException("Deck not found or access denied"));
 
         client.get()
@@ -795,7 +787,7 @@ class DeckControllerTests {
         DeckExportResponse.ExportMetadata metadata = new DeckExportResponse.ExportMetadata(0, 0);
         mockResponse.setMetadata(metadata);
 
-        when(deckExportService.exportDeck(TEST_USER_ID, 1L)).thenReturn(mockResponse);
+        when(deckService.exportDeck(TEST_USER_ID, 1L)).thenReturn(mockResponse);
 
         client.get()
                 .uri("/api/decks/1/export")
