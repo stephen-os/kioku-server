@@ -1,0 +1,2619 @@
+{
+  "info": {
+    "name": "Kioku API Tests",
+    "description": "Comprehensive API tests for the Kioku flashcard application.\n\n## Test Execution Order\n\nTests are organized into folders that should be run in order:\n\n1. **01 - Setup & Authentication** - Register users and get tokens (RUN FIRST)\n2. **02 - Deck Operations** - CRUD operations for decks\n3. **03 - Tag Operations** - CRUD operations for tags\n4. **04 - Card Operations** - CRUD operations for cards\n5. **05 - Card-Tag Associations** - Link cards and tags\n6. **06 - Search & Filter** - Test search and filter functionality\n7. **07 - Import/Export** - Bulk import and export\n8. **08 - Security Tests** - Auth failures, unauthorized access\n9. **09 - Cleanup** - Delete test data\n\n## Variables\n\nThe collection uses variables that are set automatically during test runs:\n- `baseUrl` - API base URL (default: http://localhost:8080)\n- `authToken` - JWT token for primary test user\n- `authToken2` - JWT token for secondary test user\n- `userId`, `userId2` - User IDs\n- `deckId`, `cardId`, `tagId` - Resource IDs created during tests\n\n## Prerequisites\n\n1. Start the API: `./gradlew dockerUp`\n2. Wait for containers to be healthy\n3. Import this collection into Postman\n4. Run folder \"01 - Setup & Authentication\" first",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authToken2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userEmail2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deckId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deckId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cardId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cardId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tagId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tagId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "importedDeckId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Setup & Authentication",
+      "description": "User registration and login tests. Run this folder first to set up auth tokens.",
+      "item": [
+        {
+          "name": "Register User 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email for this test run",
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('userEmail', `testuser1_${timestamp}@example.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has token', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.token).to.be.a('string');",
+                  "    pm.expect(response.token.length).to.be.greaterThan(0);",
+                  "    pm.collectionVariables.set('authToken', response.token);",
+                  "});",
+                  "",
+                  "pm.test('Response has userId', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.userId).to.be.a('number');",
+                  "    pm.collectionVariables.set('userId', response.userId);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct email', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.email).to.equal(pm.collectionVariables.get('userEmail'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register User 2 (for security tests)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('userEmail2', `testuser2_${timestamp}@example.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Store second user credentials', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken2', response.token);",
+                  "    pm.collectionVariables.set('userId2', response.userId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{userEmail2}}\",\n    \"password\": \"password456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register - Duplicate Email (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates duplicate', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message || response.error).to.include('already');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"differentpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register - Invalid Email (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"not-an-email\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register - Short Password (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"short@test.com\",\n    \"password\": \"short\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has token', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.token).to.be.a('string');",
+                  "    // Update token in case it changed",
+                  "    pm.collectionVariables.set('authToken', response.token);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct userId', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.userId).to.equal(parseInt(pm.collectionVariables.get('userId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Wrong Password (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is appropriate', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message || response.error).to.include('Invalid');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Non-existent User (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"nonexistent@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Deck Operations",
+      "description": "CRUD operations for flashcard decks.",
+      "item": [
+        {
+          "name": "Create Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has deck data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.be.a('number');",
+                  "    pm.expect(response.name).to.equal('Japanese Vocabulary');",
+                  "    pm.expect(response.description).to.equal('JLPT N5 words');",
+                  "    pm.collectionVariables.set('deckId', response.id);",
+                  "});",
+                  "",
+                  "pm.test('Response has timestamps', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.createdAt).to.be.a('string');",
+                  "    pm.expect(response.updatedAt).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Japanese Vocabulary\",\n    \"description\": \"JLPT N5 words\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "Create Second Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Store second deck ID', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('deckId2', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Spanish Basics\",\n    \"description\": \"Basic Spanish phrases\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "Create Deck - Duplicate Name (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates duplicate', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message || response.error).to.include('already exists');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Japanese Vocabulary\",\n    \"description\": \"Different description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "Create Deck - Empty Name (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"\",\n    \"description\": \"Test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "Get All Decks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array with decks', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.be.at.least(2);",
+                  "});",
+                  "",
+                  "pm.test('Decks have required fields', function () {",
+                  "    const response = pm.response.json();",
+                  "    response.forEach(deck => {",
+                  "        pm.expect(deck.id).to.be.a('number');",
+                  "        pm.expect(deck.name).to.be.a('string');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "Get Deck by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Deck has correct ID', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.equal(parseInt(pm.collectionVariables.get('deckId')));",
+                  "});",
+                  "",
+                  "pm.test('Deck has all fields', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.name).to.equal('Japanese Vocabulary');",
+                  "    pm.expect(response.description).to.equal('JLPT N5 words');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Deck - Non-existent (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "999999"]
+            }
+          }
+        },
+        {
+          "name": "Update Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Deck is updated', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.name).to.equal('Japanese Vocabulary Updated');",
+                  "    pm.expect(response.description).to.equal('Updated description');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Japanese Vocabulary Updated\",\n    \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Deck - To Duplicate Name (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates duplicate', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message || response.error).to.include('already exists');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Spanish Basics\",\n    \"description\": \"Trying to use existing name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        },
+        {
+          "name": "Restore Deck Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Japanese Vocabulary\",\n    \"description\": \"JLPT N5 words\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Tag Operations",
+      "description": "CRUD operations for tags within decks.",
+      "item": [
+        {
+          "name": "Create Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Tag has correct data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.be.a('number');",
+                  "    pm.expect(response.name).to.equal('verbs');",
+                  "    pm.collectionVariables.set('tagId', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"verbs\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Create Second Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Store second tag ID', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('tagId2', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"nouns\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Create Tag - Duplicate Name (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"verbs\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get All Tags in Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array with tags', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get All User Tags (across decks)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get Tag by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Tag has correct data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.equal(parseInt(pm.collectionVariables.get('tagId')));",
+                  "    pm.expect(response.name).to.equal('verbs');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags/{{tagId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags", "{{tagId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Tag is updated', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.name).to.equal('verbs-updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"verbs-updated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags/{{tagId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags", "{{tagId}}"]
+            }
+          }
+        },
+        {
+          "name": "Restore Tag Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"verbs\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags/{{tagId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags", "{{tagId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Card Operations",
+      "description": "CRUD operations for flashcards within decks.",
+      "item": [
+        {
+          "name": "Create Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Card has correct data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.be.a('number');",
+                  "    pm.expect(response.front).to.equal('食べる');",
+                  "    pm.expect(response.back).to.equal('to eat');",
+                  "    pm.expect(response.notes).to.equal('ru-verb');",
+                  "    pm.collectionVariables.set('cardId', response.id);",
+                  "});",
+                  "",
+                  "pm.test('Card has timestamps', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.createdAt).to.be.a('string');",
+                  "    pm.expect(response.updatedAt).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"front\": \"食べる\",\n    \"back\": \"to eat\",\n    \"notes\": \"ru-verb\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"]
+            }
+          }
+        },
+        {
+          "name": "Create Second Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Store second card ID', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('cardId2', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"front\": \"飲む\",\n    \"back\": \"to drink\",\n    \"notes\": \"u-verb\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"]
+            }
+          }
+        },
+        {
+          "name": "Create Card - Duplicate (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"front\": \"食べる\",\n    \"back\": \"to eat\",\n    \"notes\": \"different note\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"]
+            }
+          }
+        },
+        {
+          "name": "Create Card - Empty Front (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"front\": \"\",\n    \"back\": \"test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"]
+            }
+          }
+        },
+        {
+          "name": "Get All Cards in Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array with cards', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"]
+            }
+          }
+        },
+        {
+          "name": "Get Card by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Card has correct data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.equal(parseInt(pm.collectionVariables.get('cardId')));",
+                  "    pm.expect(response.front).to.equal('食べる');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Card is updated', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.front).to.equal('食べる (updated)');",
+                  "    pm.expect(response.back).to.equal('to eat (ichidan verb)');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"front\": \"食べる (updated)\",\n    \"back\": \"to eat (ichidan verb)\",\n    \"notes\": \"ru-verb, also called ichidan\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Restore Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"front\": \"食べる\",\n    \"back\": \"to eat\",\n    \"notes\": \"ru-verb\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Card-Tag Associations",
+      "description": "Tests for adding and removing tags from cards.",
+      "item": [
+        {
+          "name": "Add Tag to Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Card has tag', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.tags).to.be.an('array');",
+                  "    pm.expect(response.tags.length).to.be.at.least(1);",
+                  "    const tagNames = response.tags.map(t => t.name);",
+                  "    pm.expect(tagNames).to.include('verbs');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId}}/tags/{{tagId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId}}", "tags", "{{tagId}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Second Tag to Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Card has both tags', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.tags.length).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId}}/tags/{{tagId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId}}", "tags", "{{tagId2}}"]
+            }
+          }
+        },
+        {
+          "name": "Remove Tag from Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Tag is removed', function () {",
+                  "    const response = pm.response.json();",
+                  "    const tagIds = response.tags.map(t => t.id);",
+                  "    pm.expect(tagIds).to.not.include(parseInt(pm.collectionVariables.get('tagId2')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId}}/tags/{{tagId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId}}", "tags", "{{tagId2}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Tag to Non-existent Card (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 404', function () {",
+                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/999999/tags/{{tagId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "999999", "tags", "{{tagId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Search & Filter",
+      "description": "Tests for search and filter functionality.",
+      "item": [
+        {
+          "name": "Search Cards by Term",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Search returns matching cards', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    // Should find cards with 'eat' in the back",
+                  "    const hasMatch = response.some(card => ",
+                  "        card.front.includes('食') || card.back.includes('eat')",
+                  "    );",
+                  "    pm.expect(hasMatch).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards?search=eat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "eat"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Cards - No Results",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Empty array returned', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.equal(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards?search=xyznonexistent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "xyznonexistent"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter Cards by Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns cards with the tag', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.be.at.least(1);",
+                  "    // All returned cards should have the tag",
+                  "    response.forEach(card => {",
+                  "        const tagIds = card.tags.map(t => t.id);",
+                  "        pm.expect(tagIds).to.include(parseInt(pm.collectionVariables.get('tagId')));",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards?tagId={{tagId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"],
+              "query": [
+                {
+                  "key": "tagId",
+                  "value": "{{tagId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Import/Export",
+      "description": "Tests for bulk import and export functionality.",
+      "item": [
+        {
+          "name": "Export Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Export has deck data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.be.a('number');",
+                  "    pm.expect(response.name).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Export has cards', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.cards).to.be.an('array');",
+                  "    pm.expect(response.cards.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Export has tags', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.tags).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Export has metadata', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.metadata).to.be.an('object');",
+                  "    pm.expect(response.metadata.version).to.equal('1.0');",
+                  "    pm.expect(response.metadata.cardCount).to.be.a('number');",
+                  "    pm.expect(response.metadata.tagCount).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "export"]
+            }
+          }
+        },
+        {
+          "name": "Import Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Imported deck has correct data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.be.a('number');",
+                  "    pm.expect(response.name).to.equal('Imported French Vocabulary');",
+                  "    pm.collectionVariables.set('importedDeckId', response.id);",
+                  "});",
+                  "",
+                  "pm.test('Response has card count', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.cardCount).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Imported French Vocabulary\",\n    \"description\": \"Basic French words\",\n    \"cards\": [\n        {\n            \"front\": \"bonjour\",\n            \"back\": \"hello\",\n            \"notes\": \"common greeting\",\n            \"tags\": [\"greetings\"]\n        },\n        {\n            \"front\": \"merci\",\n            \"back\": \"thank you\",\n            \"notes\": \"polite expression\",\n            \"tags\": [\"greetings\", \"polite\"]\n        },\n        {\n            \"front\": \"au revoir\",\n            \"back\": \"goodbye\",\n            \"notes\": null,\n            \"tags\": [\"greetings\"]\n        }\n    ],\n    \"tags\": [\n        {\"name\": \"greetings\"},\n        {\"name\": \"polite\"}\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "import"]
+            }
+          }
+        },
+        {
+          "name": "Import Deck - Duplicate Name (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Imported French Vocabulary\",\n    \"description\": \"Duplicate name\",\n    \"cards\": [\n        {\n            \"front\": \"test\",\n            \"back\": \"test\",\n            \"tags\": []\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "import"]
+            }
+          }
+        },
+        {
+          "name": "Import Deck - No Cards (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Empty Deck\",\n    \"description\": \"No cards\",\n    \"cards\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "import"]
+            }
+          }
+        },
+        {
+          "name": "Verify Imported Deck Cards",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Imported cards exist', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.equal(3);",
+                  "});",
+                  "",
+                  "pm.test('Cards have tags', function () {",
+                  "    const response = pm.response.json();",
+                  "    const cardWithMultipleTags = response.find(c => c.front === 'merci');",
+                  "    pm.expect(cardWithMultipleTags.tags.length).to.equal(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{importedDeckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{importedDeckId}}", "cards"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Security Tests",
+      "description": "Tests for authentication and authorization security.",
+      "item": [
+        {
+          "name": "Access Decks Without Token (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 or 403', function () {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "Access Decks With Invalid Token (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 or 403', function () {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid.token.here"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "Access Decks With Malformed Token (should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 or 403', function () {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer notavalidjwt"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        },
+        {
+          "name": "User 2 Cannot Access User 1 Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 (deck not found for this user)', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        },
+        {
+          "name": "User 2 Cannot Update User 1 Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 403 or 404', function () {",
+                  "    pm.expect([400, 403, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken2}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Hacked Name\",\n    \"description\": \"Hacked by User 2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        },
+        {
+          "name": "User 2 Cannot Delete User 1 Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 403 or 404', function () {",
+                  "    pm.expect([400, 403, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        },
+        {
+          "name": "User 2 Cannot Access User 1 Cards",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 403 or 404', function () {",
+                  "    pm.expect([400, 403, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"]
+            }
+          }
+        },
+        {
+          "name": "User 2 Cannot Create Card in User 1 Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 403 or 404', function () {",
+                  "    pm.expect([400, 403, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken2}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"front\": \"Hacked card\",\n    \"back\": \"By user 2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards"]
+            }
+          }
+        },
+        {
+          "name": "User 2 Cannot Access User 1 Tags",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 403 or 404', function () {",
+                  "    pm.expect([400, 403, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags"]
+            }
+          }
+        },
+        {
+          "name": "User 2 Cannot Export User 1 Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 403 or 404', function () {",
+                  "    pm.expect([400, 403, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "export"]
+            }
+          }
+        },
+        {
+          "name": "Verify User 1 Deck Still Exists (not deleted by User 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Deck data is unchanged', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.name).to.equal('Japanese Vocabulary');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Cleanup",
+      "description": "Delete test data. Run this last to clean up.",
+      "item": [
+        {
+          "name": "Delete Imported Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{importedDeckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{importedDeckId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Second Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/cards/{{cardId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "cards", "{{cardId2}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags/{{tagId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags", "{{tagId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Second Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}/tags/{{tagId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}", "tags", "{{tagId2}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete First Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Second Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks/{{deckId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks", "{{deckId2}}"]
+            }
+          }
+        },
+        {
+          "name": "Verify All Decks Deleted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('No decks remain', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.equal(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/decks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "decks"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
