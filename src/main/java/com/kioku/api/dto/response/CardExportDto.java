@@ -254,4 +254,17 @@ public class CardExportDto {
     public boolean hasTags() {
         return tags != null && !tags.isEmpty();
     }
+
+    @Override
+    public String toString() {
+        return "CardExportDto{" +
+                "id=" + id +
+                ", front='" + front + '\'' +
+                ", back='" + back + '\'' +
+                ", notes='" + notes + '\'' +
+                ", tags=" + tags +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }

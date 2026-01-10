@@ -102,4 +102,12 @@ public class ErrorResponse {
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
+
+    @Override
+    public String toString() {
+        return "ErrorResponse{" +
+                "message='" + message + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }

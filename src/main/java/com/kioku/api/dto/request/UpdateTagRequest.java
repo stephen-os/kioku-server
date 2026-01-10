@@ -67,4 +67,11 @@ public class UpdateTagRequest {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        return "UpdateTagRequest{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }

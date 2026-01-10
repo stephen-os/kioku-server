@@ -125,4 +125,13 @@ public class CreateCardRequest {
     public void setNotes(String notes) {
         this.notes = notes;
     }
+
+    @Override
+    public String toString() {
+        return "CreateCardRequest{" +
+                "front='" + front + '\'' +
+                ", back='" + back + '\'' +
+                ", notes='" + notes + '\'' +
+                '}';
+    }
 }

@@ -231,4 +231,14 @@ public class DeckImportRequest {
     public int getTagCount() {
         return tags != null ? tags.size() : 0;
     }
+
+    @Override
+    public String toString() {
+        return "DeckImportRequest{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", cards=" + cards +
+                ", tags=" + tags +
+                '}';
+    }
 }

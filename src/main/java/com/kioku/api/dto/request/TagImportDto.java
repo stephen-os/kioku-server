@@ -71,4 +71,11 @@ public class TagImportDto {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        return "TagImportDto{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }

@@ -232,4 +232,17 @@ public class CardResponse {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    @Override
+    public String toString() {
+        return "CardResponse{" +
+                "id=" + id +
+                ", front='" + front + '\'' +
+                ", back='" + back + '\'' +
+                ", notes='" + notes + '\'' +
+                ", tags=" + tags +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }

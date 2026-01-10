@@ -283,6 +283,20 @@ public class DeckExportResponse {
         this.metadata = metadata;
     }
 
+    @Override
+    public String toString() {
+        return "DeckExportResponse{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", cards=" + cards +
+                ", tags=" + tags +
+                ", metadata=" + metadata +
+                '}';
+    }
+
     /**
      * Nested class for export metadata.
      *
@@ -410,6 +424,16 @@ public class DeckExportResponse {
          */
         public void setTagCount(int tagCount) {
             this.tagCount = tagCount;
+        }
+
+        @Override
+        public String toString() {
+            return "ExportMetadata{" +
+                    "version='" + version + '\'' +
+                    ", exportDate=" + exportDate +
+                    ", cardCount=" + cardCount +
+                    ", tagCount=" + tagCount +
+                    '}';
         }
     }
 }

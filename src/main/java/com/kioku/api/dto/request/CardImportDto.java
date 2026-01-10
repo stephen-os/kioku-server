@@ -176,4 +176,14 @@ public class CardImportDto {
     public boolean hasTags() {
         return tags != null && !tags.isEmpty();
     }
+
+    @Override
+    public String toString() {
+        return "CardImportDto{" +
+                "front='" + front + '\'' +
+                ", back='" + back + '\'' +
+                ", notes='" + notes + '\'' +
+                ", tags=" + tags +
+                '}';
+    }
 }
