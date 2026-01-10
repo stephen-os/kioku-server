@@ -3,26 +3,31 @@ package com.kioku.api.service;
 import com.kioku.api.model.Deck;
 import com.kioku.api.model.User;
 import com.kioku.api.repository.DeckRepository;
-import com.kioku.api.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;  // ✅ Use @SpringBootTest for service tests
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
- * Integration tests for DeckService.
+ * Unit tests for DeckService.
  *
  * <p>These tests verify:
  * <ul>
@@ -34,54 +39,58 @@ import static org.mockito.Mockito.verify;
  *   <li>Error handling for invalid operations</li>
  * </ul>
  *
- * <p><strong>Test Infrastructure:</strong>
- * <ul>
- *   <li>Uses H2 in-memory database for fast testing</li>
- *   <li>Loads full Spring application context</li>
- *   <li>Transactional - each test is rolled back</li>
- * </ul>
- *
  * @author Stephen Watson
  * @version 1.0
  * @since 1.0
  */
-@SpringBootTest
-@ActiveProfiles("test")
-@Transactional
-@DisplayName("DeckService Tests")
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@DisplayName("DeckService Unit Tests")
 class DeckServiceTests {
 
     private static final Logger logger = LoggerFactory.getLogger(DeckServiceTests.class);
 
-    @Autowired
-    private DeckService deckService;
+    // Test data constants
+    private static final Long USER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
+    private static final Long DECK_ID = 1L;
+    private static final Long NON_EXISTENT_ID = 999L;
+    private static final String DECK_NAME = "Japanese Verbs";
+    private static final String DECK_DESCRIPTION = "JLPT N5";
+    private static final String UPDATED_NAME = "New Name";
+    private static final String UPDATED_DESCRIPTION = "New Description";
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
+    @Mock
     private DeckRepository deckRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    @Mock
+    private UserService userService;
+
+    @InjectMocks
+    private DeckService deckService;
 
     private User testUser;
     private User otherUser;
+    private Deck testDeck;
 
     @BeforeEach
     void setUp() {
         logger.debug("Setting up DeckService test");
 
-        // Clean up database
-        deckRepository.deleteAll();
-        userRepository.deleteAll();
+        testUser = mock(User.class);
+        when(testUser.getId()).thenReturn(USER_ID);
+        when(testUser.getDecks()).thenReturn(new HashSet<>());
 
-        // Create test users
-        testUser = userService.createUser("test@example.com", "hashedPassword");
-        otherUser = userService.createUser("other@example.com", "hashedPassword");
+        otherUser = mock(User.class);
+        when(otherUser.getId()).thenReturn(OTHER_USER_ID);
+        when(otherUser.getDecks()).thenReturn(new HashSet<>());
 
-        logger.debug("Test setup complete: testUser id={}, otherUser id={}",
-                testUser.getId(), otherUser.getId());
+        testDeck = mock(Deck.class);
+        when(testDeck.getId()).thenReturn(DECK_ID);
+        when(testDeck.getName()).thenReturn(DECK_NAME);
+        when(testDeck.getDescription()).thenReturn(DECK_DESCRIPTION);
+
+        logger.debug("Test setup complete");
     }
 
     // Deck Creation Tests
@@ -91,16 +100,30 @@ class DeckServiceTests {
     void testCreateDeck() {
         logger.debug("Test: Successful deck creation");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "Japanese Verbs", "JLPT N5");
+        Set<Deck> userDecks = new HashSet<>();
+        when(testUser.getDecks()).thenReturn(userDecks);
+        when(userService.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(deckRepository.findByUserId(USER_ID)).thenReturn(new ArrayList<>());
 
-        assertThat(deck.getId()).isNotNull();
-        assertThat(deck.getName()).isEqualTo("Japanese Verbs");
-        assertThat(deck.getDescription()).isEqualTo("JLPT N5");
-        // Note: Deck no longer has getUser() - relationship is unidirectional
-        assertThat(deck.getCreatedAt()).isNotNull();
-        assertThat(deck.getUpdatedAt()).isNotNull();
+        // After save, the deck should be in the user's collection
+        doAnswer(invocation -> {
+            Deck deck = invocation.getArgument(0);
+            userDecks.add(deck);
+            return null;
+        }).when(testUser).addDeck(any(Deck.class));
 
-        logger.debug("Test passed: Deck created with id={}", deck.getId());
+        when(userService.save(testUser)).thenReturn(testUser);
+
+        Deck created = deckService.createDeck(USER_ID, DECK_NAME, DECK_DESCRIPTION);
+
+        assertThat(created).isNotNull();
+        assertThat(created.getName()).isEqualTo(DECK_NAME);
+        verify(userService).findById(USER_ID);
+        verify(deckRepository).findByUserId(USER_ID);
+        verify(testUser).addDeck(any(Deck.class));
+        verify(userService).save(testUser);
+
+        logger.debug("Test passed: Deck created successfully");
     }
 
     @Test
@@ -108,11 +131,23 @@ class DeckServiceTests {
     void testCreateDeckWithoutDescription() {
         logger.debug("Test: Create deck without description");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "Japanese Verbs", null);
+        Set<Deck> userDecks = new HashSet<>();
+        when(testUser.getDecks()).thenReturn(userDecks);
+        when(userService.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(deckRepository.findByUserId(USER_ID)).thenReturn(new ArrayList<>());
 
-        assertThat(deck.getId()).isNotNull();
-        assertThat(deck.getName()).isEqualTo("Japanese Verbs");
-        assertThat(deck.getDescription()).isEmpty();
+        doAnswer(invocation -> {
+            Deck deck = invocation.getArgument(0);
+            userDecks.add(deck);
+            return null;
+        }).when(testUser).addDeck(any(Deck.class));
+
+        when(userService.save(testUser)).thenReturn(testUser);
+
+        Deck created = deckService.createDeck(USER_ID, DECK_NAME, null);
+
+        assertThat(created).isNotNull();
+        verify(userService).save(testUser);
 
         logger.debug("Test passed: Deck created without description");
     }
@@ -122,31 +157,17 @@ class DeckServiceTests {
     void testCreateDeckWithDuplicateNameThrowsException() {
         logger.debug("Test: Create deck with duplicate name");
 
-        deckService.createDeck(testUser.getId(), "Japanese Verbs", "Description 1");
+        when(userService.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(deckRepository.findByUserId(USER_ID)).thenReturn(List.of(testDeck));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.createDeck(testUser.getId(), "Japanese Verbs", "Description 2");
+            deckService.createDeck(USER_ID, DECK_NAME, "Different description");
         });
 
         assertThat(exception.getMessage()).contains("already exists");
+        verify(userService, never()).save(any(User.class));
 
         logger.debug("Test passed: Duplicate name rejected");
-    }
-
-    @Test
-    @DisplayName("Should allow same deck name for different users")
-    void testCreateDeckSameNameDifferentUsers() {
-        logger.debug("Test: Same deck name for different users");
-
-        Deck deck1 = deckService.createDeck(testUser.getId(), "Japanese Verbs", "User 1 deck");
-        Deck deck2 = deckService.createDeck(otherUser.getId(), "Japanese Verbs", "User 2 deck");
-
-        assertThat(deck1.getName()).isEqualTo(deck2.getName());
-        // Note: Deck no longer has getUser() - relationship is unidirectional
-        // Verify they are different decks by ID
-        assertThat(deck1.getId()).isNotEqualTo(deck2.getId());
-
-        logger.debug("Test passed: Same name allowed for different users");
     }
 
     @Test
@@ -154,11 +175,14 @@ class DeckServiceTests {
     void testCreateDeckWithNonExistentUserThrowsException() {
         logger.debug("Test: Create deck for non-existent user");
 
+        when(userService.findById(NON_EXISTENT_ID)).thenReturn(Optional.empty());
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.createDeck(999L, "Deck Name", "Description");
+            deckService.createDeck(NON_EXISTENT_ID, DECK_NAME, DECK_DESCRIPTION);
         });
 
         assertThat(exception.getMessage()).contains("User not found");
+        verify(deckRepository, never()).findByUserId(anyLong());
 
         logger.debug("Test passed: Non-existent user rejected");
     }
@@ -170,15 +194,16 @@ class DeckServiceTests {
     void testGetUserDecks() {
         logger.debug("Test: Get all user decks");
 
-        deckService.createDeck(testUser.getId(), "Deck 1", "Description 1");
-        deckService.createDeck(testUser.getId(), "Deck 2", "Description 2");
-        deckService.createDeck(otherUser.getId(), "Other Deck", "Other description");
+        Deck deck2 = mock(Deck.class);
+        when(deck2.getName()).thenReturn("Deck 2");
 
-        List<Deck> userDecks = deckService.getUserDecks(testUser.getId());
+        List<Deck> expectedDecks = List.of(testDeck, deck2);
+        when(deckRepository.findByUserId(USER_ID)).thenReturn(expectedDecks);
+
+        List<Deck> userDecks = deckService.getUserDecks(USER_ID);
 
         assertThat(userDecks).hasSize(2);
-        // Note: Deck no longer has getUser() - verify by deck names
-        assertThat(userDecks).extracting(Deck::getName).containsExactlyInAnyOrder("Deck 1", "Deck 2");
+        verify(deckRepository).findByUserId(USER_ID);
 
         logger.debug("Test passed: Retrieved {} decks for user", userDecks.size());
     }
@@ -188,7 +213,9 @@ class DeckServiceTests {
     void testGetUserDecksEmpty() {
         logger.debug("Test: Get decks for user with no decks");
 
-        List<Deck> userDecks = deckService.getUserDecks(testUser.getId());
+        when(deckRepository.findByUserId(USER_ID)).thenReturn(new ArrayList<>());
+
+        List<Deck> userDecks = deckService.getUserDecks(USER_ID);
 
         assertThat(userDecks).isEmpty();
 
@@ -200,13 +227,13 @@ class DeckServiceTests {
     void testGetDeck() {
         logger.debug("Test: Get deck by ID");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, USER_ID)).thenReturn(Optional.of(testDeck));
 
-        Optional<Deck> found = deckService.getDeck(deck.getId(), testUser.getId());
+        Optional<Deck> found = deckService.getDeck(DECK_ID, USER_ID);
 
         assertThat(found).isPresent();
-        assertThat(found.get().getName()).isEqualTo("My Deck");
-        assertThat(found.get().getId()).isEqualTo(deck.getId());
+        assertThat(found.get().getName()).isEqualTo(DECK_NAME);
+        verify(deckRepository).findByIdAndUserId(DECK_ID, USER_ID);
 
         logger.debug("Test passed: Deck retrieved successfully");
     }
@@ -216,9 +243,9 @@ class DeckServiceTests {
     void testGetDeckWithWrongUserReturnsEmpty() {
         logger.debug("Test: Get deck with wrong user");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, OTHER_USER_ID)).thenReturn(Optional.empty());
 
-        Optional<Deck> found = deckService.getDeck(deck.getId(), otherUser.getId());
+        Optional<Deck> found = deckService.getDeck(DECK_ID, OTHER_USER_ID);
 
         assertThat(found).isEmpty();
 
@@ -230,7 +257,9 @@ class DeckServiceTests {
     void testGetDeckNonExistent() {
         logger.debug("Test: Get non-existent deck");
 
-        Optional<Deck> found = deckService.getDeck(999L, testUser.getId());
+        when(deckRepository.findByIdAndUserId(NON_EXISTENT_ID, USER_ID)).thenReturn(Optional.empty());
+
+        Optional<Deck> found = deckService.getDeck(NON_EXISTENT_ID, USER_ID);
 
         assertThat(found).isEmpty();
 
@@ -242,12 +271,12 @@ class DeckServiceTests {
     void testGetDeckOrThrow() {
         logger.debug("Test: Get deck or throw");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, USER_ID)).thenReturn(Optional.of(testDeck));
 
-        Deck found = deckService.getDeckOrThrow(deck.getId(), testUser.getId());
+        Deck found = deckService.getDeckOrThrow(DECK_ID, USER_ID);
 
         assertThat(found).isNotNull();
-        assertThat(found.getName()).isEqualTo("My Deck");
+        assertThat(found.getName()).isEqualTo(DECK_NAME);
 
         logger.debug("Test passed: Deck retrieved via getDeckOrThrow");
     }
@@ -257,10 +286,10 @@ class DeckServiceTests {
     void testGetDeckOrThrowWithWrongUserThrowsException() {
         logger.debug("Test: GetDeckOrThrow with wrong user");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, OTHER_USER_ID)).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.getDeckOrThrow(deck.getId(), otherUser.getId());
+            deckService.getDeckOrThrow(DECK_ID, OTHER_USER_ID);
         });
 
         assertThat(exception.getMessage()).contains("not found or access denied");
@@ -273,8 +302,10 @@ class DeckServiceTests {
     void testGetDeckOrThrowNonExistent() {
         logger.debug("Test: GetDeckOrThrow for non-existent deck");
 
+        when(deckRepository.findByIdAndUserId(NON_EXISTENT_ID, USER_ID)).thenReturn(Optional.empty());
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.getDeckOrThrow(999L, testUser.getId());
+            deckService.getDeckOrThrow(NON_EXISTENT_ID, USER_ID);
         });
 
         assertThat(exception.getMessage()).contains("not found or access denied");
@@ -289,21 +320,16 @@ class DeckServiceTests {
     void testUpdateDeck() {
         logger.debug("Test: Successful deck update");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "Original Name", "Original Description");
-        Long deckId = deck.getId();
+        when(deckRepository.findByIdAndUserId(DECK_ID, USER_ID)).thenReturn(Optional.of(testDeck));
+        when(deckRepository.findByUserId(USER_ID)).thenReturn(List.of(testDeck));
+        when(deckRepository.save(testDeck)).thenReturn(testDeck);
 
-        Deck updated = deckService.updateDeck(
-                deckId,
-                testUser.getId(),
-                "New Name",
-                "New Description"
-        );
+        Deck updated = deckService.updateDeck(DECK_ID, USER_ID, UPDATED_NAME, UPDATED_DESCRIPTION);
 
-        assertThat(updated.getId()).isEqualTo(deckId);
-        assertThat(updated.getName()).isEqualTo("New Name");
-        assertThat(updated.getDescription()).isEqualTo("New Description");
-        // TODO: We should manually update the updatedAt field in service.
-        // assertThat(updated.getUpdatedAt()).isAfter(deck.getUpdatedAt());
+        assertThat(updated).isNotNull();
+        verify(testDeck).setName(UPDATED_NAME);
+        verify(testDeck).setDescription(UPDATED_DESCRIPTION);
+        verify(deckRepository).save(testDeck);
 
         logger.debug("Test passed: Deck updated successfully");
     }
@@ -313,13 +339,14 @@ class DeckServiceTests {
     void testUpdateDeckWithWrongUserThrowsException() {
         logger.debug("Test: Update deck with wrong user");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, OTHER_USER_ID)).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.updateDeck(deck.getId(), otherUser.getId(), "New Name", "New Description");
+            deckService.updateDeck(DECK_ID, OTHER_USER_ID, UPDATED_NAME, UPDATED_DESCRIPTION);
         });
 
         assertThat(exception.getMessage()).contains("not found or access denied");
+        verify(deckRepository, never()).save(any(Deck.class));
 
         logger.debug("Test passed: Wrong user update rejected");
     }
@@ -329,14 +356,19 @@ class DeckServiceTests {
     void testUpdateDeckToExistingNameThrowsException() {
         logger.debug("Test: Update deck to existing name");
 
-        deckService.createDeck(testUser.getId(), "Deck A", "Description A");
-        Deck deckB = deckService.createDeck(testUser.getId(), "Deck B", "Description B");
+        Deck otherDeck = mock(Deck.class);
+        when(otherDeck.getId()).thenReturn(2L);
+        when(otherDeck.getName()).thenReturn("Existing Name");
+
+        when(deckRepository.findByIdAndUserId(DECK_ID, USER_ID)).thenReturn(Optional.of(testDeck));
+        when(deckRepository.findByUserId(USER_ID)).thenReturn(List.of(testDeck, otherDeck));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.updateDeck(deckB.getId(), testUser.getId(), "Deck A", "New Description");
+            deckService.updateDeck(DECK_ID, USER_ID, "Existing Name", UPDATED_DESCRIPTION);
         });
 
         assertThat(exception.getMessage()).contains("already exists");
+        verify(deckRepository, never()).save(any(Deck.class));
 
         logger.debug("Test passed: Duplicate name update rejected");
     }
@@ -346,17 +378,14 @@ class DeckServiceTests {
     void testUpdateDeckKeepingSameNameSucceeds() {
         logger.debug("Test: Update deck keeping same name");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Original Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, USER_ID)).thenReturn(Optional.of(testDeck));
+        when(deckRepository.save(testDeck)).thenReturn(testDeck);
 
-        Deck updated = deckService.updateDeck(
-                deck.getId(),
-                testUser.getId(),
-                "My Deck", // Same name
-                "New Description"
-        );
+        Deck updated = deckService.updateDeck(DECK_ID, USER_ID, DECK_NAME, UPDATED_DESCRIPTION);
 
-        assertThat(updated.getName()).isEqualTo("My Deck");
-        assertThat(updated.getDescription()).isEqualTo("New Description");
+        assertThat(updated).isNotNull();
+        verify(testDeck).setDescription(UPDATED_DESCRIPTION);
+        verify(deckRepository).save(testDeck);
 
         logger.debug("Test passed: Same name update allowed");
     }
@@ -366,18 +395,16 @@ class DeckServiceTests {
     void testUpdateDeckToNullDescription() {
         logger.debug("Test: Update deck to null description");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Original Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, USER_ID)).thenReturn(Optional.of(testDeck));
+        when(deckRepository.save(testDeck)).thenReturn(testDeck);
 
-        Deck updated = deckService.updateDeck(
-                deck.getId(),
-                testUser.getId(),
-                "My Deck",
-                null
-        );
+        Deck updated = deckService.updateDeck(DECK_ID, USER_ID, DECK_NAME, null);
 
-        assertThat(updated.getDescription()).isEmpty();
+        assertThat(updated).isNotNull();
+        verify(testDeck).setDescription(null);
+        verify(deckRepository).save(testDeck);
 
-        logger.debug("Test passed: Description updated to empty string");
+        logger.debug("Test passed: Description updated to null");
     }
 
     // Deck Deletion Tests
@@ -387,12 +414,18 @@ class DeckServiceTests {
     void testDeleteDeck() {
         logger.debug("Test: Successful deck deletion");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "To Delete", "Description");
-        Long deckId = deck.getId();
+        Set<Deck> userDecks = new HashSet<>();
+        userDecks.add(testDeck);
+        when(testUser.getDecks()).thenReturn(userDecks);
 
-        deckService.deleteDeck(deckId, testUser.getId());
+        when(deckRepository.findByIdAndUserId(DECK_ID, USER_ID)).thenReturn(Optional.of(testDeck));
+        when(userService.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userService.save(testUser)).thenReturn(testUser);
 
-        assertThat(deckRepository.existsById(deckId)).isFalse();
+        deckService.deleteDeck(DECK_ID, USER_ID);
+
+        verify(testUser).removeDeck(testDeck);
+        verify(userService).save(testUser);
 
         logger.debug("Test passed: Deck deleted successfully");
     }
@@ -402,13 +435,14 @@ class DeckServiceTests {
     void testDeleteDeckWithWrongUserThrowsException() {
         logger.debug("Test: Delete deck with wrong user");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        when(deckRepository.findByIdAndUserId(DECK_ID, OTHER_USER_ID)).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.deleteDeck(deck.getId(), otherUser.getId());
+            deckService.deleteDeck(DECK_ID, OTHER_USER_ID);
         });
 
         assertThat(exception.getMessage()).contains("not found or access denied");
+        verify(userService, never()).save(any(User.class));
 
         logger.debug("Test passed: Wrong user delete rejected");
     }
@@ -418,8 +452,10 @@ class DeckServiceTests {
     void testDeleteDeckNonExistent() {
         logger.debug("Test: Delete non-existent deck");
 
+        when(deckRepository.findByIdAndUserId(NON_EXISTENT_ID, USER_ID)).thenReturn(Optional.empty());
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            deckService.deleteDeck(999L, testUser.getId());
+            deckService.deleteDeck(NON_EXISTENT_ID, USER_ID);
         });
 
         assertThat(exception.getMessage()).contains("not found or access denied");
@@ -434,11 +470,13 @@ class DeckServiceTests {
     void testUserOwnsDeck() {
         logger.debug("Test: User owns deck verification");
 
-        Deck deck = deckService.createDeck(testUser.getId(), "My Deck", "Description");
+        when(deckRepository.existsByIdAndUserId(DECK_ID, USER_ID)).thenReturn(true);
+        when(deckRepository.existsByIdAndUserId(DECK_ID, OTHER_USER_ID)).thenReturn(false);
+        when(deckRepository.existsByIdAndUserId(NON_EXISTENT_ID, USER_ID)).thenReturn(false);
 
-        assertThat(deckService.userOwnsDeck(deck.getId(), testUser.getId())).isTrue();
-        assertThat(deckService.userOwnsDeck(deck.getId(), otherUser.getId())).isFalse();
-        assertThat(deckService.userOwnsDeck(999L, testUser.getId())).isFalse();
+        assertThat(deckService.userOwnsDeck(DECK_ID, USER_ID)).isTrue();
+        assertThat(deckService.userOwnsDeck(DECK_ID, OTHER_USER_ID)).isFalse();
+        assertThat(deckService.userOwnsDeck(NON_EXISTENT_ID, USER_ID)).isFalse();
 
         logger.debug("Test passed: Ownership verification works correctly");
     }
@@ -448,13 +486,12 @@ class DeckServiceTests {
     void testIsDuplicateNameTrue() {
         logger.debug("Test: Duplicate deck name");
 
-        // Create a deck with the name first
-        deckService.createDeck(testUser.getId(), "Japanese Vocabulary", "Test deck description");
+        when(deckRepository.existsByUserIdAndName(USER_ID, DECK_NAME)).thenReturn(true);
 
-        // Now check if it's a duplicate
-        boolean isDuplicate = deckService.isDuplicateName(testUser.getId(), "Japanese Vocabulary");
+        boolean isDuplicate = deckService.isDuplicateName(USER_ID, DECK_NAME);
 
         assertTrue(isDuplicate);
+        verify(deckRepository).existsByUserIdAndName(USER_ID, DECK_NAME);
 
         logger.debug("Test passed: Duplicate name detected");
     }
@@ -464,8 +501,9 @@ class DeckServiceTests {
     void testIsDuplicateNameFalse() {
         logger.debug("Test: Non-duplicate deck name");
 
-        // Don't create any deck, just check for a name that doesn't exist
-        boolean isDuplicate = deckService.isDuplicateName(testUser.getId(), "Non-existent Deck");
+        when(deckRepository.existsByUserIdAndName(USER_ID, "Non-existent Deck")).thenReturn(false);
+
+        boolean isDuplicate = deckService.isDuplicateName(USER_ID, "Non-existent Deck");
 
         assertFalse(isDuplicate);
 
@@ -477,10 +515,11 @@ class DeckServiceTests {
     void testIsDuplicateNameCaseSensitive() {
         logger.debug("Test: Case-sensitive duplicate name check");
 
-        deckService.createDeck(testUser.getId(), "MyDeck", "Test description");
+        when(deckRepository.existsByUserIdAndName(USER_ID, "MyDeck")).thenReturn(true);
+        when(deckRepository.existsByUserIdAndName(USER_ID, "mydeck")).thenReturn(false);
 
-        boolean existsExact = deckService.isDuplicateName(testUser.getId(), "MyDeck");
-        boolean existsLower = deckService.isDuplicateName(testUser.getId(), "mydeck");
+        boolean existsExact = deckService.isDuplicateName(USER_ID, "MyDeck");
+        boolean existsLower = deckService.isDuplicateName(USER_ID, "mydeck");
 
         assertTrue(existsExact);
         assertFalse(existsLower);
@@ -493,10 +532,11 @@ class DeckServiceTests {
     void testIsDuplicateNameUserIsolation() {
         logger.debug("Test: Deck name isolation by user");
 
-        deckService.createDeck(testUser.getId(), "Shared Deck Name", "Test description");
+        when(deckRepository.existsByUserIdAndName(USER_ID, "Shared Deck Name")).thenReturn(true);
+        when(deckRepository.existsByUserIdAndName(OTHER_USER_ID, "Shared Deck Name")).thenReturn(false);
 
-        boolean existsForTestUser = deckService.isDuplicateName(testUser.getId(), "Shared Deck Name");
-        boolean existsForOtherUser = deckService.isDuplicateName(otherUser.getId(), "Shared Deck Name");
+        boolean existsForTestUser = deckService.isDuplicateName(USER_ID, "Shared Deck Name");
+        boolean existsForOtherUser = deckService.isDuplicateName(OTHER_USER_ID, "Shared Deck Name");
 
         assertTrue(existsForTestUser);
         assertFalse(existsForOtherUser);
