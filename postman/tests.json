@@ -1835,9 +1835,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/decks/{{deckId}}/export",
+              "raw": "{{baseUrl}}/api/export/deck/{{deckId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "decks", "{{deckId}}", "export"]
+              "path": ["api", "export", "deck", "{{deckId}}"]
             }
           }
         },
@@ -1885,9 +1885,9 @@
               "raw": "{\n    \"name\": \"Imported French Vocabulary\",\n    \"description\": \"Basic French words\",\n    \"cards\": [\n        {\n            \"front\": \"bonjour\",\n            \"back\": \"hello\",\n            \"notes\": \"common greeting\",\n            \"tags\": [\"greetings\"]\n        },\n        {\n            \"front\": \"merci\",\n            \"back\": \"thank you\",\n            \"notes\": \"polite expression\",\n            \"tags\": [\"greetings\", \"polite\"]\n        },\n        {\n            \"front\": \"au revoir\",\n            \"back\": \"goodbye\",\n            \"notes\": null,\n            \"tags\": [\"greetings\"]\n        }\n    ],\n    \"tags\": [\n        {\"name\": \"greetings\"},\n        {\"name\": \"polite\"}\n    ]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/decks/import",
+              "raw": "{{baseUrl}}/api/import/deck",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "decks", "import"]
+              "path": ["api", "import", "deck"]
             }
           }
         },
@@ -1923,9 +1923,9 @@
               "raw": "{\n    \"name\": \"Imported French Vocabulary\",\n    \"description\": \"Duplicate name\",\n    \"cards\": [\n        {\n            \"front\": \"test\",\n            \"back\": \"test\",\n            \"tags\": []\n        }\n    ]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/decks/import",
+              "raw": "{{baseUrl}}/api/import/deck",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "decks", "import"]
+              "path": ["api", "import", "deck"]
             }
           }
         },
@@ -1961,9 +1961,9 @@
               "raw": "{\n    \"name\": \"Empty Deck\",\n    \"description\": \"No cards\",\n    \"cards\": []\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/decks/import",
+              "raw": "{{baseUrl}}/api/import/deck",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "decks", "import"]
+              "path": ["api", "import", "deck"]
             }
           }
         },
@@ -2320,9 +2320,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/decks/{{deckId}}/export",
+              "raw": "{{baseUrl}}/api/export/deck/{{deckId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "decks", "{{deckId}}", "export"]
+              "path": ["api", "export", "deck", "{{deckId}}"]
             }
           }
         },

@@ -1,24 +1,15 @@
 package com.kioku.api.service;
 
 import com.kioku.api.repository.DeckRepository;
-import com.kioku.api.dto.request.CardImportDto;
-import com.kioku.api.dto.request.DeckImportRequest;
-import com.kioku.api.dto.response.DeckExportResponse;
-import com.kioku.api.model.Card;
 import com.kioku.api.model.Deck;
-import com.kioku.api.model.Tag;
 import com.kioku.api.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Service layer for Deck entity business logic.
@@ -30,8 +21,6 @@ import java.util.Set;
  *   <li>Deck updates with duplicate prevention</li>
  *   <li>Deck deletion</li>
  *   <li>Ownership verification utilities</li>
- *   <li>Deck import with cards and tags</li>
- *   <li>Deck export to JSON-serializable response</li>
  * </ul>
  *
  * <p><strong>Security:</strong> All methods verify that the user owns the deck
@@ -60,23 +49,16 @@ public class DeckService {
 
     private final DeckRepository deckRepository;
     private final UserService userService;
-    private final CardService cardService;
-    private final TagService tagService;
 
     /**
      * Constructs a new DeckService.
      *
      * @param deckRepository the deck repository
      * @param userService the user service for user verification
-     * @param cardService the card service for card operations
-     * @param tagService the tag service for tag operations
      */
-    public DeckService(DeckRepository deckRepository, UserService userService,
-                       CardService cardService, TagService tagService) {
+    public DeckService(DeckRepository deckRepository, UserService userService) {
         this.deckRepository = deckRepository;
         this.userService = userService;
-        this.cardService = cardService;
-        this.tagService = tagService;
     }
 
     /**
@@ -274,199 +256,5 @@ public class DeckService {
         }
 
         return isDuplicate;
-    }
-
-    // ==================== Import Methods ====================
-
-    /**
-     * Imports a complete deck with cards and tags.
-     *
-     * <p>This method performs a bulk import of an entire deck including all cards
-     * and tags in a single transaction. If any part of the import fails, the entire
-     * operation is rolled back.
-     *
-     * <p><strong>Validation:</strong>
-     * <ul>
-     *   <li>Deck name must be unique for the user</li>
-     *   <li>Cards with duplicate front/back within the import are rejected</li>
-     *   <li>All validation rules from normal card/tag creation apply</li>
-     * </ul>
-     *
-     * @param userId the ID of the user importing the deck
-     * @param request the import request containing deck, cards, and tags
-     * @return the created deck entity
-     * @throws IllegalArgumentException if deck name already exists, duplicate cards found, or validation fails
-     */
-    public Deck importDeck(Long userId, DeckImportRequest request) {
-        logger.debug("Importing deck for user id={}: name={}, {} cards, {} tags",
-                userId, request.getName(), request.getCardCount(), request.getTagCount());
-
-        // 1. Check for duplicate deck name
-        if (isDuplicateName(userId, request.getName())) {
-            logger.warn("Import failed: Deck name '{}' already exists for user id={}", request.getName(), userId);
-            throw new IllegalArgumentException("A deck with this name already exists");
-        }
-
-        // 2. Create the deck
-        Deck deck = createDeck(userId, request.getName(), request.getDescription());
-        logger.debug("Deck created: deckId={}", deck.getId());
-
-        // 3. Create tags (deduplicate by name)
-        Map<String, Tag> tagMap = createTagsForImport(userId, deck.getId(), request);
-        logger.debug("Created {} unique tags", tagMap.size());
-
-        // 4. Create cards and associate tags
-        createCardsWithTagsForImport(userId, deck.getId(), request, tagMap);
-
-        logger.info("Deck imported successfully: deckId={}, {} cards, {} tags",
-                deck.getId(), request.getCardCount(), tagMap.size());
-
-        return deck;
-    }
-
-    /**
-     * Creates all tags from the import request, deduplicating by name.
-     *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param request the import request
-     * @return a map of tag names to tag entities
-     */
-    private Map<String, Tag> createTagsForImport(Long userId, Long deckId, DeckImportRequest request) {
-        Map<String, Tag> tagMap = new HashMap<>();
-
-        // Add tags from explicit tag list
-        if (request.hasTags()) {
-            for (var tagDto : request.getTags()) {
-                String tagName = tagDto.getName();
-                if (!tagMap.containsKey(tagName)) {
-                    Tag tag = tagService.createTag(userId, deckId, tagName);
-                    tagMap.put(tagName, tag);
-                    logger.debug("Created tag: {}", tagName);
-                }
-            }
-        }
-
-        return tagMap;
-    }
-
-    /**
-     * Creates all cards and associates them with tags.
-     *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param request the import request
-     * @param tagMap the map of existing tags
-     * @throws IllegalArgumentException if duplicate cards are found within the import
-     */
-    private void createCardsWithTagsForImport(Long userId, Long deckId, DeckImportRequest request,
-                                              Map<String, Tag> tagMap) {
-        Set<String> processedCards = new HashSet<>();
-        int cardIndex = 0;
-
-        for (CardImportDto cardDto : request.getCards()) {
-            cardIndex++;
-
-            logger.info(cardDto.toString());
-
-            // Check for duplicates within the import
-            String cardKey = cardDto.getFront() + "|" + cardDto.getBack();
-            if (processedCards.contains(cardKey)) {
-                logger.warn("Duplicate card found at index {}: '{}' / '{}'",
-                        cardIndex, cardDto.getFront(), cardDto.getBack());
-                throw new IllegalArgumentException(
-                        String.format("Duplicate card at index %d: '%s' / '%s'",
-                                cardIndex, cardDto.getFront(), cardDto.getBack()));
-            }
-            processedCards.add(cardKey);
-
-            // Create the card
-            Card card = cardService.createCard(
-                    userId,
-                    deckId,
-                    cardDto.getFront(),
-                    cardDto.getBack(),
-                    cardDto.getNotes()
-            );
-            logger.debug("Created card {}/{}: {}", cardIndex, request.getCardCount(), cardDto.getFront());
-
-            // Associate tags with the card directly (avoids native query lookup issues)
-            if (cardDto.hasTags()) {
-                associateTagsWithCardForImport(userId, deckId, card, cardDto, tagMap);
-            }
-        }
-    }
-
-    /**
-     * Associates tags with a card, creating tags if they don't exist.
-     *
-     * @param userId the user ID
-     * @param deckId the deck ID
-     * @param card the card entity to associate tags with
-     * @param cardDto the card import DTO containing tag names
-     * @param tagMap the map of existing tags (mutated to include newly created tags)
-     */
-    private void associateTagsWithCardForImport(Long userId, Long deckId, Card card,
-                                                CardImportDto cardDto, Map<String, Tag> tagMap) {
-        for (String tagName : cardDto.getTags()) {
-            // Create tag if it doesn't exist yet
-            if (!tagMap.containsKey(tagName)) {
-                Tag tag = tagService.createTag(userId, deckId, tagName);
-                tagMap.put(tagName, tag);
-                logger.debug("Created tag from card reference: {}", tagName);
-            }
-
-            // Add tag to card directly using the entity we already have
-            Tag tag = tagMap.get(tagName);
-            card.addTag(tag);
-            logger.debug("Associated tag '{}' with card '{}'", tagName, card.getFront());
-        }
-    }
-
-    // ==================== Export Methods ====================
-
-    /**
-     * Exports a complete deck with all cards and tags.
-     *
-     * <p>This method retrieves a deck and all its associated data (cards and tags)
-     * and packages them into an export response that can be saved as JSON and
-     * later re-imported.
-     *
-     * <p><strong>Export Contents:</strong>
-     * <ul>
-     *   <li>Deck metadata (ID, name, description, timestamps)</li>
-     *   <li>All cards with their tags</li>
-     *   <li>All tags in the deck</li>
-     *   <li>Export metadata (version, counts, export timestamp)</li>
-     * </ul>
-     *
-     * @param userId the ID of the user exporting the deck
-     * @param deckId the ID of the deck to export
-     * @return the export response containing the complete deck
-     * @throws IllegalArgumentException if deck not found or access denied
-     */
-    @Transactional(readOnly = true)
-    public DeckExportResponse exportDeck(Long userId, Long deckId) {
-        logger.debug("Exporting deck id={} for user id={}", deckId, userId);
-
-        // Get deck with ownership check
-        Deck deck = getDeckOrThrow(deckId, userId);
-        logger.debug("Deck retrieved: name={}", deck.getName());
-
-        // Get all cards in the deck
-        List<Card> cards = cardService.getDeckCards(userId, deckId);
-        logger.debug("Retrieved {} cards", cards.size());
-
-        // Get all tags in the deck
-        List<Tag> tags = tagService.getDeckTags(userId, deckId);
-        logger.debug("Retrieved {} tags", tags.size());
-
-        // Build export response
-        DeckExportResponse response = new DeckExportResponse(deck, cards, tags);
-
-        logger.info("Deck exported successfully: deckId={}, name='{}', {} cards, {} tags",
-                deckId, deck.getName(), cards.size(), tags.size());
-
-        return response;
     }
 }
