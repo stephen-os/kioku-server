@@ -1,0 +1,462 @@
+{
+    "name": "Hiragana Complete",
+    "description": "All 46 basic Hiragana characters with romanization",
+    "cards": [
+        {
+            "front": "あ",
+            "back": "a",
+            "notes": "Vowel",
+            "tags": [
+                "hiragana",
+                "vowels"
+            ]
+        },
+        {
+            "front": "い",
+            "back": "i",
+            "notes": "Vowel",
+            "tags": [
+                "hiragana",
+                "vowels"
+            ]
+        },
+        {
+            "front": "う",
+            "back": "u",
+            "notes": "Vowel",
+            "tags": [
+                "hiragana",
+                "vowels"
+            ]
+        },
+        {
+            "front": "え",
+            "back": "e",
+            "notes": "Vowel",
+            "tags": [
+                "hiragana",
+                "vowels"
+            ]
+        },
+        {
+            "front": "お",
+            "back": "o",
+            "notes": "Vowel",
+            "tags": [
+                "hiragana",
+                "vowels"
+            ]
+        },
+        {
+            "front": "か",
+            "back": "ka",
+            "notes": "K-row",
+            "tags": [
+                "hiragana",
+                "k-row"
+            ]
+        },
+        {
+            "front": "き",
+            "back": "ki",
+            "notes": "K-row",
+            "tags": [
+                "hiragana",
+                "k-row"
+            ]
+        },
+        {
+            "front": "く",
+            "back": "ku",
+            "notes": "K-row",
+            "tags": [
+                "hiragana",
+                "k-row"
+            ]
+        },
+        {
+            "front": "け",
+            "back": "ke",
+            "notes": "K-row",
+            "tags": [
+                "hiragana",
+                "k-row"
+            ]
+        },
+        {
+            "front": "こ",
+            "back": "ko",
+            "notes": "K-row",
+            "tags": [
+                "hiragana",
+                "k-row"
+            ]
+        },
+        {
+            "front": "さ",
+            "back": "sa",
+            "notes": "S-row",
+            "tags": [
+                "hiragana",
+                "s-row"
+            ]
+        },
+        {
+            "front": "し",
+            "back": "shi",
+            "notes": "S-row",
+            "tags": [
+                "hiragana",
+                "s-row"
+            ]
+        },
+        {
+            "front": "す",
+            "back": "su",
+            "notes": "S-row",
+            "tags": [
+                "hiragana",
+                "s-row"
+            ]
+        },
+        {
+            "front": "せ",
+            "back": "se",
+            "notes": "S-row",
+            "tags": [
+                "hiragana",
+                "s-row"
+            ]
+        },
+        {
+            "front": "そ",
+            "back": "so",
+            "notes": "S-row",
+            "tags": [
+                "hiragana",
+                "s-row"
+            ]
+        },
+        {
+            "front": "た",
+            "back": "ta",
+            "notes": "T-row",
+            "tags": [
+                "hiragana",
+                "t-row"
+            ]
+        },
+        {
+            "front": "ち",
+            "back": "chi",
+            "notes": "T-row",
+            "tags": [
+                "hiragana",
+                "t-row"
+            ]
+        },
+        {
+            "front": "つ",
+            "back": "tsu",
+            "notes": "T-row",
+            "tags": [
+                "hiragana",
+                "t-row"
+            ]
+        },
+        {
+            "front": "て",
+            "back": "te",
+            "notes": "T-row",
+            "tags": [
+                "hiragana",
+                "t-row"
+            ]
+        },
+        {
+            "front": "と",
+            "back": "to",
+            "notes": "T-row",
+            "tags": [
+                "hiragana",
+                "t-row"
+            ]
+        },
+        {
+            "front": "な",
+            "back": "na",
+            "notes": "N-row",
+            "tags": [
+                "hiragana",
+                "n-row"
+            ]
+        },
+        {
+            "front": "に",
+            "back": "ni",
+            "notes": "N-row",
+            "tags": [
+                "hiragana",
+                "n-row"
+            ]
+        },
+        {
+            "front": "ぬ",
+            "back": "nu",
+            "notes": "N-row",
+            "tags": [
+                "hiragana",
+                "n-row"
+            ]
+        },
+        {
+            "front": "ね",
+            "back": "ne",
+            "notes": "N-row",
+            "tags": [
+                "hiragana",
+                "n-row"
+            ]
+        },
+        {
+            "front": "の",
+            "back": "no",
+            "notes": "N-row",
+            "tags": [
+                "hiragana",
+                "n-row"
+            ]
+        },
+        {
+            "front": "は",
+            "back": "ha",
+            "notes": "H-row",
+            "tags": [
+                "hiragana",
+                "h-row"
+            ]
+        },
+        {
+            "front": "ひ",
+            "back": "hi",
+            "notes": "H-row",
+            "tags": [
+                "hiragana",
+                "h-row"
+            ]
+        },
+        {
+            "front": "ふ",
+            "back": "fu",
+            "notes": "H-row",
+            "tags": [
+                "hiragana",
+                "h-row"
+            ]
+        },
+        {
+            "front": "へ",
+            "back": "he",
+            "notes": "H-row",
+            "tags": [
+                "hiragana",
+                "h-row"
+            ]
+        },
+        {
+            "front": "ほ",
+            "back": "ho",
+            "notes": "H-row",
+            "tags": [
+                "hiragana",
+                "h-row"
+            ]
+        },
+        {
+            "front": "ま",
+            "back": "ma",
+            "notes": "M-row",
+            "tags": [
+                "hiragana",
+                "m-row"
+            ]
+        },
+        {
+            "front": "み",
+            "back": "mi",
+            "notes": "M-row",
+            "tags": [
+                "hiragana",
+                "m-row"
+            ]
+        },
+        {
+            "front": "む",
+            "back": "mu",
+            "notes": "M-row",
+            "tags": [
+                "hiragana",
+                "m-row"
+            ]
+        },
+        {
+            "front": "め",
+            "back": "me",
+            "notes": "M-row",
+            "tags": [
+                "hiragana",
+                "m-row"
+            ]
+        },
+        {
+            "front": "も",
+            "back": "mo",
+            "notes": "M-row",
+            "tags": [
+                "hiragana",
+                "m-row"
+            ]
+        },
+        {
+            "front": "や",
+            "back": "ya",
+            "notes": "Y-row",
+            "tags": [
+                "hiragana",
+                "y-row"
+            ]
+        },
+        {
+            "front": "ゆ",
+            "back": "yu",
+            "notes": "Y-row",
+            "tags": [
+                "hiragana",
+                "y-row"
+            ]
+        },
+        {
+            "front": "よ",
+            "back": "yo",
+            "notes": "Y-row",
+            "tags": [
+                "hiragana",
+                "y-row"
+            ]
+        },
+        {
+            "front": "ら",
+            "back": "ra",
+            "notes": "R-row",
+            "tags": [
+                "hiragana",
+                "r-row"
+            ]
+        },
+        {
+            "front": "り",
+            "back": "ri",
+            "notes": "R-row",
+            "tags": [
+                "hiragana",
+                "r-row"
+            ]
+        },
+        {
+            "front": "る",
+            "back": "ru",
+            "notes": "R-row",
+            "tags": [
+                "hiragana",
+                "r-row"
+            ]
+        },
+        {
+            "front": "れ",
+            "back": "re",
+            "notes": "R-row",
+            "tags": [
+                "hiragana",
+                "r-row"
+            ]
+        },
+        {
+            "front": "ろ",
+            "back": "ro",
+            "notes": "R-row",
+            "tags": [
+                "hiragana",
+                "r-row"
+            ]
+        },
+        {
+            "front": "わ",
+            "back": "wa",
+            "notes": "W-row",
+            "tags": [
+                "hiragana",
+                "w-row"
+            ]
+        },
+        {
+            "front": "を",
+            "back": "wo",
+            "notes": "W-row (particle only)",
+            "tags": [
+                "hiragana",
+                "w-row",
+                "particles"
+            ]
+        },
+        {
+            "front": "ん",
+            "back": "n",
+            "notes": "N (only consonant)",
+            "tags": [
+                "hiragana",
+                "consonants"
+            ]
+        }
+    ],
+    "tags": [
+        {
+            "name": "hiragana"
+        },
+        {
+            "name": "vowels"
+        },
+        {
+            "name": "k-row"
+        },
+        {
+            "name": "s-row"
+        },
+        {
+            "name": "t-row"
+        },
+        {
+            "name": "n-row"
+        },
+        {
+            "name": "h-row"
+        },
+        {
+            "name": "m-row"
+        },
+        {
+            "name": "y-row"
+        },
+        {
+            "name": "r-row"
+        },
+        {
+            "name": "w-row"
+        },
+        {
+            "name": "particles"
+        },
+        {
+            "name": "consonants"
+        }
+    ]
+}
