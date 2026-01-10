@@ -1,6 +1,6 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.User;
+import com.kioku.api.model.User;
 import com.kioku.api.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +68,20 @@ public class UserService {
         Optional<User> user = userRepository.findById(id);
         logger.debug("User found: {}", user.isPresent());
         return user;
+    }
+
+    /**
+     * Saves a user to the database.
+     *
+     * <p>This method should be used when updating user relationships
+     * (e.g., adding decks) since those are unidirectional from User.
+     *
+     * @param user the user to save
+     * @return the saved user
+     */
+    public User save(User user) {
+        logger.debug("Saving user id={}", user.getId());
+        return userRepository.save(user);
     }
 
     /**

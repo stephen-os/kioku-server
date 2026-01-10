@@ -1,10 +1,10 @@
 package com.kioku.api.service;
 
+import com.kioku.api.model.Deck;
 import com.kioku.api.dto.request.CardImportDto;
 import com.kioku.api.dto.request.DeckImportRequest;
-import com.kioku.api.entity.Card;
-import com.kioku.api.entity.Deck;
-import com.kioku.api.entity.Tag;
+import com.kioku.api.model.Card;
+import com.kioku.api.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -192,7 +192,7 @@ public class DeckImportService {
 
             // Associate tags with the card
             if (cardDto.hasTags()) {
-                associateTagsWithCard(userId, deckId, card.getId(), cardDto, tagMap);
+                associateTagsWithCard(userId, deckId, card.getCardId(), cardDto, tagMap);
             }
         }
     }

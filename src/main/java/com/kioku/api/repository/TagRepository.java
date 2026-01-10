@@ -1,7 +1,10 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.Tag;
+import com.kioku.api.model.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,11 +21,8 @@ import java.util.Optional;
  *   <li>Finding tags by user (across all their decks)</li>
  * </ul>
  *
- * <p><strong>Deck Isolation:</strong> Tags belong to specific decks. A "verbs" tag
- * in one deck is completely separate from a "verbs" tag in another deck.
- *
- * <p><strong>Security Note:</strong> This repository does not enforce user ownership.
- * Service layer methods must verify that users own the deck before calling these methods.
+ * <p><strong>Unidirectional Relationship:</strong> Tag doesn't have deck or user references,
+ * so queries use native SQL to access the deck_id foreign key column.
  *
  * @author Stephen Watson
  * @version 1.0
@@ -34,51 +34,61 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     /**
      * Finds all tags in a specific deck.
      *
-     * <p><strong>Security:</strong> Does not check deck ownership.
-     * Service layer must verify user owns the deck.
-     *
      * @param deckId the deck ID
      * @return list of tags in the deck
      */
-    List<Tag> findByDeckId(Long deckId);
+    @Query(value = "SELECT * FROM tags WHERE deck_id = :deckId", nativeQuery = true)
+    List<Tag> findByDeckIdNative(@Param("deckId") Long deckId);
+
+    default List<Tag> findByDeckId(Long deckId) {
+        return findByDeckIdNative(deckId);
+    }
 
     /**
      * Finds a specific tag within a specific deck.
-     *
-     * <p>This method ensures the tag belongs to the specified deck,
-     * preventing access to tags from other decks even if the tag ID is known.
-     *
-     * <p><strong>Security:</strong> Does not check deck ownership.
-     * Service layer must verify user owns the deck.
      *
      * @param id the tag ID
      * @param deckId the deck ID
      * @return an Optional containing the tag if found in the deck, empty otherwise
      */
-    Optional<Tag> findByIdAndDeckId(Long id, Long deckId);
+    @Query(value = "SELECT * FROM tags WHERE id = :id AND deck_id = :deckId", nativeQuery = true)
+    Optional<Tag> findByIdAndDeckIdNative(@Param("id") Long id, @Param("deckId") Long deckId);
+
+    default Optional<Tag> findByIdAndDeckId(Long id, Long deckId) {
+        return findByIdAndDeckIdNative(id, deckId);
+    }
 
     /**
      * Checks if a tag with the given name exists in a specific deck.
-     *
-     * <p>Used to prevent duplicate tag names within the same deck.
-     * Tags in different decks can have the same name.
      *
      * @param deckId the deck ID
      * @param name the tag name
      * @return {@code true} if a tag with this name exists in the deck, {@code false} otherwise
      */
-    boolean existsByDeckIdAndName(Long deckId, String name);
+    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM tags WHERE deck_id = :deckId AND name = :name", nativeQuery = true)
+    boolean existsByDeckIdAndNameNative(@Param("deckId") Long deckId, @Param("name") String name);
+
+    default boolean existsByDeckIdAndName(Long deckId, String name) {
+        return existsByDeckIdAndNameNative(deckId, name);
+    }
 
     /**
      * Finds all tags belonging to a specific user (across all their decks).
      *
-     * <p>This is useful for showing all tags a user has created,
-     * but remember that tags are deck-specific and cannot be shared.
-     *
      * @param userId the user ID
      * @return list of all tags created by the user
      */
-    List<Tag> findByUserId(Long userId);
+    @Query(value = """
+        SELECT t.*
+        FROM tags t
+        INNER JOIN decks d ON t.deck_id = d.id
+        WHERE d.user_id = :userId
+        """, nativeQuery = true)
+    List<Tag> findByUserIdNative(@Param("userId") Long userId);
+
+    default List<Tag> findByUserId(Long userId) {
+        return findByUserIdNative(userId);
+    }
 
     /**
      * Counts the number of tags in a deck.
@@ -86,15 +96,23 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
      * @param deckId the deck ID
      * @return the number of tags in the deck
      */
-    long countByDeckId(Long deckId);
+    @Query(value = "SELECT COUNT(*) FROM tags WHERE deck_id = :deckId", nativeQuery = true)
+    long countByDeckIdNative(@Param("deckId") Long deckId);
+
+    default long countByDeckId(Long deckId) {
+        return countByDeckIdNative(deckId);
+    }
 
     /**
      * Deletes all tags in a specific deck.
      *
-     * <p><strong>Warning:</strong> This will remove all tag associations
-     * from cards in the deck.
-     *
      * @param deckId the deck ID
      */
-    void deleteByDeckId(Long deckId);
+    @Modifying
+    @Query(value = "DELETE FROM tags WHERE deck_id = :deckId", nativeQuery = true)
+    void deleteByDeckIdNative(@Param("deckId") Long deckId);
+
+    default void deleteByDeckId(Long deckId) {
+        deleteByDeckIdNative(deckId);
+    }
 }

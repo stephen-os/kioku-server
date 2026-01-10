@@ -1,9 +1,9 @@
 package com.kioku.api.service;
 
+import com.kioku.api.model.Deck;
 import com.kioku.api.dto.response.DeckExportResponse;
-import com.kioku.api.entity.Card;
-import com.kioku.api.entity.Deck;
-import com.kioku.api.entity.Tag;
+import com.kioku.api.model.Card;
+import com.kioku.api.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

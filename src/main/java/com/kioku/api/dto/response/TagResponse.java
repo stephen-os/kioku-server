@@ -1,6 +1,6 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.Tag;
+import com.kioku.api.model.Tag;
 
 /**
  * Data Transfer Object for tag response.

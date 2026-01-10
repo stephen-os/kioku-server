@@ -1,8 +1,8 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.Deck;
-import com.kioku.api.entity.User;
 import com.kioku.api.repository.DeckRepository;
+import com.kioku.api.model.Deck;
+import com.kioku.api.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -95,8 +95,16 @@ public class DeckService {
             throw new IllegalArgumentException("Deck with name '" + name + "' already exists");
         }
 
-        Deck deck = new Deck(user, name, description);
-        Deck savedDeck = deckRepository.save(deck);
+        Deck deck = new Deck(name, description);
+        user.addDeck(deck);
+        // Save through user to properly set user_id foreign key (unidirectional relationship)
+        User savedUser = userService.save(user);
+
+        // Get the deck with its generated ID from the saved user's collection
+        Deck savedDeck = savedUser.getDecks().stream()
+                .filter(d -> d.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Deck not found after save"));
 
         logger.debug("Deck created successfully with id={}", savedDeck.getId());
         return savedDeck;
@@ -195,7 +203,7 @@ public class DeckService {
     /**
      * Deletes a deck.
      *
-     * <p>This will cascade delete all cards and tags in the deck.
+     * <p>This will cascade delete all cards and tags in the deck via orphanRemoval.
      *
      * @param deckId the deck ID
      * @param userId the user ID
@@ -205,7 +213,12 @@ public class DeckService {
         logger.debug("Deleting deck id={} for user id={}", deckId, userId);
 
         Deck deck = getDeckOrThrow(deckId, userId);
-        deckRepository.delete(deck);
+
+        // Get user and remove deck from collection (triggers orphanRemoval)
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        user.removeDeck(deck);
+        userService.save(user);
 
         logger.debug("Deck id={} deleted successfully", deckId);
     }

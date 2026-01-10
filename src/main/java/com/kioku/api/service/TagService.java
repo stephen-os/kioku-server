@@ -1,7 +1,7 @@
 package com.kioku.api.service;
 
-import com.kioku.api.entity.Deck;
-import com.kioku.api.entity.Tag;
+import com.kioku.api.model.Deck;
+import com.kioku.api.model.Tag;
 import com.kioku.api.repository.TagRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +91,8 @@ public class TagService {
             throw new IllegalArgumentException("Tag with name '" + name + "' already exists in this deck");
         }
 
-        Tag tag = new Tag(deck, name);
+        Tag tag = new Tag(name);
+        deck.addTag(tag);
         Tag savedTag = tagRepository.save(tag);
 
         logger.debug("Tag created successfully with id={}", savedTag.getId());
@@ -169,45 +170,19 @@ public class TagService {
      * Gets a tag or throws exception if not found or not owned.
      *
      * @param userId the user ID
-     * @param deckId the deck ID (can be null to skip deck check)
+     * @param deckId the deck ID
      * @param tagId the tag ID
      * @return the tag
      * @throws IllegalArgumentException if tag not found or access denied
      */
     @Transactional(readOnly = true)
     public Tag getTagOrThrow(Long userId, Long deckId, Long tagId) {
-        if (deckId != null) {
-            return getTag(userId, deckId, tagId)
-                    .orElseThrow(() -> {
-                        logger.warn("Tag not found or access denied: tag id={}, deck id={}, user id={}",
-                                tagId, deckId, userId);
-                        return new IllegalArgumentException("Tag not found or access denied: " + tagId);
-                    });
-        } else {
-            // Verify user owns the tag (check via user_id)
-            Optional<Tag> tag = tagRepository.findById(tagId);
-            if (tag.isEmpty() || !tag.get().getUser().getId().equals(userId)) {
-                logger.warn("Tag not found or access denied: tag id={}, user id={}", tagId, userId);
-                throw new IllegalArgumentException("Tag not found or access denied: " + tagId);
-            }
-            return tag.get();
-        }
-    }
-
-    /**
-     * Simplified getTagOrThrow without deck check.
-     *
-     * <p>Verifies user owns the tag by checking the tag's user_id.
-     * Use this when you have the tag ID but not the deck ID.
-     *
-     * @param userId the user ID
-     * @param tagId the tag ID
-     * @return the tag
-     * @throws IllegalArgumentException if tag not found or access denied
-     */
-    @Transactional(readOnly = true)
-    public Tag getTagOrThrow(Long userId, Long tagId) {
-        return getTagOrThrow(userId, null, tagId);
+        return getTag(userId, deckId, tagId)
+                .orElseThrow(() -> {
+                    logger.warn("Tag not found or access denied: tag id={}, deck id={}, user id={}",
+                            tagId, deckId, userId);
+                    return new IllegalArgumentException("Tag not found or access denied: " + tagId);
+                });
     }
 
     /**

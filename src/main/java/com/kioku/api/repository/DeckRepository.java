@@ -1,7 +1,8 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.Deck;
+import com.kioku.api.model.Deck;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,12 +22,8 @@ import java.util.Optional;
  *   <li>Deck analytics and statistics</li>
  * </ul>
  *
- * <p><strong>Ownership Model:</strong> Decks belong to users. Each user has their
- * own collection of decks with unique names. Different users can have decks with
- * the same name.
- *
- * <p><strong>Security Note:</strong> Methods that accept both deck ID and user ID
- * ensure the user owns the deck, preventing unauthorized access.
+ * <p><strong>Unidirectional Relationship:</strong> Deck doesn't have a user reference,
+ * so queries use native SQL to access the user_id foreign key column.
  *
  * @author Stephen Watson
  * @version 1.0
@@ -38,62 +35,71 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
     /**
      * Finds all decks belonging to a specific user.
      *
-     * <p>Returns decks ordered by creation date (newest first).
-     *
      * @param userId the user ID
      * @return list of user's decks
      */
-    List<Deck> findByUserId(Long userId);
+    @Query(value = "SELECT * FROM decks WHERE user_id = :userId ORDER BY created_at DESC", nativeQuery = true)
+    List<Deck> findByUserIdNative(@Param("userId") Long userId);
+
+    default List<Deck> findByUserId(Long userId) {
+        return findByUserIdNative(userId);
+    }
 
     /**
      * Finds a specific deck belonging to a specific user.
-     *
-     * <p>This method ensures the deck belongs to the specified user,
-     * preventing access to other users' decks even if the deck ID is known.
-     *
-     * <p><strong>Security:</strong> Use this instead of {@code findById()} when
-     * you need to verify ownership.
      *
      * @param id the deck ID
      * @param userId the user ID
      * @return an Optional containing the deck if found and owned, empty otherwise
      */
-    Optional<Deck> findByIdAndUserId(Long id, Long userId);
+    @Query(value = "SELECT * FROM decks WHERE id = :id AND user_id = :userId", nativeQuery = true)
+    Optional<Deck> findByIdAndUserIdNative(@Param("id") Long id, @Param("userId") Long userId);
+
+    default Optional<Deck> findByIdAndUserId(Long id, Long userId) {
+        return findByIdAndUserIdNative(id, userId);
+    }
 
     /**
      * Checks if a user owns a specific deck.
-     *
-     * <p>Useful for quick ownership verification without fetching the entire deck.
      *
      * @param id the deck ID
      * @param userId the user ID
      * @return {@code true} if the user owns the deck, {@code false} otherwise
      */
-    boolean existsByIdAndUserId(Long id, Long userId);
+    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM decks WHERE id = :id AND user_id = :userId", nativeQuery = true)
+    boolean existsByIdAndUserIdNative(@Param("id") Long id, @Param("userId") Long userId);
+
+    default boolean existsByIdAndUserId(Long id, Long userId) {
+        return existsByIdAndUserIdNative(id, userId);
+    }
 
     /**
      * Checks if a deck with the given name exists for a user.
-     *
-     * <p>Used to prevent duplicate deck names within a user's collection.
-     * Deck names must be unique per user but different users can have
-     * decks with the same name.
      *
      * @param userId the user ID
      * @param name the deck name
      * @return {@code true} if a deck with this name exists for the user, {@code false} otherwise
      */
-    boolean existsByUserIdAndName(Long userId, String name);
+    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM decks WHERE user_id = :userId AND name = :name", nativeQuery = true)
+    boolean existsByUserIdAndNameNative(@Param("userId") Long userId, @Param("name") String name);
+
+    default boolean existsByUserIdAndName(Long userId, String name) {
+        return existsByUserIdAndNameNative(userId, name);
+    }
 
     /**
      * Finds a deck by user ID and name.
-     *
-     * <p>Useful for looking up a deck by its name within a user's collection.
      *
      * @param userId the user ID
      * @param name the deck name
      * @return an Optional containing the deck if found, empty otherwise
      */
-    Optional<Deck> findByUserIdAndName(Long userId, String name);
+    @Query(value = "SELECT * FROM decks WHERE user_id = :userId AND name = :name", nativeQuery = true)
+    Optional<Deck> findByUserIdAndNameNative(@Param("userId") Long userId, @Param("name") String name);
+
+    default Optional<Deck> findByUserIdAndName(Long userId, String name) {
+        return findByUserIdAndNameNative(userId, name);
+    }
 
     /**
      * Counts the number of decks a user has.
@@ -101,40 +107,51 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
      * @param userId the user ID
      * @return the number of decks
      */
-    long countByUserId(Long userId);
+    @Query(value = "SELECT COUNT(*) FROM decks WHERE user_id = :userId", nativeQuery = true)
+    long countByUserIdNative(@Param("userId") Long userId);
+
+    default long countByUserId(Long userId) {
+        return countByUserIdNative(userId);
+    }
 
     /**
      * Finds decks created after a specific date.
-     *
-     * <p>Useful for analytics and reporting on deck creation trends.
      *
      * @param userId the user ID
      * @param date the date to search from
      * @return list of decks created after the date
      */
-    @Query("SELECT d FROM Deck d WHERE d.user.id = :userId AND d.createdAt > :date ORDER BY d.createdAt DESC")
-    List<Deck> findByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("date") LocalDateTime date);
+    @Query(value = "SELECT * FROM decks WHERE user_id = :userId AND created_at > :date ORDER BY created_at DESC", nativeQuery = true)
+    List<Deck> findByUserIdAndCreatedAtAfterNative(@Param("userId") Long userId, @Param("date") LocalDateTime date);
+
+    default List<Deck> findByUserIdAndCreatedAtAfter(Long userId, LocalDateTime date) {
+        return findByUserIdAndCreatedAtAfterNative(userId, date);
+    }
 
     /**
      * Finds recently updated decks for a user.
-     *
-     * <p>Returns decks ordered by update time (most recently updated first).
-     * Useful for "continue studying" features.
      *
      * @param userId the user ID
      * @param limit the maximum number of decks to return
      * @return list of recently updated decks
      */
-    @Query(value = "SELECT d FROM Deck d WHERE d.user.id = :userId ORDER BY d.updatedAt DESC LIMIT :limit")
-    List<Deck> findRecentlyUpdatedDecks(@Param("userId") Long userId, @Param("limit") int limit);
+    @Query(value = "SELECT * FROM decks WHERE user_id = :userId ORDER BY updated_at DESC LIMIT :limit", nativeQuery = true)
+    List<Deck> findRecentlyUpdatedDecksNative(@Param("userId") Long userId, @Param("limit") int limit);
+
+    default List<Deck> findRecentlyUpdatedDecks(Long userId, int limit) {
+        return findRecentlyUpdatedDecksNative(userId, limit);
+    }
 
     /**
      * Deletes all decks belonging to a user.
      *
-     * <p><strong>Warning:</strong> This will cascade delete all cards and tags
-     * in those decks if cascade is configured.
-     *
      * @param userId the user ID
      */
-    void deleteByUserId(Long userId);
+    @Modifying
+    @Query(value = "DELETE FROM decks WHERE user_id = :userId", nativeQuery = true)
+    void deleteByUserIdNative(@Param("userId") Long userId);
+
+    default void deleteByUserId(Long userId) {
+        deleteByUserIdNative(userId);
+    }
 }

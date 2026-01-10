@@ -1,12 +1,12 @@
 package com.kioku.api.controller;
 
+import com.kioku.api.service.CardService;
 import com.kioku.api.dto.request.CreateCardRequest;
 import com.kioku.api.dto.request.UpdateCardRequest;
 import com.kioku.api.dto.response.CardResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.Card;
+import com.kioku.api.model.Card;
 import com.kioku.api.security.CurrentUser;
-import com.kioku.api.service.CardService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,7 +129,7 @@ public class CardController {
                 request.getNotes()
         );
 
-        logger.info("Card {} created successfully in deck {}", card.getId(), deckId);
+        logger.info("Card {} created successfully in deck {}", card.getCardId(), deckId);
         return ResponseEntity.status(HttpStatus.CREATED).body(new CardResponse(card));
     }
 

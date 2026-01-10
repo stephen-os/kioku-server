@@ -1,7 +1,7 @@
 package com.kioku.api.controller;
 
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.User;
+import com.kioku.api.model.User;
 import com.kioku.api.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

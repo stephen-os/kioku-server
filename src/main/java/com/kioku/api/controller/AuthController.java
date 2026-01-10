@@ -4,7 +4,7 @@ import com.kioku.api.dto.request.LoginRequest;
 import com.kioku.api.dto.request.RegisterRequest;
 import com.kioku.api.dto.response.AuthResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.User;
+import com.kioku.api.model.User;
 import com.kioku.api.security.JwtUtil;
 import com.kioku.api.service.UserService;
 import jakarta.validation.Valid;

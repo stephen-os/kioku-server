@@ -1,8 +1,8 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.Card;
-import com.kioku.api.entity.Deck;
-import com.kioku.api.entity.Tag;
+import com.kioku.api.model.Card;
+import com.kioku.api.model.Deck;
+import com.kioku.api.model.Tag;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

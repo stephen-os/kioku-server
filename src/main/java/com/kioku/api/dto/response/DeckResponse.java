@@ -1,6 +1,6 @@
 package com.kioku.api.dto.response;
 
-import com.kioku.api.entity.Deck;
+import com.kioku.api.model.Deck;
 
 import java.time.LocalDateTime;
 

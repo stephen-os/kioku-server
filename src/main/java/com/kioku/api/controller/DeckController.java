@@ -6,7 +6,7 @@ import com.kioku.api.dto.request.UpdateDeckRequest;
 import com.kioku.api.dto.response.DeckExportResponse;
 import com.kioku.api.dto.response.DeckResponse;
 import com.kioku.api.dto.response.ErrorResponse;
-import com.kioku.api.entity.Deck;
+import com.kioku.api.model.Deck;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.service.DeckExportService;
 import com.kioku.api.service.DeckImportService;

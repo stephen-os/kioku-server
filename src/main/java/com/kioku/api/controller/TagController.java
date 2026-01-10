@@ -4,7 +4,7 @@ import com.kioku.api.dto.request.CreateTagRequest;
 import com.kioku.api.dto.request.UpdateTagRequest;
 import com.kioku.api.dto.response.ErrorResponse;
 import com.kioku.api.dto.response.TagResponse;
-import com.kioku.api.entity.Tag;
+import com.kioku.api.model.Tag;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.service.TagService;
 import jakarta.validation.Valid;

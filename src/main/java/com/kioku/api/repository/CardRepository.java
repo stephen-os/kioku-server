@@ -1,6 +1,6 @@
 package com.kioku.api.repository;
 
-import com.kioku.api.entity.Card;
+import com.kioku.api.model.Card;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,8 +25,8 @@ import java.util.Optional;
  * to eagerly load tags, preventing LazyInitializationException when accessing
  * card tags outside of a transaction context.
  *
- * <p><strong>Security Note:</strong> This repository does not enforce user ownership.
- * Service layer methods must verify that users own the deck before calling these methods.
+ * <p><strong>Unidirectional Relationship:</strong> Card doesn't have a deck reference,
+ * so queries use native SQL to access the deck_id foreign key column.
  *
  * @author Stephen Watson
  * @version 1.0
@@ -38,65 +38,77 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     /**
      * Finds all cards in a specific deck with tags eagerly loaded.
      *
-     * <p>Uses {@code LEFT JOIN FETCH} to eagerly load the tags collection,
-     * preventing LazyInitializationException when accessing tags outside
-     * of a transaction.
-     *
-     * <p><strong>Security:</strong> Does not check deck ownership.
-     * Service layer must verify user owns the deck.
-     *
      * @param deckId the deck ID
      * @return list of cards in the deck with tags loaded
      */
-    @Query("""
-        SELECT DISTINCT c
-        FROM Card c
-        LEFT JOIN FETCH c.tags
-        WHERE c.deck.id = :deckId
-        ORDER BY c.createdAt ASC
-        """)
-    List<Card> findByDeckId(@Param("deckId") Long deckId);
+    @Query(value = """
+        SELECT DISTINCT c.*
+        FROM card c
+        WHERE c.deck_id = :deckId
+        ORDER BY c.created_at ASC
+        """, nativeQuery = true)
+    List<Card> findByDeckIdNative(@Param("deckId") Long deckId);
 
     /**
-     * Finds a specific card within a specific deck with tags eagerly loaded.
+     * Finds all cards in a specific deck.
+     * Note: Tags are loaded lazily; use within a transaction.
      *
-     * <p>This method ensures the card belongs to the specified deck,
-     * preventing access to cards from other decks even if the card ID is known.
-     *
-     * <p><strong>Security:</strong> Does not check deck ownership.
-     * Service layer must verify user owns the deck.
+     * @param deckId the deck ID
+     * @return list of cards in the deck
+     */
+    default List<Card> findByDeckId(Long deckId) {
+        return findByDeckIdNative(deckId);
+    }
+
+    /**
+     * Finds a specific card within a specific deck.
      *
      * @param id the card ID
      * @param deckId the deck ID
-     * @return an Optional containing the card with tags if found in the deck, empty otherwise
+     * @return an Optional containing the card if found in the deck, empty otherwise
      */
-    @Query("""
-        SELECT DISTINCT c
-        FROM Card c
-        LEFT JOIN FETCH c.tags
-        WHERE c.id = :id AND c.deck.id = :deckId
-        """)
-    Optional<Card> findByIdAndDeckId(@Param("id") Long id, @Param("deckId") Long deckId);
+    @Query(value = """
+        SELECT c.*
+        FROM card c
+        WHERE c.id = :id AND c.deck_id = :deckId
+        """, nativeQuery = true)
+    Optional<Card> findByIdAndDeckIdNative(@Param("id") Long id, @Param("deckId") Long deckId);
+
+    /**
+     * Finds a specific card within a specific deck.
+     *
+     * @param id the card ID
+     * @param deckId the deck ID
+     * @return an Optional containing the card if found in the deck, empty otherwise
+     */
+    default Optional<Card> findByIdAndDeckId(Long id, Long deckId) {
+        return findByIdAndDeckIdNative(id, deckId);
+    }
 
     /**
      * Checks if a card with the same front and back text exists in a deck.
-     *
-     * <p>Used to prevent duplicate cards within the same deck.
-     * Comparison is case-sensitive and exact match.
      *
      * @param deckId the deck ID
      * @param front the front text
      * @param back the back text
      * @return {@code true} if a duplicate exists, {@code false} otherwise
      */
-    boolean existsByDeckIdAndFrontAndBack(Long deckId, String front, String back);
+    @Query(value = """
+        SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END
+        FROM card c
+        WHERE c.deck_id = :deckId AND c.front = :front AND c.back = :back
+        """, nativeQuery = true)
+    boolean existsByDeckIdAndFrontAndBackNative(@Param("deckId") Long deckId,
+                                                 @Param("front") String front,
+                                                 @Param("back") String back);
+
+    default boolean existsByDeckIdAndFrontAndBack(Long deckId, String front, String back) {
+        return existsByDeckIdAndFrontAndBackNative(deckId, front, back);
+    }
 
     /**
      * Checks if a card with the same front and back text exists in a deck,
      * excluding a specific card ID.
-     *
-     * <p>Used during card updates to check for duplicates while allowing
-     * the card being updated to have the same front/back as before.
      *
      * @param deckId the deck ID
      * @param front the front text
@@ -104,58 +116,60 @@ public interface CardRepository extends JpaRepository<Card, Long> {
      * @param id the card ID to exclude from the check
      * @return {@code true} if a duplicate exists, {@code false} otherwise
      */
-    boolean existsByDeckIdAndFrontAndBackAndIdNot(Long deckId, String front, String back, Long id);
+    @Query(value = """
+        SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END
+        FROM card c
+        WHERE c.deck_id = :deckId AND c.front = :front AND c.back = :back AND c.id != :id
+        """, nativeQuery = true)
+    boolean existsByDeckIdAndFrontAndBackAndIdNotNative(@Param("deckId") Long deckId,
+                                                         @Param("front") String front,
+                                                         @Param("back") String back,
+                                                         @Param("id") Long id);
+
+    default boolean existsByDeckIdAndFrontAndBackAndIdNot(Long deckId, String front, String back, Long id) {
+        return existsByDeckIdAndFrontAndBackAndIdNotNative(deckId, front, back, id);
+    }
 
     /**
-     * Searches for cards within a deck by text content with tags eagerly loaded.
-     *
-     * <p>Searches both front and back text using case-insensitive partial matching.
-     * For example, searching "eat" would match "eating", "beaten", "eat", etc.
-     *
-     * <p><strong>Performance Note:</strong> Uses LIKE queries which may be slow
-     * on large datasets. Consider full-text search for production use.
+     * Searches for cards within a deck by text content.
      *
      * @param deckId the deck ID
      * @param searchTerm the text to search for (partial match, case-insensitive)
-     * @return list of matching cards with tags loaded
+     * @return list of matching cards
      */
-    @Query("""
-        SELECT DISTINCT c
-        FROM Card c
-        LEFT JOIN FETCH c.tags
-        WHERE c.deck.id = :deckId
+    @Query(value = """
+        SELECT DISTINCT c.*
+        FROM card c
+        WHERE c.deck_id = :deckId
         AND (LOWER(c.front) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
         OR LOWER(c.back) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
-        ORDER BY c.createdAt ASC
-        """)
-    List<Card> searchByDeckId(@Param("deckId") Long deckId, @Param("searchTerm") String searchTerm);
+        ORDER BY c.created_at ASC
+        """, nativeQuery = true)
+    List<Card> searchByDeckIdNative(@Param("deckId") Long deckId, @Param("searchTerm") String searchTerm);
+
+    default List<Card> searchByDeckId(Long deckId, String searchTerm) {
+        return searchByDeckIdNative(deckId, searchTerm);
+    }
 
     /**
-     * Finds all cards in a deck that have a specific tag with tags eagerly loaded.
-     *
-     * <p>Uses a JOIN on the many-to-many card_tags relationship and eagerly
-     * loads all tags for each card.
-     *
-     * <p><strong>Security:</strong> Does not check deck or tag ownership.
-     * Service layer must verify user owns both the deck and the tag.
+     * Finds all cards in a deck that have a specific tag.
      *
      * @param deckId the deck ID
      * @param tagId the tag ID
-     * @return list of cards that have the specified tag with all tags loaded
+     * @return list of cards that have the specified tag
      */
-    @Query("""
-        SELECT DISTINCT c
-        FROM Card c
-        LEFT JOIN FETCH c.tags t
-        WHERE c.deck.id = :deckId
-        AND EXISTS (
-            SELECT 1 FROM Card c2
-            JOIN c2.tags t2
-            WHERE c2.id = c.id AND t2.id = :tagId
-        )
-        ORDER BY c.createdAt ASC
-        """)
-    List<Card> findByDeckIdAndTagId(@Param("deckId") Long deckId, @Param("tagId") Long tagId);
+    @Query(value = """
+        SELECT DISTINCT c.*
+        FROM card c
+        INNER JOIN card_tags ct ON c.id = ct.card_id
+        WHERE c.deck_id = :deckId AND ct.tag_id = :tagId
+        ORDER BY c.created_at ASC
+        """, nativeQuery = true)
+    List<Card> findByDeckIdAndTagIdNative(@Param("deckId") Long deckId, @Param("tagId") Long tagId);
+
+    default List<Card> findByDeckIdAndTagId(Long deckId, Long tagId) {
+        return findByDeckIdAndTagIdNative(deckId, tagId);
+    }
 
     /**
      * Counts the number of cards in a deck.
@@ -163,5 +177,10 @@ public interface CardRepository extends JpaRepository<Card, Long> {
      * @param deckId the deck ID
      * @return the number of cards in the deck
      */
-    long countByDeckId(Long deckId);
+    @Query(value = "SELECT COUNT(*) FROM card WHERE deck_id = :deckId", nativeQuery = true)
+    long countByDeckIdNative(@Param("deckId") Long deckId);
+
+    default long countByDeckId(Long deckId) {
+        return countByDeckIdNative(deckId);
+    }
 }
