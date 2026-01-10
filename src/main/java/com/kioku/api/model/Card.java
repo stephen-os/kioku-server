@@ -52,6 +52,14 @@ public class Card {
     private String notes;
 
     /**
+     * The deck ID this card belongs to.
+     * Read-only mapping to support JPQL queries with eager tag loading.
+     * The actual relationship is managed by Deck.addCard().
+     */
+    @Column(name = "deck_id", insertable = false, updatable = false)
+    private Long deckId;
+
+    /**
      * Tags associated with this card for organization.
      * Bidirectional many-to-many relationship.
      */
@@ -122,6 +130,15 @@ public class Card {
      */
     public Long getCardId() {
         return id;
+    }
+
+    /**
+     * Gets the deck ID this card belongs to.
+     *
+     * @return the deck ID, or {@code null} if not yet persisted
+     */
+    public Long getDeckId() {
+        return deckId;
     }
 
     /**

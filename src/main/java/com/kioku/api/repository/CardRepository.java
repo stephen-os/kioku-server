@@ -1,6 +1,7 @@
 package com.kioku.api.repository;
 
 import com.kioku.api.model.Card;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,10 +37,30 @@ import java.util.Optional;
 public interface CardRepository extends JpaRepository<Card, Long> {
 
     /**
-     * Finds all cards in a specific deck with tags eagerly loaded.
+     * Finds all cards by their IDs with tags eagerly loaded.
+     * Uses EntityGraph to load tags without duplication issues.
+     *
+     * @param ids the card IDs
+     * @return list of cards with tags loaded
+     */
+    @EntityGraph(attributePaths = {"tags"})
+    @Query("SELECT c FROM Card c WHERE c.id IN :ids ORDER BY c.createdAt ASC")
+    List<Card> findByIdsWithTags(@Param("ids") List<Long> ids);
+
+    /**
+     * Finds all card IDs in a specific deck.
      *
      * @param deckId the deck ID
-     * @return list of cards in the deck with tags loaded
+     * @return list of card IDs in the deck
+     */
+    @Query(value = "SELECT c.id FROM card c WHERE c.deck_id = :deckId ORDER BY c.created_at ASC", nativeQuery = true)
+    List<Long> findIdsByDeckId(@Param("deckId") Long deckId);
+
+    /**
+     * Finds all cards in a specific deck (native query, tags loaded lazily).
+     *
+     * @param deckId the deck ID
+     * @return list of cards in the deck
      */
     @Query(value = """
         SELECT DISTINCT c.*
@@ -50,14 +71,18 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     List<Card> findByDeckIdNative(@Param("deckId") Long deckId);
 
     /**
-     * Finds all cards in a specific deck.
-     * Note: Tags are loaded lazily; use within a transaction.
+     * Finds all cards in a specific deck with tags eagerly loaded.
+     * Uses a two-query strategy: first gets IDs via native query, then loads cards with tags.
      *
      * @param deckId the deck ID
-     * @return list of cards in the deck
+     * @return list of cards in the deck with tags loaded
      */
     default List<Card> findByDeckId(Long deckId) {
-        return findByDeckIdNative(deckId);
+        List<Long> ids = findIdsByDeckId(deckId);
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return findByIdsWithTags(ids);
     }
 
     /**
@@ -84,6 +109,17 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     default Optional<Card> findByIdAndDeckId(Long id, Long deckId) {
         return findByIdAndDeckIdNative(id, deckId);
     }
+
+    /**
+     * Finds a specific card by ID with tags eagerly loaded.
+     * Uses EntityGraph to load tags without duplication issues.
+     *
+     * @param id the card ID
+     * @return an Optional containing the card with tags loaded if found, empty otherwise
+     */
+    @EntityGraph(attributePaths = {"tags"})
+    @Query("SELECT c FROM Card c WHERE c.id = :id")
+    Optional<Card> findByIdWithTags(@Param("id") Long id);
 
     /**
      * Checks if a card with the same front and back text exists in a deck.

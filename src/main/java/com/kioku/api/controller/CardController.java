@@ -183,6 +183,10 @@ public class CardController {
             cards = cardService.getDeckCards(userId, deckId);
         }
 
+        for (Card card : cards) {
+            logger.info(card.toString());
+        }
+
         List<CardResponse> response = cards.stream()
                 .map(CardResponse::new)
                 .collect(Collectors.toList());

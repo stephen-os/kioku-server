@@ -4,6 +4,7 @@ import com.kioku.api.model.Card;
 import com.kioku.api.model.Deck;
 import com.kioku.api.model.Tag;
 import com.kioku.api.repository.CardRepository;
+import com.kioku.api.repository.DeckRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,9 @@ class CardServiceTests {
     private CardRepository cardRepository;
 
     @Mock
+    private DeckRepository deckRepository;
+
+    @Mock
     private DeckService deckService;
 
     @Mock
@@ -112,6 +116,7 @@ class CardServiceTests {
         when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
         when(cardRepository.existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK)).thenReturn(false);
         when(cardRepository.save(any(Card.class))).thenReturn(testCard);
+        when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
         Card created = cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
 
@@ -119,6 +124,7 @@ class CardServiceTests {
         verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
         verify(cardRepository).existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK);
         verify(cardRepository).save(any(Card.class));
+        verify(cardRepository).findByIdWithTags(CARD_ID);
 
         logger.debug("Test passed: Card created successfully");
     }
@@ -173,15 +179,24 @@ class CardServiceTests {
     void testGetDeckCards() {
         logger.debug("Test: Getting all cards in deck");
 
-        List<Card> expectedCards = Arrays.asList(testCard, mock(Card.class));
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID)).thenReturn(testDeck);
-        when(cardRepository.findByDeckId(DECK_ID)).thenReturn(expectedCards);
+        // Create a real deck with cards for this test
+        Deck deckWithCards = mock(Deck.class);
+        Card card1 = mock(Card.class);
+        Card card2 = mock(Card.class);
+        when(card1.getCreatedAt()).thenReturn(java.time.LocalDateTime.now());
+        when(card2.getCreatedAt()).thenReturn(java.time.LocalDateTime.now().plusSeconds(1));
+        java.util.Set<Card> cardSet = new java.util.HashSet<>(Arrays.asList(card1, card2));
+        when(deckWithCards.getCards()).thenReturn(cardSet);
+
+        // Use existsByIdAndUserId for ownership check (not getDeckOrThrow to avoid cache issues)
+        when(deckRepository.existsByIdAndUserId(DECK_ID, USER_ID)).thenReturn(true);
+        when(deckRepository.findByIdWithCardsAndTags(DECK_ID)).thenReturn(Optional.of(deckWithCards));
 
         List<Card> cards = cardService.getDeckCards(USER_ID, DECK_ID);
 
         assertEquals(2, cards.size());
-        verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
-        verify(cardRepository).findByDeckId(DECK_ID);
+        verify(deckRepository).existsByIdAndUserId(DECK_ID, USER_ID);
+        verify(deckRepository).findByIdWithCardsAndTags(DECK_ID);
 
         logger.debug("Test passed: Got {} cards", cards.size());
     }
@@ -194,14 +209,13 @@ class CardServiceTests {
     void testGetDeckCardsUnauthorized() {
         logger.debug("Test: Getting cards from unowned deck");
 
-        when(deckService.getDeckOrThrow(DECK_ID, USER_ID))
-                .thenThrow(new IllegalArgumentException("Deck not found or access denied"));
+        when(deckRepository.existsByIdAndUserId(DECK_ID, USER_ID)).thenReturn(false);
 
         assertThrows(IllegalArgumentException.class, () -> {
             cardService.getDeckCards(USER_ID, DECK_ID);
         });
 
-        verify(cardRepository, never()).findByDeckId(anyLong());
+        verify(deckRepository, never()).findByIdWithCardsAndTags(anyLong());
 
         logger.debug("Test passed: Exception thrown for unauthorized access");
     }
@@ -279,6 +293,7 @@ class CardServiceTests {
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
         when(cardRepository.existsByDeckIdAndFrontAndBackAndIdNot(DECK_ID, UPDATED_FRONT, UPDATED_BACK, CARD_ID)).thenReturn(false);
         when(cardRepository.save(testCard)).thenReturn(testCard);
+        when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
         Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES);
 
@@ -287,6 +302,7 @@ class CardServiceTests {
         verify(testCard).setBack(UPDATED_BACK);
         verify(testCard).setNotes(CARD_NOTES);
         verify(cardRepository).save(testCard);
+        verify(cardRepository).findByIdWithTags(CARD_ID);
 
         logger.debug("Test passed: Card updated successfully");
     }
@@ -324,12 +340,14 @@ class CardServiceTests {
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
         when(cardRepository.existsByDeckIdAndFrontAndBackAndIdNot(DECK_ID, CARD_FRONT, CARD_BACK, CARD_ID)).thenReturn(false);
         when(cardRepository.save(testCard)).thenReturn(testCard);
+        when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
         // Update to same front/back but different notes
         Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, CARD_FRONT, CARD_BACK, "New notes");
 
         assertNotNull(updated);
         verify(cardRepository).save(testCard);
+        verify(cardRepository).findByIdWithTags(CARD_ID);
 
         logger.debug("Test passed: Update with same values allowed");
     }
@@ -494,12 +512,14 @@ class CardServiceTests {
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
         when(tagService.getTag(USER_ID, DECK_ID, TAG_ID)).thenReturn(Optional.of(testTag));
         when(cardRepository.save(testCard)).thenReturn(testCard);
+        when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
         Card result = cardService.addTagToCard(USER_ID, DECK_ID, CARD_ID, TAG_ID);
 
         assertNotNull(result);
         verify(testCard).addTag(testTag);
         verify(cardRepository).save(testCard);
+        verify(cardRepository).findByIdWithTags(CARD_ID);
 
         logger.debug("Test passed: Tag added to card");
     }
@@ -516,12 +536,14 @@ class CardServiceTests {
         when(cardRepository.findByIdAndDeckId(CARD_ID, DECK_ID)).thenReturn(Optional.of(testCard));
         when(tagService.getTag(USER_ID, DECK_ID, TAG_ID)).thenReturn(Optional.of(testTag));
         when(cardRepository.save(testCard)).thenReturn(testCard);
+        when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
         Card result = cardService.removeTagFromCard(USER_ID, DECK_ID, CARD_ID, TAG_ID);
 
         assertNotNull(result);
         verify(testCard).removeTag(testTag);
         verify(cardRepository).save(testCard);
+        verify(cardRepository).findByIdWithTags(CARD_ID);
 
         logger.debug("Test passed: Tag removed from card");
     }

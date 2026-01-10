@@ -1,6 +1,7 @@
 package com.kioku.api.repository;
 
 import com.kioku.api.model.Deck;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -46,7 +47,7 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
     }
 
     /**
-     * Finds a specific deck belonging to a specific user.
+     * Finds a specific deck belonging to a specific user (native query).
      *
      * @param id the deck ID
      * @param userId the user ID
@@ -55,9 +56,33 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
     @Query(value = "SELECT * FROM decks WHERE id = :id AND user_id = :userId", nativeQuery = true)
     Optional<Deck> findByIdAndUserIdNative(@Param("id") Long id, @Param("userId") Long userId);
 
+    /**
+     * Finds a specific deck belonging to a specific user.
+     * Uses the deck's userId field for JPQL compatibility with first-level cache.
+     *
+     * @param id the deck ID
+     * @param userId the user ID
+     * @return an Optional containing the deck if found and owned, empty otherwise
+     */
     default Optional<Deck> findByIdAndUserId(Long id, Long userId) {
-        return findByIdAndUserIdNative(id, userId);
+        // First check if deck exists for user using native query
+        // Then use findById which leverages Hibernate's first-level cache
+        if (existsByIdAndUserId(id, userId)) {
+            return findById(id);
+        }
+        return Optional.empty();
     }
+
+    /**
+     * Finds a deck by ID with cards and their tags eagerly loaded.
+     * Uses EntityGraph for efficient loading without N+1 queries.
+     *
+     * @param id the deck ID
+     * @return an Optional containing the deck with cards and tags loaded
+     */
+    @EntityGraph(attributePaths = {"cards", "cards.tags"})
+    @Query("SELECT d FROM Deck d WHERE d.id = :id")
+    Optional<Deck> findByIdWithCardsAndTags(@Param("id") Long id);
 
     /**
      * Checks if a user owns a specific deck.

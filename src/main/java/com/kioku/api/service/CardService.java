@@ -1,6 +1,7 @@
 package com.kioku.api.service;
 
 import com.kioku.api.repository.CardRepository;
+import com.kioku.api.repository.DeckRepository;
 import com.kioku.api.model.Deck;
 import com.kioku.api.model.Card;
 import com.kioku.api.model.Tag;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +49,7 @@ public class CardService {
     private static final Logger logger = LoggerFactory.getLogger(CardService.class);
 
     private final CardRepository cardRepository;
+    private final DeckRepository deckRepository;
     private final DeckService deckService;
     private final TagService tagService;
 
@@ -54,11 +57,14 @@ public class CardService {
      * Constructs a CardService with required dependencies.
      *
      * @param cardRepository the card repository
+     * @param deckRepository the deck repository for fetching decks with cards
      * @param deckService the deck service for ownership verification
      * @param tagService the tag service for tag operations
      */
-    public CardService(CardRepository cardRepository, DeckService deckService, TagService tagService) {
+    public CardService(CardRepository cardRepository, DeckRepository deckRepository,
+                       DeckService deckService, TagService tagService) {
         this.cardRepository = cardRepository;
+        this.deckRepository = deckRepository;
         this.deckService = deckService;
         this.tagService = tagService;
     }
@@ -104,7 +110,8 @@ public class CardService {
         Card savedCard = cardRepository.save(card);
         // logger.info("Card created: id={} in deck id={}", savedCard.getId(), deckId);
 
-        return savedCard;
+        // Re-fetch with tags eagerly loaded to prevent LazyInitializationException
+        return cardRepository.findByIdWithTags(savedCard.getCardId()).orElseThrow();
     }
 
     /**
@@ -112,8 +119,12 @@ public class CardService {
      *
      * <p><strong>Security:</strong> Verifies user owns the deck.
      *
-     * <p><strong>Performance:</strong> Tags are eagerly loaded to prevent
-     * LazyInitializationException when accessing tags in DTOs.
+     * <p><strong>Performance:</strong> Uses EntityGraph to fetch deck with cards and tags
+     * in a single query, preventing LazyInitializationException and N+1 queries.
+     *
+     * <p><strong>Important:</strong> Ownership check uses existsByIdAndUserId rather than
+     * getDeckOrThrow to avoid loading the deck into the first-level cache without cards,
+     * which would cause the subsequent EntityGraph query to return cached deck without cards.
      *
      * @param userId the ID of the user requesting the cards
      * @param deckId the ID of the deck
@@ -124,11 +135,26 @@ public class CardService {
     public List<Card> getDeckCards(Long userId, Long deckId) {
         logger.debug("Getting cards for deck id={}, user id={}", deckId, userId);
 
-        // Verify deck ownership
-        deckService.getDeckOrThrow(deckId, userId);
+        // Verify deck ownership WITHOUT loading deck into cache (important!)
+        // If we use getDeckOrThrow, the deck gets cached without cards, and
+        // findByIdWithCardsAndTags may return the cached deck instead of fetching with EntityGraph
+        if (!deckRepository.existsByIdAndUserId(deckId, userId)) {
+            logger.warn("Deck not found or access denied: deck id={}, user id={}", deckId, userId);
+            throw new IllegalArgumentException("Deck not found or access denied: " + deckId);
+        }
 
-        // Fetch cards with tags eagerly loaded
-        List<Card> cards = cardRepository.findByDeckId(deckId);
+        // Fetch deck with cards and tags eagerly loaded via EntityGraph
+        Deck deck = deckRepository.findByIdWithCardsAndTags(deckId)
+                .orElseThrow(() -> new IllegalArgumentException("Deck not found: " + deckId));
+
+        // Convert Set to List and sort by createdAt
+        List<Card> cards = new ArrayList<>(deck.getCards());
+        cards.sort((a, b) -> {
+            if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+            if (a.getCreatedAt() == null) return 1;
+            if (b.getCreatedAt() == null) return -1;
+            return a.getCreatedAt().compareTo(b.getCreatedAt());
+        });
 
         logger.debug("Found {} cards in deck id={}", cards.size(), deckId);
         return cards;
@@ -203,10 +229,11 @@ public class CardService {
         card.setBack(back);
         card.setNotes(notes);
 
-        Card updatedCard = cardRepository.save(card);
+        cardRepository.save(card);
         logger.info("Card updated: id={} in deck id={}", cardId, deckId);
 
-        return updatedCard;
+        // Re-fetch with tags eagerly loaded to prevent LazyInitializationException
+        return cardRepository.findByIdWithTags(cardId).orElseThrow();
     }
 
     /**
@@ -336,10 +363,11 @@ public class CardService {
         // Add tag to card (Set prevents duplicates automatically)
         card.addTag(tag);
 
-        Card savedCard = cardRepository.save(card);
+        cardRepository.save(card);
         logger.info("Tag id={} added to card id={}", tagId, cardId);
 
-        return savedCard;
+        // Re-fetch with tags eagerly loaded to prevent LazyInitializationException
+        return cardRepository.findByIdWithTags(cardId).orElseThrow();
     }
 
     /**
@@ -383,9 +411,10 @@ public class CardService {
         // Remove tag from card
         card.removeTag(tag);
 
-        Card savedCard = cardRepository.save(card);
+        cardRepository.save(card);
         logger.info("Tag id={} removed from card id={}", tagId, cardId);
 
-        return savedCard;
+        // Re-fetch with tags eagerly loaded to prevent LazyInitializationException
+        return cardRepository.findByIdWithTags(cardId).orElseThrow();
     }
 }
