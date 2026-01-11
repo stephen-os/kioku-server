@@ -369,6 +369,145 @@ public class UserService {
     // Account Management
 
     /**
+     * Gets a user's account profile information.
+     *
+     * @param userId the user ID
+     * @return the user
+     * @throws IllegalArgumentException if user not found
+     */
+    @Transactional(readOnly = true)
+    public User getAccountProfile(Long userId) {
+        logger.debug("Getting account profile for user id={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    logger.warn("Account profile failed: user not found id={}", userId);
+                    return new IllegalArgumentException("User not found");
+                });
+
+        logger.debug("Account profile retrieved for user id={}", userId);
+        return user;
+    }
+
+    /**
+     * Initiates an email change by generating a verification token.
+     *
+     * <p>This method:
+     * <ul>
+     *   <li>Verifies the user's current password</li>
+     *   <li>Checks the new email isn't already registered</li>
+     *   <li>Stores the pending email with a verification token</li>
+     * </ul>
+     *
+     * <p>The token expires after 24 hours.
+     *
+     * @param userId the user ID
+     * @param currentPassword the current password for verification
+     * @param newEmail the new email address to change to
+     * @return the verification token
+     * @throws IllegalArgumentException if user not found, password incorrect, or email already registered
+     */
+    public String initiateEmailChange(Long userId, String currentPassword, String newEmail) {
+        logger.debug("Initiating email change for user id={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    logger.warn("Email change failed: user not found id={}", userId);
+                    return new IllegalArgumentException("User not found");
+                });
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            logger.warn("Email change failed: current password incorrect for user id={}", userId);
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Check if new email is already registered (case-insensitive)
+        String normalizedEmail = newEmail.toLowerCase().trim();
+        if (existsByEmail(normalizedEmail)) {
+            logger.warn("Email change failed: email already registered: {}", normalizedEmail);
+            throw new IllegalArgumentException("Email is already registered");
+        }
+
+        // Generate token and store pending email
+        String token = UUID.randomUUID().toString();
+        user.setPendingEmailChange(normalizedEmail, token);
+        userRepository.save(user);
+
+        logger.debug("Email change token generated for user id={}, pending email={}",
+                userId, normalizedEmail);
+        return token;
+    }
+
+    /**
+     * Confirms an email change using the verification token.
+     *
+     * @param token the verification token
+     * @return {@code true} if email change successful, {@code false} otherwise
+     */
+    public boolean confirmEmailChange(String token) {
+        logger.debug("Confirming email change with token");
+
+        Optional<User> userOpt = userRepository.findByPendingEmailToken(token);
+
+        if (userOpt.isEmpty()) {
+            logger.debug("Email change confirmation failed: invalid token");
+            return false;
+        }
+
+        User user = userOpt.get();
+
+        if (user.isPendingEmailTokenExpired()) {
+            logger.debug("Email change confirmation failed: token expired for user id={}", user.getId());
+            user.clearPendingEmailChange();
+            userRepository.save(user);
+            return false;
+        }
+
+        // Verify email still not taken (race condition check)
+        if (existsByEmail(user.getPendingEmail())) {
+            logger.warn("Email change confirmation failed: email now registered by another user");
+            user.clearPendingEmailChange();
+            userRepository.save(user);
+            return false;
+        }
+
+        String newEmail = user.confirmPendingEmailChange();
+        userRepository.save(user);
+
+        logger.debug("Email changed successfully for user id={} to {}", user.getId(), newEmail);
+        return true;
+    }
+
+    /**
+     * Soft deletes a user account after verifying the password.
+     *
+     * @param userId the user ID
+     * @param currentPassword the current password for verification
+     * @throws IllegalArgumentException if user not found or password incorrect
+     */
+    public void softDeleteAccount(Long userId, String currentPassword) {
+        logger.debug("Soft deleting account for user id={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    logger.warn("Account deletion failed: user not found id={}", userId);
+                    return new IllegalArgumentException("User not found");
+                });
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            logger.warn("Account deletion failed: current password incorrect for user id={}", userId);
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        user.softDelete();
+        userRepository.save(user);
+
+        logger.info("Account soft deleted for user id={}", userId);
+    }
+
+    /**
      * Updates a user's password.
      *
      * @param userId the user ID

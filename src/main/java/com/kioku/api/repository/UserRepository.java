@@ -78,6 +78,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPasswordResetToken(String token);
 
     /**
+     * Finds a user by pending email change token.
+     *
+     * <p>Used during the email change verification process to locate the user
+     * who requested an email change.
+     *
+     * @param token the pending email verification token
+     * @return an Optional containing the user if found, empty otherwise
+     */
+    Optional<User> findByPendingEmailToken(String token);
+
+    /**
      * Finds all users with a specific status.
      *
      * @param status the user status to filter by

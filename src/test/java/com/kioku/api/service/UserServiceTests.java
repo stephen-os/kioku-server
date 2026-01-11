@@ -728,4 +728,300 @@ class UserServiceTests {
 
         logger.debug("Test passed: Exception thrown for duplicate email");
     }
+
+    // Account Profile Tests
+
+    /**
+     * Tests getting account profile successfully.
+     */
+    @Test
+    @DisplayName("Should get account profile successfully")
+    void testGetAccountProfile() {
+        logger.debug("Test: Getting account profile for user id={}", USER_ID);
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+
+        User profile = userService.getAccountProfile(USER_ID);
+
+        assertNotNull(profile);
+        assertEquals(TEST_EMAIL, profile.getEmail());
+        verify(userRepository).findById(USER_ID);
+
+        logger.debug("Test passed: Account profile retrieved");
+    }
+
+    /**
+     * Tests getting account profile throws exception for non-existent user.
+     */
+    @Test
+    @DisplayName("Should throw exception when getting profile for non-existent user")
+    void testGetAccountProfileUserNotFound() {
+        logger.debug("Test: Getting profile for non-existent user");
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.getAccountProfile(USER_ID);
+        });
+
+        verify(userRepository).findById(USER_ID);
+
+        logger.debug("Test passed: Exception thrown for non-existent user");
+    }
+
+    // Email Change Tests
+
+    /**
+     * Tests initiating email change successfully.
+     */
+    @Test
+    @DisplayName("Should initiate email change successfully")
+    void testInitiateEmailChangeSuccess() {
+        logger.debug("Test: Initiating email change for user id={}", USER_ID);
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.existsByEmail(OTHER_EMAIL.toLowerCase())).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        String token = userService.initiateEmailChange(USER_ID, PLAIN_PASSWORD, OTHER_EMAIL);
+
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+        verify(userRepository).findById(USER_ID);
+        verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
+        verify(userRepository).existsByEmail(OTHER_EMAIL.toLowerCase());
+        verify(userRepository).save(any(User.class));
+
+        logger.debug("Test passed: Email change initiated");
+    }
+
+    /**
+     * Tests initiating email change fails with incorrect password.
+     */
+    @Test
+    @DisplayName("Should throw exception when initiating email change with incorrect password")
+    void testInitiateEmailChangeIncorrectPassword() {
+        logger.debug("Test: Initiating email change with incorrect password");
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.initiateEmailChange(USER_ID, PLAIN_PASSWORD, OTHER_EMAIL);
+        });
+
+        verify(userRepository).findById(USER_ID);
+        verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
+        verify(userRepository, never()).save(any(User.class));
+
+        logger.debug("Test passed: Exception thrown for incorrect password");
+    }
+
+    /**
+     * Tests initiating email change fails when email already registered.
+     */
+    @Test
+    @DisplayName("Should throw exception when new email is already registered")
+    void testInitiateEmailChangeEmailExists() {
+        logger.debug("Test: Initiating email change with already registered email");
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.existsByEmail(OTHER_EMAIL.toLowerCase())).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.initiateEmailChange(USER_ID, PLAIN_PASSWORD, OTHER_EMAIL);
+        });
+
+        verify(userRepository).findById(USER_ID);
+        verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
+        verify(userRepository).existsByEmail(OTHER_EMAIL.toLowerCase());
+        verify(userRepository, never()).save(any(User.class));
+
+        logger.debug("Test passed: Exception thrown for already registered email");
+    }
+
+    /**
+     * Tests initiating email change fails for non-existent user.
+     */
+    @Test
+    @DisplayName("Should throw exception when initiating email change for non-existent user")
+    void testInitiateEmailChangeUserNotFound() {
+        logger.debug("Test: Initiating email change for non-existent user");
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.initiateEmailChange(USER_ID, PLAIN_PASSWORD, OTHER_EMAIL);
+        });
+
+        verify(userRepository).findById(USER_ID);
+        verify(userRepository, never()).save(any(User.class));
+
+        logger.debug("Test passed: Exception thrown for non-existent user");
+    }
+
+    /**
+     * Tests confirming email change successfully.
+     */
+    @Test
+    @DisplayName("Should confirm email change with valid token")
+    void testConfirmEmailChangeSuccess() {
+        logger.debug("Test: Confirming email change with valid token");
+
+        String pendingEmailToken = "pending-email-token-12345";
+        when(testUser.getPendingEmail()).thenReturn(OTHER_EMAIL);
+        when(testUser.isPendingEmailTokenExpired()).thenReturn(false);
+        when(testUser.confirmPendingEmailChange()).thenReturn(OTHER_EMAIL);
+        when(userRepository.findByPendingEmailToken(pendingEmailToken))
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.existsByEmail(OTHER_EMAIL)).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        boolean confirmed = userService.confirmEmailChange(pendingEmailToken);
+
+        assertTrue(confirmed);
+        verify(userRepository).findByPendingEmailToken(pendingEmailToken);
+        verify(userRepository).save(any(User.class));
+
+        logger.debug("Test passed: Email change confirmed");
+    }
+
+    /**
+     * Tests confirming email change fails with invalid token.
+     */
+    @Test
+    @DisplayName("Should fail email change confirmation with invalid token")
+    void testConfirmEmailChangeInvalidToken() {
+        logger.debug("Test: Confirming email change with invalid token");
+
+        String invalidToken = "invalid-token";
+        when(userRepository.findByPendingEmailToken(invalidToken))
+                .thenReturn(Optional.empty());
+
+        boolean confirmed = userService.confirmEmailChange(invalidToken);
+
+        assertFalse(confirmed);
+        verify(userRepository).findByPendingEmailToken(invalidToken);
+        verify(userRepository, never()).save(any(User.class));
+
+        logger.debug("Test passed: Invalid token rejected");
+    }
+
+    /**
+     * Tests confirming email change fails with expired token.
+     */
+    @Test
+    @DisplayName("Should fail email change confirmation with expired token")
+    void testConfirmEmailChangeExpiredToken() {
+        logger.debug("Test: Confirming email change with expired token");
+
+        String expiredToken = "expired-token";
+        when(testUser.isPendingEmailTokenExpired()).thenReturn(true);
+        when(userRepository.findByPendingEmailToken(expiredToken))
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        boolean confirmed = userService.confirmEmailChange(expiredToken);
+
+        assertFalse(confirmed);
+        verify(userRepository).findByPendingEmailToken(expiredToken);
+        verify(testUser).clearPendingEmailChange();
+        verify(userRepository).save(any(User.class));
+
+        logger.debug("Test passed: Expired token rejected");
+    }
+
+    /**
+     * Tests confirming email change fails when email now taken by another user.
+     */
+    @Test
+    @DisplayName("Should fail email change confirmation when email now taken")
+    void testConfirmEmailChangeEmailNowTaken() {
+        logger.debug("Test: Confirming email change when email now taken");
+
+        String token = "valid-token";
+        when(testUser.getPendingEmail()).thenReturn(OTHER_EMAIL);
+        when(testUser.isPendingEmailTokenExpired()).thenReturn(false);
+        when(userRepository.findByPendingEmailToken(token))
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.existsByEmail(OTHER_EMAIL)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        boolean confirmed = userService.confirmEmailChange(token);
+
+        assertFalse(confirmed);
+        verify(testUser).clearPendingEmailChange();
+        verify(userRepository).save(any(User.class));
+
+        logger.debug("Test passed: Email now taken rejected");
+    }
+
+    // Soft Delete Account Tests
+
+    /**
+     * Tests soft deleting account successfully.
+     */
+    @Test
+    @DisplayName("Should soft delete account successfully")
+    void testSoftDeleteAccountSuccess() {
+        logger.debug("Test: Soft deleting account for user id={}", USER_ID);
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        userService.softDeleteAccount(USER_ID, PLAIN_PASSWORD);
+
+        verify(userRepository).findById(USER_ID);
+        verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
+        verify(testUser).softDelete();
+        verify(userRepository).save(any(User.class));
+
+        logger.debug("Test passed: Account soft deleted");
+    }
+
+    /**
+     * Tests soft deleting account fails with incorrect password.
+     */
+    @Test
+    @DisplayName("Should throw exception when deleting account with incorrect password")
+    void testSoftDeleteAccountIncorrectPassword() {
+        logger.debug("Test: Soft deleting account with incorrect password");
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(PLAIN_PASSWORD, PASSWORD_HASH)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.softDeleteAccount(USER_ID, PLAIN_PASSWORD);
+        });
+
+        verify(userRepository).findById(USER_ID);
+        verify(passwordEncoder).matches(PLAIN_PASSWORD, PASSWORD_HASH);
+        verify(testUser, never()).softDelete();
+        verify(userRepository, never()).save(any(User.class));
+
+        logger.debug("Test passed: Exception thrown for incorrect password");
+    }
+
+    /**
+     * Tests soft deleting account fails for non-existent user.
+     */
+    @Test
+    @DisplayName("Should throw exception when deleting non-existent user account")
+    void testSoftDeleteAccountUserNotFound() {
+        logger.debug("Test: Soft deleting account for non-existent user");
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.softDeleteAccount(USER_ID, PLAIN_PASSWORD);
+        });
+
+        verify(userRepository).findById(USER_ID);
+        verify(userRepository, never()).save(any(User.class));
+
+        logger.debug("Test passed: Exception thrown for non-existent user");
+    }
 }

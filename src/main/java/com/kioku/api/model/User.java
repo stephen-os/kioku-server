@@ -66,6 +66,27 @@ public class User {
     private LocalDateTime emailVerificationSentAt;
 
     /**
+     * The new email address awaiting verification during an email change.
+     */
+    @Email(message = "Pending email must be valid")
+    @Size(max = 255, message = "Pending email must not exceed 255 characters")
+    @Column(name = "pending_email")
+    private String pendingEmail;
+
+    /**
+     * The token used to verify the pending email change.
+     */
+    @Column(name = "pending_email_token")
+    @Size(max = 255, message = "Pending email token must not exceed 255 characters")
+    private String pendingEmailToken;
+
+    /**
+     * The timestamp when the pending email verification was sent.
+     */
+    @Column(name = "pending_email_sent_at")
+    private LocalDateTime pendingEmailSentAt;
+
+    /**
      * The hashed password for this user.
      */
     @NotBlank(message = "Password hash is required")
@@ -430,6 +451,95 @@ public class User {
                 id, expired, emailVerificationSentAt, emailVerificationSentAt.plusHours(24));
 
         return expired;
+    }
+
+    /**
+     * Initiates an email change by storing the pending email and verification token.
+     *
+     * @param newEmail the new email address to change to
+     * @param token the verification token
+     */
+    public void setPendingEmailChange(String newEmail, String token) {
+        this.pendingEmail = newEmail != null ? newEmail.toLowerCase().trim() : null;
+        this.pendingEmailToken = token;
+        this.pendingEmailSentAt = LocalDateTime.now();
+
+        logger.debug("User id={} pending email change initiated to {}, sentAt={}",
+                id, pendingEmail, pendingEmailSentAt);
+    }
+
+    /**
+     * Completes the pending email change by updating the email and clearing pending fields.
+     *
+     * @return the new email address that was set
+     */
+    public String confirmPendingEmailChange() {
+        String newEmail = this.pendingEmail;
+        this.email = this.pendingEmail;
+        this.pendingEmail = null;
+        this.pendingEmailToken = null;
+        this.pendingEmailSentAt = null;
+
+        logger.debug("User id={} email change confirmed to {}", id, email);
+        return newEmail;
+    }
+
+    /**
+     * Clears any pending email change.
+     */
+    public void clearPendingEmailChange() {
+        this.pendingEmail = null;
+        this.pendingEmailToken = null;
+        this.pendingEmailSentAt = null;
+
+        logger.debug("User id={} pending email change cleared", id);
+    }
+
+    /**
+     * Checks if the pending email token has expired.
+     *
+     * Pending email tokens expire 24 hours after being sent.
+     *
+     * @return {@code true} if the token is expired or not set, {@code false} if still valid
+     */
+    public boolean isPendingEmailTokenExpired() {
+        if (pendingEmailSentAt == null) {
+            logger.debug("User id={} pending email token check: no token sent", id);
+            return true;
+        }
+
+        boolean expired = pendingEmailSentAt.plusHours(24).isBefore(LocalDateTime.now());
+        logger.debug("User id={} pending email token expired: {}, sentAt={}, expiresAt={}",
+                id, expired, pendingEmailSentAt, pendingEmailSentAt.plusHours(24));
+
+        return expired;
+    }
+
+    /**
+     * Gets the pending email address awaiting verification.
+     *
+     * @return the pending email address, or {@code null} if no change is pending
+     */
+    public String getPendingEmail() {
+        return pendingEmail;
+    }
+
+    /**
+     * Gets the pending email verification token.
+     *
+     * @return the pending email token, or {@code null} if no change is pending
+     */
+    public String getPendingEmailToken() {
+        return pendingEmailToken;
+    }
+
+    /**
+     * Gets the timestamp when the pending email verification was sent.
+     *
+     * @return the timestamp, or {@code null} if no change is pending
+     */
+    public LocalDateTime getPendingEmailSentAt() {
+        return pendingEmailSentAt;
     }
 
     // Getters and Setters
