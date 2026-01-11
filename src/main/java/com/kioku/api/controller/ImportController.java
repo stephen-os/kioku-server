@@ -4,6 +4,8 @@ import com.kioku.api.dto.request.CardImportDto;
 import com.kioku.api.dto.request.DeckImportRequest;
 import com.kioku.api.dto.response.DeckResponse;
 import com.kioku.api.model.Card;
+import com.kioku.api.model.CodeLanguage;
+import com.kioku.api.model.ContentType;
 import com.kioku.api.model.Deck;
 import com.kioku.api.model.Tag;
 import com.kioku.api.repository.DeckRepository;
@@ -169,11 +171,21 @@ public class ImportController {
             }
             processedCards.add(cardKey);
 
+            // Validate content type and language combinations
+            validateContentTypeAndLanguage(cardDto.getFrontType(), cardDto.getFrontLanguage(), "front", cardIndex);
+            validateContentTypeAndLanguage(cardDto.getBackType(), cardDto.getBackLanguage(), "back", cardIndex);
+
             // Create the card directly
             Card card = new Card(cardDto.getFront(), cardDto.getBack());
             if (cardDto.getNotes() != null && !cardDto.getNotes().isBlank()) {
                 card.setNotes(cardDto.getNotes());
             }
+
+            // Set content types (default to TEXT if null)
+            card.setFrontType(cardDto.getFrontType() != null ? cardDto.getFrontType() : ContentType.TEXT);
+            card.setBackType(cardDto.getBackType() != null ? cardDto.getBackType() : ContentType.TEXT);
+            card.setFrontLanguage(cardDto.getFrontLanguage());
+            card.setBackLanguage(cardDto.getBackLanguage());
 
             // Associate tags with the card
             if (cardDto.hasTags()) {
@@ -192,6 +204,22 @@ public class ImportController {
             // Add card to deck - the cascade will handle persistence
             deck.addCard(card);
             logger.debug("Created card {}/{}: {}", cardIndex, request.getCardCount(), cardDto.getFront());
+        }
+    }
+
+    /**
+     * Validates that a language is provided when content type is CODE.
+     *
+     * @param contentType the content type
+     * @param language the language
+     * @param side "front" or "back" for error messages
+     * @param cardIndex the card index for error messages
+     * @throws IllegalArgumentException if CODE type without language
+     */
+    private void validateContentTypeAndLanguage(ContentType contentType, CodeLanguage language, String side, int cardIndex) {
+        if (contentType == ContentType.CODE && language == null) {
+            throw new IllegalArgumentException(
+                    String.format("Card at index %d: language is required when %s content type is CODE", cardIndex, side));
         }
     }
 }

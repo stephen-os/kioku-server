@@ -1,6 +1,8 @@
 package com.kioku.api.dto.response;
 
 import com.kioku.api.model.Card;
+import com.kioku.api.model.CodeLanguage;
+import com.kioku.api.model.ContentType;
 import com.kioku.api.model.Tag;
 
 import java.time.LocalDateTime;
@@ -58,6 +60,26 @@ public class CardExportDto {
     private String notes;
 
     /**
+     * Content type for the front of the card (TEXT or CODE).
+     */
+    private ContentType frontType;
+
+    /**
+     * Content type for the back of the card (TEXT or CODE).
+     */
+    private ContentType backType;
+
+    /**
+     * Programming language for the front (when frontType is CODE).
+     */
+    private CodeLanguage frontLanguage;
+
+    /**
+     * Programming language for the back (when backType is CODE).
+     */
+    private CodeLanguage backLanguage;
+
+    /**
      * List of tag names associated with this card.
      */
     private List<String> tags;
@@ -89,6 +111,10 @@ public class CardExportDto {
         this.front = card.getFront();
         this.back = card.getBack();
         this.notes = card.getNotes();
+        this.frontType = card.getFrontType();
+        this.backType = card.getBackType();
+        this.frontLanguage = card.getFrontLanguage();
+        this.backLanguage = card.getBackLanguage();
         this.tags = card.getTags().stream()
                 .map(Tag::getName)
                 .collect(Collectors.toList());
@@ -193,6 +219,78 @@ public class CardExportDto {
     }
 
     /**
+     * Gets the content type for the front of the card.
+     *
+     * @return the front content type
+     */
+    public ContentType getFrontType() {
+        return frontType;
+    }
+
+    /**
+     * Sets the content type for the front of the card.
+     *
+     * @param frontType the front content type
+     */
+    public void setFrontType(ContentType frontType) {
+        this.frontType = frontType;
+    }
+
+    /**
+     * Gets the content type for the back of the card.
+     *
+     * @return the back content type
+     */
+    public ContentType getBackType() {
+        return backType;
+    }
+
+    /**
+     * Sets the content type for the back of the card.
+     *
+     * @param backType the back content type
+     */
+    public void setBackType(ContentType backType) {
+        this.backType = backType;
+    }
+
+    /**
+     * Gets the programming language for the front of the card.
+     *
+     * @return the front language, or null if not applicable
+     */
+    public CodeLanguage getFrontLanguage() {
+        return frontLanguage;
+    }
+
+    /**
+     * Sets the programming language for the front of the card.
+     *
+     * @param frontLanguage the front language
+     */
+    public void setFrontLanguage(CodeLanguage frontLanguage) {
+        this.frontLanguage = frontLanguage;
+    }
+
+    /**
+     * Gets the programming language for the back of the card.
+     *
+     * @return the back language, or null if not applicable
+     */
+    public CodeLanguage getBackLanguage() {
+        return backLanguage;
+    }
+
+    /**
+     * Sets the programming language for the back of the card.
+     *
+     * @param backLanguage the back language
+     */
+    public void setBackLanguage(CodeLanguage backLanguage) {
+        this.backLanguage = backLanguage;
+    }
+
+    /**
      * Gets the list of tag names.
      *
      * @return the list of tag names (never null)
@@ -260,7 +358,11 @@ public class CardExportDto {
         return "CardExportDto{" +
                 "id=" + id +
                 ", front='" + front + '\'' +
+                ", frontType=" + frontType +
+                ", frontLanguage=" + frontLanguage +
                 ", back='" + back + '\'' +
+                ", backType=" + backType +
+                ", backLanguage=" + backLanguage +
                 ", notes='" + notes + '\'' +
                 ", tags=" + tags +
                 ", createdAt=" + createdAt +

@@ -2,6 +2,8 @@ package com.kioku.api.service;
 
 import com.kioku.api.repository.CardRepository;
 import com.kioku.api.repository.DeckRepository;
+import com.kioku.api.model.CodeLanguage;
+import com.kioku.api.model.ContentType;
 import com.kioku.api.model.Deck;
 import com.kioku.api.model.Card;
 import com.kioku.api.model.Tag;
@@ -77,6 +79,7 @@ public class CardService {
      *   <li>Verifies user owns the deck</li>
      *   <li>Checks for duplicate front/back combination</li>
      *   <li>Ensures front and back are not null or blank</li>
+     *   <li>Validates language is provided when content type is CODE</li>
      * </ul>
      *
      * @param userId the ID of the user creating the card
@@ -84,12 +87,22 @@ public class CardService {
      * @param front the front text of the card
      * @param back the back text of the card
      * @param notes optional notes for the card
+     * @param frontType content type for front (TEXT or CODE), defaults to TEXT
+     * @param backType content type for back (TEXT or CODE), defaults to TEXT
+     * @param frontLanguage programming language for front (required if frontType is CODE)
+     * @param backLanguage programming language for back (required if backType is CODE)
      * @return the created card
-     * @throws IllegalArgumentException if user doesn't own deck or card is duplicate
+     * @throws IllegalArgumentException if user doesn't own deck, card is duplicate, or validation fails
      */
     @Transactional
-    public Card createCard(Long userId, Long deckId, String front, String back, String notes) {
+    public Card createCard(Long userId, Long deckId, String front, String back, String notes,
+                           ContentType frontType, ContentType backType,
+                           CodeLanguage frontLanguage, CodeLanguage backLanguage) {
         logger.debug("Creating card in deck id={} for user id={}", deckId, userId);
+
+        // Validate content type and language combinations
+        validateContentTypeAndLanguage(frontType, frontLanguage, "front");
+        validateContentTypeAndLanguage(backType, backLanguage, "back");
 
         // Get deck and verify ownership
         Deck deck = deckService.getDeckOrThrow(deckId, userId);
@@ -105,13 +118,33 @@ public class CardService {
         if (notes != null && !notes.isBlank()) {
             card.setNotes(notes);
         }
+
+        // Set content types (default to TEXT if null)
+        card.setFrontType(frontType != null ? frontType : ContentType.TEXT);
+        card.setBackType(backType != null ? backType : ContentType.TEXT);
+        card.setFrontLanguage(frontLanguage);
+        card.setBackLanguage(backLanguage);
+
         deck.addCard(card);
 
         Card savedCard = cardRepository.save(card);
-        // logger.info("Card created: id={} in deck id={}", savedCard.getId(), deckId);
 
         // Re-fetch with tags eagerly loaded to prevent LazyInitializationException
         return cardRepository.findByIdWithTags(savedCard.getCardId()).orElseThrow();
+    }
+
+    /**
+     * Validates that a language is provided when content type is CODE.
+     *
+     * @param contentType the content type
+     * @param language the language
+     * @param side "front" or "back" for error messages
+     * @throws IllegalArgumentException if CODE type without language
+     */
+    private void validateContentTypeAndLanguage(ContentType contentType, CodeLanguage language, String side) {
+        if (contentType == ContentType.CODE && language == null) {
+            throw new IllegalArgumentException("Language is required when " + side + " content type is CODE");
+        }
     }
 
     /**
@@ -193,6 +226,7 @@ public class CardService {
      *   <li>Verifies user owns the deck</li>
      *   <li>Verifies card exists in the deck</li>
      *   <li>Checks for duplicate front/back (excluding the card being updated)</li>
+     *   <li>Validates language is provided when content type is CODE</li>
      * </ul>
      *
      * @param userId the ID of the user updating the card
@@ -201,12 +235,22 @@ public class CardService {
      * @param front the new front text
      * @param back the new back text
      * @param notes the new notes (can be null)
+     * @param frontType content type for front (TEXT or CODE), defaults to TEXT
+     * @param backType content type for back (TEXT or CODE), defaults to TEXT
+     * @param frontLanguage programming language for front (required if frontType is CODE)
+     * @param backLanguage programming language for back (required if backType is CODE)
      * @return the updated card with tags loaded
-     * @throws IllegalArgumentException if user doesn't own deck, card not found, or duplicate
+     * @throws IllegalArgumentException if user doesn't own deck, card not found, duplicate, or validation fails
      */
     @Transactional
-    public Card updateCard(Long userId, Long deckId, Long cardId, String front, String back, String notes) {
+    public Card updateCard(Long userId, Long deckId, Long cardId, String front, String back, String notes,
+                           ContentType frontType, ContentType backType,
+                           CodeLanguage frontLanguage, CodeLanguage backLanguage) {
         logger.debug("Updating card id={} in deck id={} for user id={}", cardId, deckId, userId);
+
+        // Validate content type and language combinations
+        validateContentTypeAndLanguage(frontType, frontLanguage, "front");
+        validateContentTypeAndLanguage(backType, backLanguage, "back");
 
         // Verify deck ownership
         deckService.getDeckOrThrow(deckId, userId);
@@ -228,6 +272,12 @@ public class CardService {
         card.setFront(front);
         card.setBack(back);
         card.setNotes(notes);
+
+        // Update content types (default to TEXT if null)
+        card.setFrontType(frontType != null ? frontType : ContentType.TEXT);
+        card.setBackType(backType != null ? backType : ContentType.TEXT);
+        card.setFrontLanguage(frontLanguage);
+        card.setBackLanguage(backLanguage);
 
         cardRepository.save(card);
         logger.info("Card updated: id={} in deck id={}", cardId, deckId);

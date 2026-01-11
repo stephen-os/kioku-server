@@ -5,6 +5,8 @@ import com.kioku.api.dto.request.UpdateCardRequest;
 import com.kioku.api.dto.response.CardResponse;
 import com.kioku.api.dto.response.ErrorResponse;
 import com.kioku.api.model.Card;
+import com.kioku.api.model.CodeLanguage;
+import com.kioku.api.model.ContentType;
 import com.kioku.api.model.Tag;
 import com.kioku.api.security.CurrentUser;
 import com.kioku.api.security.CurrentUserArgumentResolver;
@@ -154,7 +156,8 @@ class CardControllerTests {
 
         CreateCardRequest request = new CreateCardRequest(TEST_FRONT, TEST_BACK, TEST_NOTES);
 
-        when(cardService.createCard(TEST_USER_ID, TEST_DECK_ID, TEST_FRONT, TEST_BACK, TEST_NOTES))
+        when(cardService.createCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_FRONT), eq(TEST_BACK), eq(TEST_NOTES),
+                any(), any(), any(), any()))
                 .thenReturn(testCard);
 
         CardResponse response = client.post()
@@ -173,7 +176,8 @@ class CardControllerTests {
         assertThat(response.getBack()).isEqualTo(TEST_BACK);
         assertThat(response.getNotes()).isEqualTo(TEST_NOTES);
 
-        verify(cardService).createCard(TEST_USER_ID, TEST_DECK_ID, TEST_FRONT, TEST_BACK, TEST_NOTES);
+        verify(cardService).createCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_FRONT), eq(TEST_BACK), eq(TEST_NOTES),
+                any(), any(), any(), any());
 
         logger.debug("Test passed: Card created successfully");
     }
@@ -186,7 +190,8 @@ class CardControllerTests {
 
         CreateCardRequest request = new CreateCardRequest(TEST_FRONT, TEST_BACK, TEST_NOTES);
 
-        when(cardService.createCard(TEST_USER_ID, TEST_DECK_ID, TEST_FRONT, TEST_BACK, TEST_NOTES))
+        when(cardService.createCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_FRONT), eq(TEST_BACK), eq(TEST_NOTES),
+                any(), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("Card with same front and back already exists in this deck"));
 
         ErrorResponse response = client.post()
@@ -202,7 +207,8 @@ class CardControllerTests {
         assertThat(response).isNotNull();
         assertThat(response.getMessage()).contains("already exists");
 
-        verify(cardService).createCard(TEST_USER_ID, TEST_DECK_ID, TEST_FRONT, TEST_BACK, TEST_NOTES);
+        verify(cardService).createCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_FRONT), eq(TEST_BACK), eq(TEST_NOTES),
+                any(), any(), any(), any());
 
         logger.debug("Test passed: Duplicate card rejected");
     }
@@ -215,7 +221,8 @@ class CardControllerTests {
 
         CreateCardRequest request = new CreateCardRequest(TEST_FRONT, TEST_BACK, TEST_NOTES);
 
-        when(cardService.createCard(TEST_USER_ID, TEST_DECK_ID, TEST_FRONT, TEST_BACK, TEST_NOTES))
+        when(cardService.createCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_FRONT), eq(TEST_BACK), eq(TEST_NOTES),
+                any(), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("Deck not found or access denied"));
 
         ErrorResponse response = client.post()
@@ -249,7 +256,7 @@ class CardControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(cardService, never()).createCard(anyLong(), anyLong(), anyString(), anyString(), anyString());
+        verify(cardService, never()).createCard(anyLong(), anyLong(), anyString(), anyString(), anyString(), any(), any(), any(), any());
 
         logger.debug("Test passed: Missing front rejected");
     }
@@ -269,7 +276,7 @@ class CardControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(cardService, never()).createCard(anyLong(), anyLong(), anyString(), anyString(), anyString());
+        verify(cardService, never()).createCard(anyLong(), anyLong(), anyString(), anyString(), anyString(), any(), any(), any(), any());
 
         logger.debug("Test passed: Missing back rejected");
     }
@@ -290,7 +297,7 @@ class CardControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(cardService, never()).createCard(anyLong(), anyLong(), anyString(), anyString(), anyString());
+        verify(cardService, never()).createCard(anyLong(), anyLong(), anyString(), anyString(), anyString(), any(), any(), any(), any());
 
         logger.debug("Test passed: Front too long rejected");
     }
@@ -502,8 +509,9 @@ class CardControllerTests {
         when(updatedCard.getNotes()).thenReturn(UPDATED_NOTES);
         when(updatedCard.getTags()).thenReturn(java.util.Collections.emptySet());
 
-        when(cardService.updateCard(TEST_USER_ID, TEST_DECK_ID, TEST_CARD_ID,
-                UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES))
+        when(cardService.updateCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_CARD_ID),
+                eq(UPDATED_FRONT), eq(UPDATED_BACK), eq(UPDATED_NOTES),
+                any(), any(), any(), any()))
                 .thenReturn(updatedCard);
 
         CardResponse response = client.put()
@@ -522,8 +530,9 @@ class CardControllerTests {
         assertThat(response.getBack()).isEqualTo(UPDATED_BACK);
         assertThat(response.getNotes()).isEqualTo(UPDATED_NOTES);
 
-        verify(cardService).updateCard(TEST_USER_ID, TEST_DECK_ID, TEST_CARD_ID,
-                UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES);
+        verify(cardService).updateCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_CARD_ID),
+                eq(UPDATED_FRONT), eq(UPDATED_BACK), eq(UPDATED_NOTES),
+                any(), any(), any(), any());
 
         logger.debug("Test passed: Card updated successfully");
     }
@@ -536,8 +545,9 @@ class CardControllerTests {
 
         UpdateCardRequest request = new UpdateCardRequest(UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES);
 
-        when(cardService.updateCard(TEST_USER_ID, TEST_DECK_ID, TEST_CARD_ID,
-                UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES))
+        when(cardService.updateCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_CARD_ID),
+                eq(UPDATED_FRONT), eq(UPDATED_BACK), eq(UPDATED_NOTES),
+                any(), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("Card with same front and back already exists in this deck"));
 
         ErrorResponse response = client.put()
@@ -564,8 +574,9 @@ class CardControllerTests {
 
         UpdateCardRequest request = new UpdateCardRequest(UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES);
 
-        when(cardService.updateCard(TEST_USER_ID, TEST_DECK_ID, TEST_CARD_ID,
-                UPDATED_FRONT, UPDATED_BACK, UPDATED_NOTES))
+        when(cardService.updateCard(eq(TEST_USER_ID), eq(TEST_DECK_ID), eq(TEST_CARD_ID),
+                eq(UPDATED_FRONT), eq(UPDATED_BACK), eq(UPDATED_NOTES),
+                any(), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("Card not found or access denied: " + TEST_CARD_ID));
 
         ErrorResponse response = client.put()
@@ -600,7 +611,7 @@ class CardControllerTests {
                 .expectStatus().isBadRequest();
 
         verify(cardService, never()).updateCard(anyLong(), anyLong(), anyLong(),
-                anyString(), anyString(), anyString());
+                anyString(), anyString(), anyString(), any(), any(), any(), any());
 
         logger.debug("Test passed: Blank front rejected");
     }

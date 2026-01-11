@@ -126,7 +126,11 @@ public class CardController {
                 deckId,
                 request.getFront(),
                 request.getBack(),
-                request.getNotes()
+                request.getNotes(),
+                request.getFrontType(),
+                request.getBackType(),
+                request.getFrontLanguage(),
+                request.getBackLanguage()
         );
 
         logger.info("Card {} created successfully in deck {}", card.getCardId(), deckId);
@@ -280,7 +284,11 @@ public class CardController {
                 cardId,
                 request.getFront(),
                 request.getBack(),
-                request.getNotes()
+                request.getNotes(),
+                request.getFrontType(),
+                request.getBackType(),
+                request.getFrontLanguage(),
+                request.getBackLanguage()
         );
 
         logger.info("Card {} updated successfully", cardId);

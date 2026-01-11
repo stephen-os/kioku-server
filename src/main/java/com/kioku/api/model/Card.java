@@ -52,6 +52,42 @@ public class Card {
     private String notes;
 
     /**
+     * Content type for the front of the card.
+     * Determines how the frontend should render the content.
+     * Defaults to TEXT.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "front_type", length = 10, nullable = false)
+    private ContentType frontType = ContentType.TEXT;
+
+    /**
+     * Content type for the back of the card.
+     * Determines how the frontend should render the content.
+     * Defaults to TEXT.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "back_type", length = 10, nullable = false)
+    private ContentType backType = ContentType.TEXT;
+
+    /**
+     * Programming language for the front of the card.
+     * Only applicable when frontType is CODE.
+     * Used for syntax highlighting on the frontend.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "front_language", length = 20)
+    private CodeLanguage frontLanguage;
+
+    /**
+     * Programming language for the back of the card.
+     * Only applicable when backType is CODE.
+     * Used for syntax highlighting on the frontend.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "back_language", length = 20)
+    private CodeLanguage backLanguage;
+
+    /**
      * The deck ID this card belongs to.
      * Read-only mapping to support JPQL queries with eager tag loading.
      * The actual relationship is managed by Deck.addCard().
@@ -201,6 +237,78 @@ public class Card {
     }
 
     /**
+     * Gets the content type for the front of the card.
+     *
+     * @return the front content type
+     */
+    public ContentType getFrontType() {
+        return frontType;
+    }
+
+    /**
+     * Sets the content type for the front of the card.
+     *
+     * @param frontType the front content type
+     */
+    public void setFrontType(ContentType frontType) {
+        this.frontType = frontType != null ? frontType : ContentType.TEXT;
+    }
+
+    /**
+     * Gets the content type for the back of the card.
+     *
+     * @return the back content type
+     */
+    public ContentType getBackType() {
+        return backType;
+    }
+
+    /**
+     * Sets the content type for the back of the card.
+     *
+     * @param backType the back content type
+     */
+    public void setBackType(ContentType backType) {
+        this.backType = backType != null ? backType : ContentType.TEXT;
+    }
+
+    /**
+     * Gets the programming language for the front of the card.
+     *
+     * @return the front language, or {@code null} if not applicable
+     */
+    public CodeLanguage getFrontLanguage() {
+        return frontLanguage;
+    }
+
+    /**
+     * Sets the programming language for the front of the card.
+     *
+     * @param frontLanguage the front language
+     */
+    public void setFrontLanguage(CodeLanguage frontLanguage) {
+        this.frontLanguage = frontLanguage;
+    }
+
+    /**
+     * Gets the programming language for the back of the card.
+     *
+     * @return the back language, or {@code null} if not applicable
+     */
+    public CodeLanguage getBackLanguage() {
+        return backLanguage;
+    }
+
+    /**
+     * Sets the programming language for the back of the card.
+     *
+     * @param backLanguage the back language
+     */
+    public void setBackLanguage(CodeLanguage backLanguage) {
+        this.backLanguage = backLanguage;
+    }
+
+    /**
      * Gets all tags associated with this card.
      *
      * @return an unmodifiable set of tags
@@ -316,7 +424,11 @@ public class Card {
         return "Card{" +
                 "id=" + id +
                 ", front='" + front + '\'' +
+                ", frontType=" + frontType +
+                ", frontLanguage=" + frontLanguage +
                 ", back='" + back + '\'' +
+                ", backType=" + backType +
+                ", backLanguage=" + backLanguage +
                 ", notes='" + notes + '\'' +
                 ", tagCount=" + (tags != null ? tags.size() : 0) +
                 ", createdAt=" + createdAt +

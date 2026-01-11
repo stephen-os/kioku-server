@@ -118,7 +118,7 @@ class CardServiceTests {
         when(cardRepository.save(any(Card.class))).thenReturn(testCard);
         when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
-        Card created = cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
+        Card created = cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES, null, null, null, null);
 
         assertNotNull(created);
         verify(deckService).getDeckOrThrow(DECK_ID, USER_ID);
@@ -141,7 +141,7 @@ class CardServiceTests {
                 .thenThrow(new IllegalArgumentException("Deck not found or access denied"));
 
         assertThrows(IllegalArgumentException.class, () -> {
-            cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
+            cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES, null, null, null, null);
         });
 
         verify(cardRepository, never()).save(any(Card.class));
@@ -161,7 +161,7 @@ class CardServiceTests {
         when(cardRepository.existsByDeckIdAndFrontAndBack(DECK_ID, CARD_FRONT, CARD_BACK)).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES);
+            cardService.createCard(USER_ID, DECK_ID, CARD_FRONT, CARD_BACK, CARD_NOTES, null, null, null, null);
         });
 
         verify(cardRepository, never()).save(any(Card.class));
@@ -295,7 +295,7 @@ class CardServiceTests {
         when(cardRepository.save(testCard)).thenReturn(testCard);
         when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
-        Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES);
+        Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES, null, null, null, null);
 
         assertNotNull(updated);
         verify(testCard).setFront(UPDATED_FRONT);
@@ -320,7 +320,7 @@ class CardServiceTests {
         when(cardRepository.existsByDeckIdAndFrontAndBackAndIdNot(DECK_ID, UPDATED_FRONT, UPDATED_BACK, CARD_ID)).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES);
+            cardService.updateCard(USER_ID, DECK_ID, CARD_ID, UPDATED_FRONT, UPDATED_BACK, CARD_NOTES, null, null, null, null);
         });
 
         verify(cardRepository, never()).save(any(Card.class));
@@ -343,7 +343,7 @@ class CardServiceTests {
         when(cardRepository.findByIdWithTags(CARD_ID)).thenReturn(Optional.of(testCard));
 
         // Update to same front/back but different notes
-        Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, CARD_FRONT, CARD_BACK, "New notes");
+        Card updated = cardService.updateCard(USER_ID, DECK_ID, CARD_ID, CARD_FRONT, CARD_BACK, "New notes", null, null, null, null);
 
         assertNotNull(updated);
         verify(cardRepository).save(testCard);
