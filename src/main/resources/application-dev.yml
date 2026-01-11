@@ -9,16 +9,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         jdbc:
           lob:
             non_contextual_creation: true
 
-# Logging - DEBUG enabled
+# Logging
 logging:
   level:
     root: INFO
@@ -26,7 +26,7 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# JWT Configuration - NO FALLBACK (fail fast if not set)
+# JWT Configuration
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000
