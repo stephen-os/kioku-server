@@ -62,8 +62,9 @@ public class Card {
     /**
      * Tags associated with this card for organization.
      * Bidirectional many-to-many relationship.
+     * Eagerly loaded since tags are almost always needed when displaying cards.
      */
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "card_tags",
             joinColumns = @JoinColumn(name = "card_id"),
