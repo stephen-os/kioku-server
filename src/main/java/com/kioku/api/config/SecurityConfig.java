@@ -44,22 +44,15 @@ import java.util.List;
  *   <li>Stateless sessions (no server-side session storage)</li>
  *   <li>CSRF protection disabled (safe for JWT-based APIs)</li>
  *   <li>BCrypt password hashing with automatic salt generation</li>
- *   <li>Environment-based CORS configuration (development vs production)</li>
+ *   <li>CORS configuration via FRONTEND_URL environment variable</li>
  * </ul>
  *
- * <p><strong>Environment Variables Required for Production:</strong>
+ * <p><strong>Required Environment Variables:</strong>
  * <ul>
  *   <li><strong>FRONTEND_URL:</strong> The exact URL of your frontend application
- *       (e.g., "https://kioku.vercel.app"). If not set, falls back to localhost.</li>
+ *       (e.g., "https://kioku.vercel.app"). Required for CORS configuration.</li>
  *   <li><strong>JWT_SECRET:</strong> Strong secret key for JWT signing (min 256 bits).
  *       Generate with: {@code openssl rand -base64 64}</li>
- *   <li><strong>SPRING_PROFILES_ACTIVE:</strong> Set to "prod" for production deployment</li>
- * </ul>
- *
- * <p><strong>CORS Configuration:</strong>
- * <ul>
- *   <li><strong>Development:</strong> Allows http://localhost:3000 when FRONTEND_URL not set</li>
- *   <li><strong>Production:</strong> Restricts to exact FRONTEND_URL from environment variable</li>
  * </ul>
  *
  * <p><strong>Endpoint Authorization Rules:</strong>
@@ -145,16 +138,11 @@ public class SecurityConfig {
      * <p>CORS allows the frontend application (running on a different origin)
      * to make requests to this backend API.
      *
-     * <p><strong>Environment-Based Configuration:</strong>
+     * <p><strong>Required Environment Variable:</strong>
      * <ul>
-     *   <li><strong>Production:</strong> If FRONTEND_URL environment variable is set,
-     *       CORS is restricted to that exact URL only</li>
-     *   <li><strong>Development:</strong> If FRONTEND_URL is not set, falls back to
-     *       http://localhost:3000 for local development</li>
+     *   <li><strong>FRONTEND_URL:</strong> The exact URL of the frontend application
+     *       (e.g., "https://kioku.vercel.app"). This must be set for the application to start.</li>
      * </ul>
-     *
-     * <p><strong>Security:</strong>
-     * Always set FRONTEND_URL in production to prevent unauthorized cross-origin access.
      *
      * <p><strong>Configuration Details:</strong>
      * <ul>
@@ -165,29 +153,20 @@ public class SecurityConfig {
      *   <li><strong>Max Age:</strong> 3600 seconds (1 hour preflight cache)</li>
      * </ul>
      *
-     * <p><strong>Example Production Deployment:</strong>
-     * <pre>
-     * # On Railway/Heroku/etc, set environment variable:
-     * FRONTEND_URL=https://kioku.vercel.app
-     * </pre>
-     *
      * @return the CORS configuration source
+     * @throws IllegalStateException if FRONTEND_URL environment variable is not set
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Get frontend URL from environment variable
         String frontendUrl = System.getenv("FRONTEND_URL");
-
-        if (frontendUrl != null && !frontendUrl.isEmpty()) {
-            logger.info("CORS configured for production frontend: {}", frontendUrl);
-            configuration.setAllowedOriginPatterns(List.of(frontendUrl));
-        } else {
-            logger.warn("FRONTEND_URL not set - using localhost:3000 (development mode only)");
-            logger.warn("⚠️  Set FRONTEND_URL environment variable for production deployment");
-            configuration.setAllowedOriginPatterns(List.of("http://localhost:3000"));
+        if (frontendUrl == null || frontendUrl.isEmpty()) {
+            throw new IllegalStateException("FRONTEND_URL environment variable must be set");
         }
+
+        logger.info("CORS configured for frontend: {}", frontendUrl);
+        configuration.setAllowedOriginPatterns(List.of(frontendUrl));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
