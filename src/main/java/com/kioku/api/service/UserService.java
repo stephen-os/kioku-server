@@ -384,6 +384,34 @@ public class UserService {
     // Account Management
 
     /**
+     * Updates how an account presents itself.
+     *
+     * <p>A null field is left unchanged rather than cleared, so a client can
+     * change one without restating the other.
+     *
+     * @param userId      the account
+     * @param displayName new display name, or null to leave it
+     * @param avatar      new avatar id, or null to leave it
+     * @return the updated account
+     */
+    @Transactional
+    public User updateProfile(UUID userId, String displayName, String avatar) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (displayName != null) {
+            user.setDisplayName(displayName);
+        }
+        if (avatar != null) {
+            user.setAvatar(avatar);
+        }
+
+        logger.debug("Updated profile for user id={}", userId);
+        return userRepository.save(user);
+    }
+
+    /**
      * Gets a user's account profile information.
      *
      * @param userId the user ID

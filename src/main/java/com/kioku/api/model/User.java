@@ -46,6 +46,14 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    /** How this account presents itself. Falls back to the email when unset. */
+    @Column(name = "display_name", length = 100)
+    private String displayName;
+
+    /** Identifier of a built-in avatar, resolved to an image by the client. */
+    @Column(nullable = false, length = 50)
+    private String avatar = "avatar-smile";
+
     /**
      * Whether this user's email address has been verified.
      */
@@ -564,6 +572,26 @@ public class User {
      *
      * @return the user's email address
      */
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName == null || displayName.isBlank()
+                ? null
+                : displayName.trim();
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        if (avatar != null && !avatar.isBlank()) {
+            this.avatar = avatar.trim();
+        }
+    }
+
     public String getEmail() {
         return email;
     }

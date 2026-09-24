@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 import com.kioku.api.service.RefreshTokenService;
+import com.kioku.api.dto.request.UpdateProfileRequest;
 
 /**
  * REST controller for user account management operations.
@@ -201,6 +202,22 @@ public class AccountController {
      * @param request the password update request
      * @return ResponseEntity with success or error message
      */
+    /**
+     * Updates the account's display name and avatar.
+     */
+    @PatchMapping("/profile")
+    public ResponseEntity<AccountResponse> updateProfile(
+            @CurrentUser UUID userId,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        logger.debug("Updating profile for user id={}", userId);
+
+        User updated = userService.updateProfile(
+                userId, request.getDisplayName(), request.getAvatar());
+
+        return ResponseEntity.ok(new AccountResponse(updated));
+    }
+
     @PatchMapping("/password")
     public ResponseEntity<?> updatePassword(
             @CurrentUser UUID userId,

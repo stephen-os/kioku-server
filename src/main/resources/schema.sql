@@ -20,6 +20,11 @@
 CREATE TABLE IF NOT EXISTS users (
     id                          uuid         PRIMARY KEY,
     email                       varchar(255) NOT NULL,
+    -- How the account presents itself. An account is the identity now, and an
+    -- identity with no name shows an email address everywhere a person should
+    -- appear.
+    display_name                varchar(100),
+    avatar                      varchar(50)  NOT NULL DEFAULT 'avatar-smile',
     email_verified              boolean      NOT NULL DEFAULT false,
     email_verification_token    varchar(255),
     email_verification_sent_at  timestamptz,

@@ -19,6 +19,8 @@ public class AccountResponse {
 
     private UUID id;
     private String email;
+    private String displayName;
+    private String avatar;
     private boolean emailVerified;
     private String status;
     private Instant createdAt;
@@ -30,10 +32,28 @@ public class AccountResponse {
     public AccountResponse(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
+        this.displayName = user.getDisplayName();
+        this.avatar = user.getAvatar();
         this.emailVerified = user.isEmailVerified();
         this.status = user.getStatus().name();
         this.createdAt = user.getCreatedAt();
         this.lastLoginAt = user.getLastLoginAt();
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public UUID getId() {

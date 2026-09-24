@@ -60,10 +60,16 @@ memory, so it is correct for a single instance only.
 | GET | `/account` | exists |
 | PATCH | `/account/email` | exists |
 | PATCH | `/account/password` | exists |
+| PATCH | `/account/profile` | built |
 | DELETE | `/account` | exists |
 
 Account data is server-authoritative and never synced. There is no offline edit
 path for it.
+
+The account carries a display name and an avatar id. An account is the identity
+now, so without them every place a person should appear falls back to an email
+address. Both are optional on a profile update: sending one leaves the other
+alone.
 
 ### Sync
 
