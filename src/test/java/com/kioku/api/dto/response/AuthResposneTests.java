@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.UUID;
 
 /**
  * Unit tests for AuthResponse DTO.
@@ -33,7 +34,7 @@ class AuthResponseTest {
 
     // Test data constants
     private static final String TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token";
-    private static final Long TEST_USER_ID = 1L;
+    private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final String TEST_EMAIL = "user@example.com";
     private static final String DEFAULT_TYPE = "Bearer";
 
@@ -214,7 +215,7 @@ class AuthResponseTest {
 
         assertThat(json).contains("\"token\":\"" + TEST_TOKEN + "\"");
         assertThat(json).contains("\"type\":\"Bearer\"");
-        assertThat(json).contains("\"userId\":" + TEST_USER_ID);
+        assertThat(json).contains("\"userId\":\"" + TEST_USER_ID + "\"");
         assertThat(json).contains("\"email\":\"" + TEST_EMAIL + "\"");
 
         logger.debug("Test passed: Serialization works - {}", json);
@@ -226,7 +227,7 @@ class AuthResponseTest {
         logger.debug("Test: Deserialize from JSON");
 
         String json = String.format(
-                "{\"token\":\"%s\",\"type\":\"Bearer\",\"userId\":%d,\"email\":\"%s\"}",
+                "{\"token\":\"%s\",\"type\":\"Bearer\",\"userId\":\"%s\",\"email\":\"%s\"}",
                 TEST_TOKEN, TEST_USER_ID, TEST_EMAIL
         );
 
@@ -264,7 +265,7 @@ class AuthResponseTest {
         logger.debug("Test: Deserialize with missing type field");
 
         String json = String.format(
-                "{\"token\":\"%s\",\"userId\":%d,\"email\":\"%s\"}",
+                "{\"token\":\"%s\",\"userId\":\"%s\",\"email\":\"%s\"}",
                 TEST_TOKEN, TEST_USER_ID, TEST_EMAIL
         );
 
@@ -333,40 +334,29 @@ class AuthResponseTest {
     }
 
     @Test
-    @DisplayName("Should handle zero userId")
-    void testZeroUserId() {
-        logger.debug("Test: Zero userId");
+    @DisplayName("Should carry an arbitrary userId unchanged")
+    void testArbitraryUserId() {
+        logger.debug("Test: Arbitrary userId");
 
-        AuthResponse response = new AuthResponse(TEST_TOKEN, 0L, TEST_EMAIL);
+        UUID id = UUID.randomUUID();
+        AuthResponse response = new AuthResponse(TEST_TOKEN, id, TEST_EMAIL);
 
-        assertThat(response.getUserId()).isEqualTo(0L);
+        assertThat(response.getUserId()).isEqualTo(id);
 
-        logger.debug("Test passed: Zero userId handled");
+        logger.debug("Test passed: Arbitrary userId carried");
     }
 
     @Test
-    @DisplayName("Should handle negative userId")
-    void testNegativeUserId() {
-        logger.debug("Test: Negative userId");
+    @DisplayName("Should carry the nil userId unchanged")
+    void testNilUserId() {
+        logger.debug("Test: Nil userId");
 
-        AuthResponse response = new AuthResponse(TEST_TOKEN, -1L, TEST_EMAIL);
+        UUID nil = new UUID(0L, 0L);
+        AuthResponse response = new AuthResponse(TEST_TOKEN, nil, TEST_EMAIL);
 
-        assertThat(response.getUserId()).isEqualTo(-1L);
+        assertThat(response.getUserId()).isEqualTo(nil);
 
-        logger.debug("Test passed: Negative userId handled");
-    }
-
-    @Test
-    @DisplayName("Should handle large userId")
-    void testLargeUserId() {
-        logger.debug("Test: Large userId");
-
-        Long largeId = Long.MAX_VALUE;
-        AuthResponse response = new AuthResponse(TEST_TOKEN, largeId, TEST_EMAIL);
-
-        assertThat(response.getUserId()).isEqualTo(largeId);
-
-        logger.debug("Test passed: Large userId handled");
+        logger.debug("Test passed: Nil userId carried");
     }
 
     @Test

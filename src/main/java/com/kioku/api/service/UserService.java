@@ -8,7 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,7 +63,7 @@ public class UserService {
      * @return an Optional containing the user if found, empty otherwise
      */
     @Transactional(readOnly = true)
-    public Optional<User> findById(Long id) {
+    public Optional<User> findById(UUID id) {
         logger.debug("Finding user by id={}", id);
         Optional<User> user = userRepository.findById(id);
         logger.debug("User found: {}", user.isPresent());
@@ -138,7 +138,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<User> findActiveAccounts() {
         logger.debug("Finding all active accounts");
-        List<User> userEntities = userRepository.findActiveAccounts(LocalDateTime.now());
+        List<User> userEntities = userRepository.findActiveAccounts(Instant.now());
         logger.debug("Found {} active accounts", userEntities.size());
         return userEntities;
     }
@@ -151,7 +151,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<User> findLockedAccounts() {
         logger.debug("Finding all locked accounts");
-        List<User> userEntities = userRepository.findLockedAccounts(LocalDateTime.now());
+        List<User> userEntities = userRepository.findLockedAccounts(Instant.now());
         logger.debug("Found {} locked accounts", userEntities.size());
         return userEntities;
     }
@@ -259,7 +259,7 @@ public class UserService {
      * @return the generated verification token
      * @throws IllegalArgumentException if user not found
      */
-    public String initiateEmailVerification(Long userId) {
+    public String initiateEmailVerification(UUID userId) {
         logger.debug("Initiating email verification for user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -376,7 +376,7 @@ public class UserService {
      * @throws IllegalArgumentException if user not found
      */
     @Transactional(readOnly = true)
-    public User getAccountProfile(Long userId) {
+    public User getAccountProfile(UUID userId) {
         logger.debug("Getting account profile for user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -407,7 +407,7 @@ public class UserService {
      * @return the verification token
      * @throws IllegalArgumentException if user not found, password incorrect, or email already registered
      */
-    public String initiateEmailChange(Long userId, String currentPassword, String newEmail) {
+    public String initiateEmailChange(UUID userId, String currentPassword, String newEmail) {
         logger.debug("Initiating email change for user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -486,7 +486,7 @@ public class UserService {
      * @param currentPassword the current password for verification
      * @throws IllegalArgumentException if user not found or password incorrect
      */
-    public void softDeleteAccount(Long userId, String currentPassword) {
+    public void softDeleteAccount(UUID userId, String currentPassword) {
         logger.debug("Soft deleting account for user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -516,7 +516,7 @@ public class UserService {
      * @return {@code true} if password updated, {@code false} if current password is incorrect
      * @throws IllegalArgumentException if user not found
      */
-    public boolean updatePassword(Long userId, String currentPassword, String newPassword) {
+    public boolean updatePassword(UUID userId, String currentPassword, String newPassword) {
         logger.debug("Updating password for user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -541,7 +541,7 @@ public class UserService {
      * @param userId the user ID to delete
      * @throws IllegalArgumentException if user not found
      */
-    public void deleteUser(Long userId) {
+    public void deleteUser(UUID userId) {
         logger.debug("Soft deleting user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -559,7 +559,7 @@ public class UserService {
      * @param userId the user ID to restore
      * @throws IllegalArgumentException if user not found
      */
-    public void restoreUser(Long userId) {
+    public void restoreUser(UUID userId) {
         logger.debug("Restoring user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -577,7 +577,7 @@ public class UserService {
      * @param userId the user ID to suspend
      * @throws IllegalArgumentException if user not found
      */
-    public void suspendUser(Long userId) {
+    public void suspendUser(UUID userId) {
         logger.debug("Suspending user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -595,7 +595,7 @@ public class UserService {
      * @param userId the user ID to activate
      * @throws IllegalArgumentException if user not found
      */
-    public void activateUser(Long userId) {
+    public void activateUser(UUID userId) {
         logger.debug("Activating user id={}", userId);
 
         User user = userRepository.findById(userId)
@@ -613,7 +613,7 @@ public class UserService {
      * @param userId the user ID to unlock
      * @throws IllegalArgumentException if user not found
      */
-    public void unlockUser(Long userId) {
+    public void unlockUser(UUID userId) {
         logger.debug("Unlocking user id={}", userId);
 
         User user = userRepository.findById(userId)

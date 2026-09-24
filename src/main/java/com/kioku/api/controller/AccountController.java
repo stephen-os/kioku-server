@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * REST controller for user account management operations.
@@ -78,7 +79,7 @@ public class AccountController {
      * @return ResponseEntity containing the account profile
      */
     @GetMapping
-    public ResponseEntity<AccountResponse> getProfile(@CurrentUser Long userId) {
+    public ResponseEntity<AccountResponse> getProfile(@CurrentUser UUID userId) {
         logger.debug("Getting account profile for user id={}", userId);
 
         User user = userService.getAccountProfile(userId);
@@ -115,7 +116,7 @@ public class AccountController {
      */
     @PatchMapping("/email")
     public ResponseEntity<?> initiateEmailChange(
-            @CurrentUser Long userId,
+            @CurrentUser UUID userId,
             @Valid @RequestBody UpdateEmailRequest request) {
 
         logger.debug("Initiating email change for user id={} to {}", userId, request.getNewEmail());
@@ -198,7 +199,7 @@ public class AccountController {
      */
     @PatchMapping("/password")
     public ResponseEntity<?> updatePassword(
-            @CurrentUser Long userId,
+            @CurrentUser UUID userId,
             @Valid @RequestBody UpdatePasswordRequest request) {
 
         logger.debug("Updating password for user id={}", userId);
@@ -242,7 +243,7 @@ public class AccountController {
      */
     @DeleteMapping
     public ResponseEntity<?> deleteAccount(
-            @CurrentUser Long userId,
+            @CurrentUser UUID userId,
             @Valid @RequestBody DeleteAccountRequest request) {
 
         logger.debug("Deleting account for user id={}", userId);

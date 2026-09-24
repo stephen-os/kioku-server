@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
+import java.util.UUID;
 
 /**
  * Integration tests for AuthController using RestTestClient (Spring Boot 4.0).
@@ -49,7 +50,7 @@ class AuthControllerTests {
     // Test data constants
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD = "SecurePassword123!";
-    private static final Long TEST_USER_ID = 1L;
+    private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final String TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token";
 
     @Autowired
@@ -136,7 +137,7 @@ class AuthControllerTests {
         assertThat(response.getMessage()).isEqualTo("Email already in use");
 
         verify(userService).registerUser(TEST_EMAIL, TEST_PASSWORD);
-        verify(jwtUtil, never()).generateToken(anyLong(), anyString());
+        verify(jwtUtil, never()).generateToken(any(UUID.class), anyString());
 
         logger.debug("Test passed: Duplicate email rejected");
     }
@@ -291,7 +292,7 @@ class AuthControllerTests {
         assertThat(response.getMessage()).isEqualTo("Invalid email or password");
 
         verify(userService).authenticateUser(TEST_EMAIL, "WrongPassword123!");
-        verify(jwtUtil, never()).generateToken(anyLong(), anyString());
+        verify(jwtUtil, never()).generateToken(any(UUID.class), anyString());
 
         logger.debug("Test passed: Invalid credentials rejected");
     }
@@ -322,7 +323,7 @@ class AuthControllerTests {
         assertThat(response).isNotNull();
         assertThat(response.getMessage()).isEqualTo("Invalid email or password");
 
-        verify(jwtUtil, never()).generateToken(anyLong(), anyString());
+        verify(jwtUtil, never()).generateToken(any(UUID.class), anyString());
 
         logger.debug("Test passed: Non-existent user rejected");
     }

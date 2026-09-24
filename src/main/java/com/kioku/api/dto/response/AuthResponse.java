@@ -32,6 +32,7 @@ package com.kioku.api.dto.response;
  * @version 1.0
  * @since 1.0
  */
+import java.util.UUID;
 public class AuthResponse {
 
     /**
@@ -49,7 +50,7 @@ public class AuthResponse {
     /**
      * The authenticated user's unique identifier.
      */
-    private Long userId;
+    private UUID userId;
 
     /**
      * The authenticated user's email address.
@@ -69,7 +70,7 @@ public class AuthResponse {
      * @param userId the user's ID
      * @param email the user's email address
      */
-    public AuthResponse(String token, Long userId, String email) {
+    public AuthResponse(String token, UUID userId, String email) {
         this.token = token;
         this.userId = userId;
         this.email = email;
@@ -116,7 +117,7 @@ public class AuthResponse {
      *
      * @return the user ID
      */
-    public Long getUserId() {
+    public UUID getUserId() {
         return userId;
     }
 
@@ -125,7 +126,7 @@ public class AuthResponse {
      *
      * @param userId the user ID to set
      */
-    public void setUserId(Long userId) {
+    public void setUserId(UUID userId) {
         this.userId = userId;
     }
 

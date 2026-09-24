@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import java.util.UUID;
 
 /**
  * Unit tests for JwtAuthenticationFilter.
@@ -43,7 +44,7 @@ class JwtAuthenticationFilterTests {
     // Test data constants
     private static final String VALID_TOKEN = "valid.jwt.token";
     private static final String INVALID_TOKEN = "invalid.jwt.token";
-    private static final Long TEST_USER_ID = 1L;
+    private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final String BEARER_PREFIX = "Bearer ";
 
     @Mock

@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 
 /**
  * JWT authentication filter that validates and processes JWT tokens.
@@ -90,7 +91,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
-                Long userId = jwtUtil.getUserIdFromToken(jwt);
+                UUID userId = jwtUtil.getUserIdFromToken(jwt);
                 logger.debug("Valid JWT token found for user ID: {}", userId);
 
                 UsernamePasswordAuthenticationToken authentication =

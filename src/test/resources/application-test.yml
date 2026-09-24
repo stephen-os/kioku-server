@@ -1,25 +1,34 @@
 spring:
-  # H2 In-Memory Database
+  # Real Postgres via Testcontainers, matching the version in
+  # docker-compose.yml. The jdbc:tc: URL starts and reuses a container for the
+  # test JVM, so no per-test setup code is needed.
+  #
+  # Tests run against the database we actually ship. H2 could not represent
+  # uuid[] or GIN indexes, and generated its schema from the entities, which
+  # meant schema.sql was never exercised by a single test.
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:tc:postgresql:15:///kioku
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
 
-  # Hibernate
+  # schema.sql is authoritative in tests too, so entity drift fails CI rather
+  # than production startup.
+  sql:
+    init:
+      mode: always
+
+  # @DataJpaTest swaps in an embedded database by default. There is no longer
+  # one on the classpath, and the point is to test against real Postgres.
+  test:
+    database:
+      replace: none
+
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.H2Dialect
-
-  # H2 Console
-  h2:
-    console:
-      enabled: true
 
 # Logging
 logging:

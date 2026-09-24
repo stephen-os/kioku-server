@@ -11,6 +11,7 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+import java.util.UUID;
 
 /**
  * Resolves controller method parameters annotated with {@link CurrentUser}.
@@ -22,11 +23,11 @@ import org.springframework.web.method.support.ModelAndViewContainer;
  *
  * <p><strong>Supported Parameter Types:</strong>
  * <ul>
- *   <li>{@code Long} - The user's database ID</li>
+ *   <li>{@code UUID} - The user's id</li>
  * </ul>
  *
  * <p><strong>Security Note:</strong> This resolver only works for authenticated
- * requests. If no authentication is present or the principal is not a Long,
+ * requests. If no authentication is present or the principal is not a UUID,
  * it returns {@code null}.
  *
  * @author Stephen Watson
@@ -44,7 +45,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
      * Determines if this resolver supports the given method parameter.
      *
      * <p>Returns {@code true} if the parameter is annotated with {@link CurrentUser}
-     * and the parameter type is {@code Long}.
+     * and the parameter type is {@code UUID}.
      *
      * @param parameter the method parameter to check
      * @return {@code true} if this resolver can resolve the parameter, {@code false} otherwise
@@ -52,12 +53,12 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         boolean hasAnnotation = parameter.getParameterAnnotation(CurrentUser.class) != null;
-        boolean isLongType = parameter.getParameterType().equals(Long.class);
+        boolean isUuidType = parameter.getParameterType().equals(UUID.class);
 
-        logger.debug("Checking parameter support: hasAnnotation={}, isLongType={}",
-                hasAnnotation, isLongType);
+        logger.debug("Checking parameter support: hasAnnotation={}, isUuidType={}",
+                hasAnnotation, isUuidType);
 
-        return hasAnnotation && isLongType;
+        return hasAnnotation && isUuidType;
     }
 
     /**
@@ -79,7 +80,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
                                   WebDataBinderFactory binderFactory) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null && authentication.getPrincipal() instanceof Long userId) {
+        if (authentication != null && authentication.getPrincipal() instanceof UUID userId) {
             logger.debug("Resolved current user ID: {}", userId);
             return userId;
         }

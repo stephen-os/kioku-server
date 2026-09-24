@@ -2,7 +2,8 @@ package com.kioku.api.dto.response;
 
 import com.kioku.api.model.User;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Response DTO for user account profile information.
@@ -16,12 +17,12 @@ import java.time.LocalDateTime;
  */
 public class AccountResponse {
 
-    private Long id;
+    private UUID id;
     private String email;
     private boolean emailVerified;
     private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime lastLoginAt;
+    private Instant createdAt;
+    private Instant lastLoginAt;
 
     public AccountResponse() {
     }
@@ -35,11 +36,11 @@ public class AccountResponse {
         this.lastLoginAt = user.getLastLoginAt();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -67,19 +68,19 @@ public class AccountResponse {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getLastLoginAt() {
+    public Instant getLastLoginAt() {
         return lastLoginAt;
     }
 
-    public void setLastLoginAt(LocalDateTime lastLoginAt) {
+    public void setLastLoginAt(Instant lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
     }
 

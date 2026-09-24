@@ -6,9 +6,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 /**
  * Comprehensive unit tests for the User entity.
@@ -31,7 +33,7 @@ class UserTests {
     @BeforeEach
     void setUp() {
         user = new User(TEST_EMAIL, PASSWORD_HASH);
-        ReflectionTestUtils.setField(user, "id", 1L);
+        ReflectionTestUtils.setField(user, "id", UUID.fromString("00000000-0000-0000-0000-000000000001"));
     }
 
     @Nested
@@ -45,12 +47,10 @@ class UserTests {
 
             assertEquals("apple@example.com", newUser.getEmail());
             assertEquals(PASSWORD_HASH, newUser.getPasswordHash());
-            assertNull(newUser.getId());
+            assertNotNull(newUser.getId()); // UUID assigned at construction, not on insert
             assertEquals(User.UserStatus.ACTIVE, newUser.getStatus());
             assertFalse(newUser.isEmailVerified());
             assertEquals(0, newUser.getFailedLoginAttempts());
-            assertNotNull(newUser.getDecks());
-            assertTrue(newUser.getDecks().isEmpty());
         }
 
         @Test
@@ -62,7 +62,6 @@ class UserTests {
             assertNull(emptyUser.getEmail());
             assertNull(emptyUser.getPasswordHash());
             assertEquals(User.UserStatus.ACTIVE, emptyUser.getStatus());
-            assertNotNull(emptyUser.getDecks());
         }
 
         @Test
@@ -156,7 +155,7 @@ class UserTests {
 
             assertTrue(user.isLocked());
             assertNotNull(user.getLockedUntil());
-            assertTrue(user.getLockedUntil().isAfter(LocalDateTime.now()));
+            assertTrue(user.getLockedUntil().isAfter(Instant.now()));
             assertEquals(5, user.getFailedLoginAttempts());
         }
 
@@ -167,9 +166,9 @@ class UserTests {
                 user.recordFailedLoginAttempt();
             }
 
-            LocalDateTime expectedUnlock = LocalDateTime.now().plusMinutes(15);
-            assertTrue(user.getLockedUntil().isBefore(expectedUnlock.plusSeconds(5)));
-            assertTrue(user.getLockedUntil().isAfter(expectedUnlock.minusSeconds(5)));
+            Instant expectedUnlock = Instant.now().plus(15, ChronoUnit.MINUTES);
+            assertTrue(user.getLockedUntil().isBefore(expectedUnlock.plus(5, ChronoUnit.SECONDS)));
+            assertTrue(user.getLockedUntil().isAfter(expectedUnlock.minus(5, ChronoUnit.SECONDS)));
         }
 
         @Test
@@ -191,14 +190,14 @@ class UserTests {
         @Test
         @DisplayName("account unlocks after lock period expires")
         void accountUnlocksAfterLockPeriodExpires() {
-            user.setLockedUntil(LocalDateTime.now().minusMinutes(1));
+            user.setLockedUntil(Instant.now().minus(1, ChronoUnit.MINUTES));
             assertFalse(user.isLocked());
         }
 
         @Test
         @DisplayName("account remains locked if lock time is in future")
         void accountRemainsLockedIfLockTimeInFuture() {
-            user.setLockedUntil(LocalDateTime.now().plusMinutes(10));
+            user.setLockedUntil(Instant.now().plus(10, ChronoUnit.MINUTES));
             assertTrue(user.isLocked());
         }
     }
@@ -287,14 +286,14 @@ class UserTests {
         @Test
         @DisplayName("softDelete sets deletedAt and status")
         void softDeleteSetsDeletedAtAndStatus() {
-            LocalDateTime beforeDelete = LocalDateTime.now();
+            Instant beforeDelete = Instant.now();
             user.softDelete();
-            LocalDateTime afterDelete = LocalDateTime.now();
+            Instant afterDelete = Instant.now();
 
             assertTrue(user.isDeleted());
             assertNotNull(user.getDeletedAt());
-            assertTrue(user.getDeletedAt().isAfter(beforeDelete.minusSeconds(1)));
-            assertTrue(user.getDeletedAt().isBefore(afterDelete.plusSeconds(1)));
+            assertTrue(user.getDeletedAt().isAfter(beforeDelete.minus(1, ChronoUnit.SECONDS)));
+            assertTrue(user.getDeletedAt().isBefore(afterDelete.plus(1, ChronoUnit.SECONDS)));
             assertEquals(User.UserStatus.DELETED, user.getStatus());
         }
 
@@ -332,7 +331,7 @@ class UserTests {
         void restorePreservesOtherState() {
             user.setEmail("specific@example.com");
             user.recordSuccessfulLogin();
-            LocalDateTime loginTime = user.getLastLoginAt();
+            Instant loginTime = user.getLastLoginAt();
 
             user.softDelete();
             user.restore();
@@ -357,14 +356,14 @@ class UserTests {
         @Test
         @DisplayName("setEmailVerificationToken sets token and timestamp")
         void setEmailVerificationTokenSetsTokenAndTimestamp() {
-            LocalDateTime beforeSet = LocalDateTime.now();
+            Instant beforeSet = Instant.now();
             user.setEmailVerificationToken(VERIFICATION_TOKEN);
-            LocalDateTime afterSet = LocalDateTime.now();
+            Instant afterSet = Instant.now();
 
             assertEquals(VERIFICATION_TOKEN, user.getEmailVerificationToken());
             assertNotNull(user.getEmailVerificationSentAt());
-            assertTrue(user.getEmailVerificationSentAt().isAfter(beforeSet.minusSeconds(1)));
-            assertTrue(user.getEmailVerificationSentAt().isBefore(afterSet.plusSeconds(1)));
+            assertTrue(user.getEmailVerificationSentAt().isAfter(beforeSet.minus(1, ChronoUnit.SECONDS)));
+            assertTrue(user.getEmailVerificationSentAt().isBefore(afterSet.plus(1, ChronoUnit.SECONDS)));
             assertFalse(user.isEmailVerified());
         }
 
@@ -396,7 +395,7 @@ class UserTests {
         @DisplayName("allows re-sending verification token")
         void allowsReSendingVerificationToken() throws InterruptedException {
             user.setEmailVerificationToken("first-token");
-            LocalDateTime firstSentAt = user.getEmailVerificationSentAt();
+            Instant firstSentAt = user.getEmailVerificationSentAt();
 
             Thread.sleep(10);
             user.setEmailVerificationToken("second-token");
@@ -413,14 +412,14 @@ class UserTests {
         @Test
         @DisplayName("setPasswordResetToken sets token and timestamp")
         void setPasswordResetTokenSetsTokenAndTimestamp() {
-            LocalDateTime beforeSet = LocalDateTime.now();
+            Instant beforeSet = Instant.now();
             user.setPasswordResetToken(RESET_TOKEN);
-            LocalDateTime afterSet = LocalDateTime.now();
+            Instant afterSet = Instant.now();
 
             assertEquals(RESET_TOKEN, user.getPasswordResetToken());
             assertNotNull(user.getPasswordResetSentAt());
-            assertTrue(user.getPasswordResetSentAt().isAfter(beforeSet.minusSeconds(1)));
-            assertTrue(user.getPasswordResetSentAt().isBefore(afterSet.plusSeconds(1)));
+            assertTrue(user.getPasswordResetSentAt().isAfter(beforeSet.minus(1, ChronoUnit.SECONDS)));
+            assertTrue(user.getPasswordResetSentAt().isBefore(afterSet.plus(1, ChronoUnit.SECONDS)));
         }
 
         @Test
@@ -450,101 +449,13 @@ class UserTests {
         @DisplayName("allows replacing reset token")
         void allowsReplacingResetToken() throws InterruptedException {
             user.setPasswordResetToken("first-token");
-            LocalDateTime firstSentAt = user.getPasswordResetSentAt();
+            Instant firstSentAt = user.getPasswordResetSentAt();
 
             Thread.sleep(10);
             user.setPasswordResetToken("second-token");
 
             assertEquals("second-token", user.getPasswordResetToken());
             assertTrue(user.getPasswordResetSentAt().isAfter(firstSentAt));
-        }
-    }
-
-    @Nested
-    @DisplayName("Deck Management Tests")
-    class DeckManagementTests {
-
-        @Test
-        @DisplayName("new user has empty deck collection")
-        void newUserHasEmptyDeckCollection() {
-            assertNotNull(user.getDecks());
-            assertTrue(user.getDecks().isEmpty());
-        }
-
-        @Test
-        @DisplayName("addDeck adds deck to user")
-        void addDeckAddsDeckToUser() {
-            Deck deck = new Deck("Citrus Fruits");
-            user.addDeck(deck);
-
-            assertTrue(user.getDecks().contains(deck));
-            assertEquals(1, user.getDecks().size());
-        }
-
-        @Test
-        @DisplayName("addDeck throws exception when deck is null")
-        void addDeckThrowsExceptionWhenDeckIsNull() {
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> user.addDeck(null)
-            );
-            assertEquals("Deck cannot be null", exception.getMessage());
-        }
-
-        @Test
-        @DisplayName("can add multiple decks")
-        void canAddMultipleDecks() {
-            Deck citrus = new Deck("Citrus Fruits");
-            Deck tropical = new Deck("Tropical Fruits");
-            Deck berries = new Deck("Berries");
-
-            user.addDeck(citrus);
-            user.addDeck(tropical);
-            user.addDeck(berries);
-
-            assertEquals(3, user.getDecks().size());
-            assertTrue(user.getDecks().contains(citrus));
-            assertTrue(user.getDecks().contains(tropical));
-            assertTrue(user.getDecks().contains(berries));
-        }
-
-        @Test
-        @DisplayName("removeDeck removes deck from user")
-        void removeDeckRemovesDeckFromUser() {
-            Deck deck = new Deck("Citrus Fruits");
-            user.addDeck(deck);
-
-            user.removeDeck(deck);
-
-            assertFalse(user.getDecks().contains(deck));
-            assertTrue(user.getDecks().isEmpty());
-        }
-
-        @Test
-        @DisplayName("removeDeck throws exception when deck is null")
-        void removeDeckThrowsExceptionWhenDeckIsNull() {
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> user.removeDeck(null)
-            );
-            assertEquals("Deck cannot be null", exception.getMessage());
-        }
-
-        @Test
-        @DisplayName("removing non-existent deck is handled gracefully")
-        void removingNonExistentDeckHandledGracefully() {
-            Deck deck = new Deck("Citrus Fruits");
-            assertDoesNotThrow(() -> user.removeDeck(deck));
-        }
-
-        @Test
-        @DisplayName("adding same deck twice does not duplicate")
-        void addingSameDeckTwiceDoesNotDuplicate() {
-            Deck deck = new Deck("Citrus Fruits");
-            user.addDeck(deck);
-            user.addDeck(deck);
-
-            assertEquals(1, user.getDecks().size());
         }
     }
 
@@ -568,8 +479,8 @@ class UserTests {
         @DisplayName("onUpdate updates timestamp and normalizes email")
         void onUpdateUpdatesTimestampAndNormalizesEmail() throws InterruptedException {
             user.onCreate();
-            LocalDateTime createdAt = user.getCreatedAt();
-            LocalDateTime initialUpdatedAt = user.getUpdatedAt();
+            Instant createdAt = user.getCreatedAt();
+            Instant initialUpdatedAt = user.getUpdatedAt();
 
             Thread.sleep(10);
             user.setEmail("BANANA@EXAMPLE.COM");
@@ -607,10 +518,10 @@ class UserTests {
         @DisplayName("users with same ID are equal")
         void usersWithSameIdAreEqual() {
             User user1 = new User("apple@example.com", PASSWORD_HASH);
-            ReflectionTestUtils.setField(user1, "id", 1L);
+            ReflectionTestUtils.setField(user1, "id", UUID.fromString("00000000-0000-0000-0000-000000000001"));
 
             User user2 = new User("banana@example.com", "differentHash");
-            ReflectionTestUtils.setField(user2, "id", 1L);
+            ReflectionTestUtils.setField(user2, "id", UUID.fromString("00000000-0000-0000-0000-000000000001"));
 
             assertEquals(user1, user2);
             assertEquals(user1.hashCode(), user2.hashCode());
@@ -620,10 +531,10 @@ class UserTests {
         @DisplayName("users with different IDs are not equal")
         void usersWithDifferentIdsAreNotEqual() {
             User user1 = new User(TEST_EMAIL, PASSWORD_HASH);
-            ReflectionTestUtils.setField(user1, "id", 1L);
+            ReflectionTestUtils.setField(user1, "id", UUID.fromString("00000000-0000-0000-0000-000000000001"));
 
             User user2 = new User(TEST_EMAIL, PASSWORD_HASH);
-            ReflectionTestUtils.setField(user2, "id", 2L);
+            ReflectionTestUtils.setField(user2, "id", UUID.fromString("00000000-0000-0000-0000-000000000002"));
 
             assertNotEquals(user1, user2);
         }
@@ -693,13 +604,13 @@ class UserTests {
     class GetterSetterTests {
 
         @Test
-        @DisplayName("getId returns null before persistence and can be set via reflection")
-        void getIdReturnsNullBeforePersistenceAndCanBeSetViaReflection() {
+        @DisplayName("getId is assigned at construction and can be set via reflection")
+        void getIdIsAssignedAtConstructionAndCanBeSetViaReflection() {
             User newUser = new User();
-            assertNull(newUser.getId());
+            assertNotNull(newUser.getId()); // UUID assigned at construction, not on insert
 
-            ReflectionTestUtils.setField(newUser, "id", 42L);
-            assertEquals(42L, newUser.getId());
+            ReflectionTestUtils.setField(newUser, "id", UUID.fromString("00000000-0000-0000-0000-000000000042"));
+            assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000042"), newUser.getId());
         }
 
         @Test
@@ -727,7 +638,7 @@ class UserTests {
         @Test
         @DisplayName("getLockedUntil and setLockedUntil work correctly")
         void getLockedUntilAndSetLockedUntilWorkCorrectly() {
-            LocalDateTime lockTime = LocalDateTime.now().plusHours(1);
+            Instant lockTime = Instant.now().plus(1, ChronoUnit.HOURS);
             user.setLockedUntil(lockTime);
             assertEquals(lockTime, user.getLockedUntil());
         }
@@ -735,7 +646,7 @@ class UserTests {
         @Test
         @DisplayName("getLastLoginAt and setLastLoginAt work correctly")
         void getLastLoginAtAndSetLastLoginAtWorkCorrectly() {
-            LocalDateTime loginTime = LocalDateTime.now();
+            Instant loginTime = Instant.now();
             user.setLastLoginAt(loginTime);
             assertEquals(loginTime, user.getLastLoginAt());
         }
@@ -766,7 +677,7 @@ class UserTests {
         void completeUserLifecycle() {
             // Create user
             User fruitFan = new User("fruitfan@example.com", PASSWORD_HASH);
-            ReflectionTestUtils.setField(fruitFan, "id", 100L);
+            ReflectionTestUtils.setField(fruitFan, "id", UUID.fromString("00000000-0000-0000-0000-000000000100"));
             assertFalse(fruitFan.isEmailVerified());
 
             // Email verification
@@ -774,10 +685,6 @@ class UserTests {
             fruitFan.verifyEmail();
             assertTrue(fruitFan.isEmailVerified());
 
-            // Add decks
-            Deck citrus = new Deck("Citrus Collection");
-            fruitFan.addDeck(citrus);
-            assertEquals(1, fruitFan.getDecks().size());
 
             // Failed login attempts
             fruitFan.recordFailedLoginAttempt();
@@ -806,46 +713,6 @@ class UserTests {
             fruitFan.restore();
             assertFalse(fruitFan.isDeleted());
             assertTrue(fruitFan.isActive());
-        }
-
-        @Test
-        @DisplayName("user with multiple decks containing cards and tags")
-        void userWithMultipleDecksContainingCardsAndTags() {
-            // Create decks
-            Deck citrusDeck = new Deck("Citrus Fruits", "All about citrus");
-            Deck tropicalDeck = new Deck("Tropical Fruits", "Exotic tropical fruits");
-
-            user.addDeck(citrusDeck);
-            user.addDeck(tropicalDeck);
-
-            // Add cards to citrus deck
-            Card orange = new Card("Orange", "A round orange citrus fruit");
-            Card lemon = new Card("Lemon", "A sour yellow citrus fruit");
-            citrusDeck.addCard(orange);
-            citrusDeck.addCard(lemon);
-
-            // Add cards to tropical deck
-            Card mango = new Card("Mango", "A sweet tropical fruit");
-            tropicalDeck.addCard(mango);
-
-            // Add tags
-            Tag sour = citrusDeck.createTag("sour");
-            lemon.addTag(sour);
-
-            Tag sweet = tropicalDeck.createTag("sweet");
-            mango.addTag(sweet);
-
-            // Verify structure
-            assertEquals(2, user.getDecks().size());
-            assertEquals(2, citrusDeck.getCardCount());
-            assertEquals(1, tropicalDeck.getCardCount());
-            assertTrue(citrusDeck.isTagInUse(sour));
-            assertTrue(tropicalDeck.isTagInUse(sweet));
-
-            // Remove one deck
-            user.removeDeck(citrusDeck);
-            assertEquals(1, user.getDecks().size());
-            assertTrue(user.getDecks().contains(tropicalDeck));
         }
 
         @Test
@@ -889,7 +756,7 @@ class UserTests {
             user.recordSuccessfulLogin();
 
             assertNotNull(user.getLastLoginAt());
-            assertTrue(user.getLastLoginAt().isBefore(LocalDateTime.now().plusSeconds(1)));
+            assertTrue(user.getLastLoginAt().isBefore(Instant.now().plus(1, ChronoUnit.SECONDS)));
         }
 
         @Test

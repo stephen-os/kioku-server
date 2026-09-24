@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * Utility class for JWT token generation and validation.
@@ -89,7 +90,7 @@ public class JwtUtil {
      * @param email the user's email address
      * @return the generated JWT token as a string
      */
-    public String generateToken(Long userId, String email) {
+    public String generateToken(UUID userId, String email) {
         logger.debug("Generating JWT token for user ID: {}", userId);
 
         Date now = new Date();
@@ -121,7 +122,7 @@ public class JwtUtil {
      * @throws SignatureException if the signature is invalid
      * @throws MalformedJwtException if the token is malformed
      */
-    public Long getUserIdFromToken(String token) {
+    public UUID getUserIdFromToken(String token) {
         logger.debug("Extracting user ID from JWT token");
 
         Claims claims = Jwts.parser()
@@ -130,7 +131,7 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload();
 
-        Long userId = Long.parseLong(claims.getSubject());
+        UUID userId = UUID.fromString(claims.getSubject());
         logger.debug("Extracted user ID: {}", userId);
 
         return userId;

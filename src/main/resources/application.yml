@@ -1,4 +1,10 @@
 spring:
+  # Schema is hand-maintained in schema.sql, applied on startup.
+  # Hibernate validates entities against it rather than generating it.
+  sql:
+    init:
+      mode: always
+
   # Database
   datasource:
     url: ${SPRING_DATASOURCE_URL}
@@ -8,7 +14,7 @@ spring:
   # Hibernate
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     open-in-view: false
     properties:

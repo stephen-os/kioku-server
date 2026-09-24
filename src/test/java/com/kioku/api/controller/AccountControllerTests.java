@@ -36,13 +36,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 /**
  * Integration tests for AccountController using RestTestClient (Spring Boot 4.0).
@@ -75,7 +77,7 @@ class AccountControllerTests {
     private static final Logger logger = LoggerFactory.getLogger(AccountControllerTests.class);
 
     // Test data constants
-    private static final Long TEST_USER_ID = 1L;
+    private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final String TEST_EMAIL = "test@example.com";
     private static final String NEW_EMAIL = "new@example.com";
     private static final String TEST_PASSWORD = "SecurePassword123!";
@@ -99,7 +101,7 @@ class AccountControllerTests {
                 @Override
                 public boolean supportsParameter(MethodParameter parameter) {
                     return parameter.getParameterAnnotation(CurrentUser.class) != null
-                            && parameter.getParameterType().equals(Long.class);
+                            && parameter.getParameterType().equals(UUID.class);
                 }
 
                 @Override
@@ -122,8 +124,8 @@ class AccountControllerTests {
         when(testUser.getEmail()).thenReturn(TEST_EMAIL);
         when(testUser.isEmailVerified()).thenReturn(true);
         when(testUser.getStatus()).thenReturn(User.UserStatus.ACTIVE);
-        when(testUser.getCreatedAt()).thenReturn(LocalDateTime.now().minusDays(30));
-        when(testUser.getLastLoginAt()).thenReturn(LocalDateTime.now());
+        when(testUser.getCreatedAt()).thenReturn(Instant.now().minus(30, ChronoUnit.DAYS));
+        when(testUser.getLastLoginAt()).thenReturn(Instant.now());
 
         client = RestTestClient.bindTo(mockMvc).build();
     }
@@ -259,7 +261,7 @@ class AccountControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(userService, never()).initiateEmailChange(anyLong(), anyString(), anyString());
+        verify(userService, never()).initiateEmailChange(any(UUID.class), anyString(), anyString());
 
         logger.debug("Test passed: Missing email rejected");
     }
@@ -279,7 +281,7 @@ class AccountControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(userService, never()).initiateEmailChange(anyLong(), anyString(), anyString());
+        verify(userService, never()).initiateEmailChange(any(UUID.class), anyString(), anyString());
 
         logger.debug("Test passed: Invalid email rejected");
     }
@@ -299,7 +301,7 @@ class AccountControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(userService, never()).initiateEmailChange(anyLong(), anyString(), anyString());
+        verify(userService, never()).initiateEmailChange(any(UUID.class), anyString(), anyString());
 
         logger.debug("Test passed: Missing password rejected");
     }
@@ -453,7 +455,7 @@ class AccountControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(userService, never()).updatePassword(anyLong(), anyString(), anyString());
+        verify(userService, never()).updatePassword(any(UUID.class), anyString(), anyString());
 
         logger.debug("Test passed: Short password rejected");
     }
@@ -473,7 +475,7 @@ class AccountControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(userService, never()).updatePassword(anyLong(), anyString(), anyString());
+        verify(userService, never()).updatePassword(any(UUID.class), anyString(), anyString());
 
         logger.debug("Test passed: Missing current password rejected");
     }
@@ -493,7 +495,7 @@ class AccountControllerTests {
                 .exchange()
                 .expectStatus().isBadRequest();
 
-        verify(userService, never()).updatePassword(anyLong(), anyString(), anyString());
+        verify(userService, never()).updatePassword(any(UUID.class), anyString(), anyString());
 
         logger.debug("Test passed: Missing new password rejected");
     }
@@ -555,7 +557,7 @@ class AccountControllerTests {
                         .content(requestJson))
                 .andExpect(status().isBadRequest());
 
-        verify(userService, never()).softDeleteAccount(anyLong(), anyString());
+        verify(userService, never()).softDeleteAccount(any(UUID.class), anyString());
 
         logger.debug("Test passed: Missing password rejected");
     }

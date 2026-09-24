@@ -7,10 +7,11 @@ import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Model representing a user account.
@@ -34,8 +35,7 @@ public class User {
      * The unique identifier for this user.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id = UUID.randomUUID();
 
     /**
      * The email address of this user.
@@ -63,7 +63,7 @@ public class User {
      * The timestamp when this user's email verification was sent, if any.
      */
     @Column(name = "email_verification_sent_at")
-    private LocalDateTime emailVerificationSentAt;
+    private Instant emailVerificationSentAt;
 
     /**
      * The new email address awaiting verification during an email change.
@@ -84,7 +84,7 @@ public class User {
      * The timestamp when the pending email verification was sent.
      */
     @Column(name = "pending_email_sent_at")
-    private LocalDateTime pendingEmailSentAt;
+    private Instant pendingEmailSentAt;
 
     /**
      * The hashed password for this user.
@@ -104,7 +104,7 @@ public class User {
      * The timestamp when this user account was reset, if any.
      */
     @Column(name = "password_reset_sent_at")
-    private LocalDateTime passwordResetSentAt;
+    private Instant passwordResetSentAt;
 
     /**
      * The status of this user account.
@@ -123,45 +123,37 @@ public class User {
      * The timestamp when this user account was locked, if any.
      */
     @Column(name = "locked_until")
-    private LocalDateTime lockedUntil;
+    private Instant lockedUntil;
 
     /**
      * The timestamp when this user last logged in.
      */
     @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
+    private Instant lastLoginAt;
 
     /**
      * The timestamp when this user was created.
      */
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     /**
      * The timestamp when this user was last updated.
      */
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     /**
      * The timestamp when this user was deleted, if any.
      */
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    private Instant deletedAt;
 
     /**
      * The version of this entity, used for optimistic locking.
      */
     @Version
     private Long version;
-
-    /**
-     * The decks owned by this user.
-     * Unidirectional relationship - decks don't know their owner.
-     */
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "user_id")
-    final private Set<Deck> decks = new HashSet<>();
 
     /**
      * JPA lifecycle callback executed before persisting a new user.
@@ -173,7 +165,7 @@ public class User {
      */
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
         if (email != null) {
@@ -192,7 +184,7 @@ public class User {
      */
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
         if (email != null) {
             email = email.toLowerCase().trim();
         }
@@ -232,7 +224,7 @@ public class User {
      * @return {@code true} if the account is locked, {@code false} otherwise
      */
     public boolean isLocked() {
-        boolean locked = lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
+        boolean locked = lockedUntil != null && lockedUntil.isAfter(Instant.now());
         logger.debug("User id={} lock status checked: locked={}, lockedUntil={}",
                 id, locked, lockedUntil);
         return locked;
@@ -284,7 +276,7 @@ public class User {
         failedLoginAttempts++;
 
         if (failedLoginAttempts >= 5) {
-            lockedUntil = LocalDateTime.now().plusMinutes(15);
+            lockedUntil = Instant.now().plus(15, ChronoUnit.MINUTES);
             logger.debug("User id={} account locked after {} failed login attempts, lockedUntil={}",
                     id, failedLoginAttempts, lockedUntil);
         } else {
@@ -307,7 +299,7 @@ public class User {
         int previousAttempts = failedLoginAttempts;
         failedLoginAttempts = 0;
         lockedUntil = null;
-        lastLoginAt = LocalDateTime.now();
+        lastLoginAt = Instant.now();
 
         logger.debug("User id={} successful login recorded: failedAttempts {} -> 0, lastLoginAt={}",
                 id, previousAttempts, lastLoginAt);
@@ -324,7 +316,7 @@ public class User {
      */
     public void softDelete() {
         UserStatus previousStatus = status;
-        deletedAt = LocalDateTime.now();
+        deletedAt = Instant.now();
         status = UserStatus.DELETED;
 
         logger.debug("User id={} soft deleted: status {} -> {}, deletedAt={}",
@@ -358,7 +350,7 @@ public class User {
      */
     public void setEmailVerificationToken(String token) {
         this.emailVerificationToken = token;
-        this.emailVerificationSentAt = LocalDateTime.now();
+        this.emailVerificationSentAt = Instant.now();
 
         logger.debug("User id={} email verification token set, sentAt={}",
                 id, emailVerificationSentAt);
@@ -394,7 +386,7 @@ public class User {
      */
     public void setPasswordResetToken(String token) {
         this.passwordResetToken = token;
-        this.passwordResetSentAt = LocalDateTime.now();
+        this.passwordResetSentAt = Instant.now();
 
         logger.debug("User id={} password reset token set, sentAt={}",
                 id, passwordResetSentAt);
@@ -426,9 +418,9 @@ public class User {
             return true;
         }
 
-        boolean expired = passwordResetSentAt.plusHours(24).isBefore(LocalDateTime.now());
+        boolean expired = passwordResetSentAt.plus(24, ChronoUnit.HOURS).isBefore(Instant.now());
         logger.debug("User id={} password reset token expired: {}, sentAt={}, expiresAt={}",
-                id, expired, passwordResetSentAt, passwordResetSentAt.plusHours(24));
+                id, expired, passwordResetSentAt, passwordResetSentAt.plus(24, ChronoUnit.HOURS));
 
         return expired;
     }
@@ -446,9 +438,9 @@ public class User {
             return true;
         }
 
-        boolean expired = emailVerificationSentAt.plusHours(24).isBefore(LocalDateTime.now());
+        boolean expired = emailVerificationSentAt.plus(24, ChronoUnit.HOURS).isBefore(Instant.now());
         logger.debug("User id={} email verification token expired: {}, sentAt={}, expiresAt={}",
-                id, expired, emailVerificationSentAt, emailVerificationSentAt.plusHours(24));
+                id, expired, emailVerificationSentAt, emailVerificationSentAt.plus(24, ChronoUnit.HOURS));
 
         return expired;
     }
@@ -462,7 +454,7 @@ public class User {
     public void setPendingEmailChange(String newEmail, String token) {
         this.pendingEmail = newEmail != null ? newEmail.toLowerCase().trim() : null;
         this.pendingEmailToken = token;
-        this.pendingEmailSentAt = LocalDateTime.now();
+        this.pendingEmailSentAt = Instant.now();
 
         logger.debug("User id={} pending email change initiated to {}, sentAt={}",
                 id, pendingEmail, pendingEmailSentAt);
@@ -508,9 +500,9 @@ public class User {
             return true;
         }
 
-        boolean expired = pendingEmailSentAt.plusHours(24).isBefore(LocalDateTime.now());
+        boolean expired = pendingEmailSentAt.plus(24, ChronoUnit.HOURS).isBefore(Instant.now());
         logger.debug("User id={} pending email token expired: {}, sentAt={}, expiresAt={}",
-                id, expired, pendingEmailSentAt, pendingEmailSentAt.plusHours(24));
+                id, expired, pendingEmailSentAt, pendingEmailSentAt.plus(24, ChronoUnit.HOURS));
 
         return expired;
     }
@@ -538,7 +530,7 @@ public class User {
      *
      * @return the timestamp, or {@code null} if no change is pending
      */
-    public LocalDateTime getPendingEmailSentAt() {
+    public Instant getPendingEmailSentAt() {
         return pendingEmailSentAt;
     }
 
@@ -549,7 +541,7 @@ public class User {
      *
      * @return the user ID, or {@code null} if not yet persisted
      */
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -560,7 +552,7 @@ public class User {
      *
      * @param id the user ID
      */
-    public void setId(Long id) {
+    public void setId(UUID id) {
         logger.debug("Setting user ID: {} -> {}", this.id, id);
         this.id = id;
     }
@@ -628,7 +620,7 @@ public class User {
      *
      * @return the timestamp when the verification token was sent, or {@code null} if not set
      */
-    public LocalDateTime getEmailVerificationSentAt() {
+    public Instant getEmailVerificationSentAt() {
         return emailVerificationSentAt;
     }
 
@@ -680,7 +672,7 @@ public class User {
      *
      * @return the timestamp when the reset token was sent, or {@code null} if not set
      */
-    public LocalDateTime getPasswordResetSentAt() {
+    public Instant getPasswordResetSentAt() {
         return passwordResetSentAt;
     }
 
@@ -733,7 +725,7 @@ public class User {
      *
      * @return the lock expiration timestamp, or {@code null} if not locked
      */
-    public LocalDateTime getLockedUntil() {
+    public Instant getLockedUntil() {
         return lockedUntil;
     }
 
@@ -742,8 +734,8 @@ public class User {
      *
      * @param lockedUntil the lock expiration timestamp
      */
-    public void setLockedUntil(LocalDateTime lockedUntil) {
-        LocalDateTime previous = this.lockedUntil;
+    public void setLockedUntil(Instant lockedUntil) {
+        Instant previous = this.lockedUntil;
         this.lockedUntil = lockedUntil;
         logger.debug("User id={} lockedUntil changed: {} -> {}", id, previous, lockedUntil);
     }
@@ -753,7 +745,7 @@ public class User {
      *
      * @return the last login timestamp, or {@code null} if never logged in
      */
-    public LocalDateTime getLastLoginAt() {
+    public Instant getLastLoginAt() {
         return lastLoginAt;
     }
 
@@ -765,8 +757,8 @@ public class User {
      *
      * @param lastLoginAt the last login timestamp
      */
-    public void setLastLoginAt(LocalDateTime lastLoginAt) {
-        LocalDateTime previous = this.lastLoginAt;
+    public void setLastLoginAt(Instant lastLoginAt) {
+        Instant previous = this.lastLoginAt;
         this.lastLoginAt = lastLoginAt;
         logger.debug("User id={} lastLoginAt changed: {} -> {}", id, previous, lastLoginAt);
     }
@@ -776,7 +768,7 @@ public class User {
      *
      * @return the creation timestamp
      */
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
@@ -785,7 +777,7 @@ public class User {
      *
      * @return the last update timestamp
      */
-    public LocalDateTime getUpdatedAt() {
+    public Instant getUpdatedAt() {
         return updatedAt;
     }
 
@@ -794,7 +786,7 @@ public class User {
      *
      * @return the deletion timestamp, or {@code null} if not deleted
      */
-    public LocalDateTime getDeletedAt() {
+    public Instant getDeletedAt() {
         return deletedAt;
     }
 
@@ -808,44 +800,6 @@ public class User {
      */
     public Long getVersion() {
         return version;
-    }
-
-    /**
-     * Gets all decks owned by this user.
-     *
-     * @return the set of decks (never null)
-     */
-    public Set<Deck> getDecks() {
-        return decks;
-    }
-
-    /**
-     * Adds a deck to this user's collection.
-     *
-     * @param deck the deck to add
-     * @throws IllegalArgumentException if deck is null
-     */
-    public void addDeck(Deck deck) {
-        if (deck == null) {
-            throw new IllegalArgumentException("Deck cannot be null");
-        }
-        this.decks.add(deck);
-        logger.debug("User id={} added deck id={}", id, deck.getId());
-    }
-
-    /**
-     * Removes a deck from this user's collection.
-     * Due to orphanRemoval=true, the removed deck will be deleted from the database.
-     *
-     * @param deck the deck to remove
-     * @throws IllegalArgumentException if deck is null
-     */
-    public void removeDeck(Deck deck) {
-        if (deck == null) {
-            throw new IllegalArgumentException("Deck cannot be null");
-        }
-        this.decks.remove(deck);
-        logger.debug("User id={} removed deck id={}", id, deck.getId());
     }
 
     /**

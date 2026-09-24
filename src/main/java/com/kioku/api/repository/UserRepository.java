@@ -6,9 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Repository interface for User entity database operations.
@@ -29,7 +30,7 @@ import java.util.Optional;
  * @since 1.0
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
     /**
      * Finds a user by email address.
@@ -105,7 +106,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return a list of locked users
      */
     @Query("SELECT u FROM User u WHERE u.lockedUntil > :now")
-    List<User> findLockedAccounts(@Param("now") LocalDateTime now);
+    List<User> findLockedAccounts(@Param("now") Instant now);
 
     /**
      * Finds all soft-deleted accounts.
@@ -133,7 +134,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.status = 'ACTIVE' " +
             "AND u.deletedAt IS NULL " +
             "AND (u.lockedUntil IS NULL OR u.lockedUntil < :now)")
-    List<User> findActiveAccounts(@Param("now") LocalDateTime now);
+    List<User> findActiveAccounts(@Param("now") Instant now);
 
     /**
      * Finds users by email verification status.
@@ -152,5 +153,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return the number of users created after the given date
      */
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt > :date")
-    long countUsersCreatedAfter(@Param("date") LocalDateTime date);
+    long countUsersCreatedAfter(@Param("date") Instant date);
 }

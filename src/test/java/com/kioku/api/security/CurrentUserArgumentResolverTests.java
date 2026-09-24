@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
+import java.util.UUID;
 
 /**
  * Unit tests for CurrentUserArgumentResolver.
@@ -40,7 +41,7 @@ class CurrentUserArgumentResolverTests {
     private static final Logger logger = LoggerFactory.getLogger(CurrentUserArgumentResolverTests.class);
 
     // Test data constants
-    private static final Long TEST_USER_ID = 1L;
+    private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     @Mock
     private MethodParameter mockParameter;
@@ -63,15 +64,15 @@ class CurrentUserArgumentResolverTests {
     // Parameter Support Tests
 
     /**
-     * Tests that resolver supports parameter with @CurrentUser and Long type.
+     * Tests that resolver supports parameter with @CurrentUser and UUID type.
      */
     @Test
-    @DisplayName("Should support parameter with @CurrentUser annotation and Long type")
-    void testSupportsParameterWithAnnotationAndLongType() {
-        logger.debug("Test: Checking parameter support with annotation and Long type");
+    @DisplayName("Should support parameter with @CurrentUser annotation and UUID type")
+    void testSupportsParameterWithAnnotationAndUuidType() {
+        logger.debug("Test: Checking parameter support with annotation and UUID type");
 
         when(mockParameter.getParameterAnnotation(CurrentUser.class)).thenReturn(mockCurrentUserAnnotation);
-        when(mockParameter.getParameterType()).thenReturn((Class) Long.class);
+        when(mockParameter.getParameterType()).thenReturn((Class) UUID.class);
 
         boolean supports = resolver.supportsParameter(mockParameter);
 
@@ -89,7 +90,7 @@ class CurrentUserArgumentResolverTests {
         logger.debug("Test: Checking parameter support without annotation");
 
         when(mockParameter.getParameterAnnotation(CurrentUser.class)).thenReturn(null);
-        when(mockParameter.getParameterType()).thenReturn((Class) Long.class);
+        when(mockParameter.getParameterType()).thenReturn((Class) UUID.class);
 
         boolean supports = resolver.supportsParameter(mockParameter);
 
@@ -182,8 +183,8 @@ class CurrentUserArgumentResolverTests {
     void testResolveDifferentUserIds() {
         logger.debug("Test: Resolving different user IDs");
 
-        Long userId1 = 123L;
-        Long userId2 = 456L;
+        UUID userId1 = UUID.fromString("00000000-0000-0000-0000-000000000123");
+        UUID userId2 = UUID.fromString("00000000-0000-0000-0000-000000000456");
 
         // Test first user ID
         Authentication auth1 = new UsernamePasswordAuthenticationToken(userId1, null, new ArrayList<>());
@@ -228,7 +229,7 @@ class CurrentUserArgumentResolverTests {
     void testResolveWithLargeUserId() {
         logger.debug("Test: Resolving with large user ID");
 
-        Long largeUserId = Long.MAX_VALUE;
+        UUID largeUserId = new UUID(-1L, -1L);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 largeUserId, null, new ArrayList<>());
         SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 /**
  * Unit tests for UserService.
@@ -55,7 +57,7 @@ class UserServiceTests {
     private static final String PLAIN_PASSWORD = "Password123!";
     private static final String PASSWORD_HASH = "$2a$10$hashedPassword123";
     private static final String OTHER_PASSWORD_HASH = "$2a$10$otherHashedPassword456";
-    private static final Long USER_ID = 1L;
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final String VERIFICATION_TOKEN = "verification-token-uuid-12345";
     private static final String RESET_TOKEN = "reset-token-uuid-67890";
 
@@ -308,7 +310,7 @@ class UserServiceTests {
         logger.debug("Test: Authenticating locked user");
 
         when(testUser.isLocked()).thenReturn(true);
-        when(testUser.getLockedUntil()).thenReturn(LocalDateTime.now().plusHours(1));
+        when(testUser.getLockedUntil()).thenReturn(Instant.now().plus(1, ChronoUnit.HOURS));
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -672,7 +674,7 @@ class UserServiceTests {
         logger.debug("Test: Unlocking user id={}", USER_ID);
 
         when(testUser.isLocked()).thenReturn(true);
-        when(testUser.getLockedUntil()).thenReturn(LocalDateTime.now().plusHours(1));
+        when(testUser.getLockedUntil()).thenReturn(Instant.now().plus(1, ChronoUnit.HOURS));
         when(testUser.getFailedLoginAttempts()).thenReturn(5);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.UUID;
 
 /**
  * Unit tests for JwtUtil.
@@ -33,7 +34,7 @@ class JwtUtilTests {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtilTests.class);
 
     // Test data constants
-    private static final Long TEST_USER_ID = 1L;
+    private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_SECRET = "ThisIsAVerySecureSecretKeyForTestingPurposesOnly123456789";
     private static final Long TEST_EXPIRATION = 3600000L; // 1 hour
@@ -100,8 +101,8 @@ class JwtUtilTests {
     void testGenerateTokensForDifferentUsers() {
         logger.debug("Test: Generating tokens for different users");
 
-        String token1 = jwtUtil.generateToken(1L, "user1@example.com");
-        String token2 = jwtUtil.generateToken(2L, "user2@example.com");
+        String token1 = jwtUtil.generateToken(UUID.randomUUID(), "user1@example.com");
+        String token2 = jwtUtil.generateToken(UUID.randomUUID(), "user2@example.com");
 
         assertNotNull(token1);
         assertNotNull(token2);
@@ -252,7 +253,7 @@ class JwtUtilTests {
         logger.debug("Test: Extracting user ID from token");
 
         String token = jwtUtil.generateToken(TEST_USER_ID, TEST_EMAIL);
-        Long extractedUserId = jwtUtil.getUserIdFromToken(token);
+        UUID extractedUserId = jwtUtil.getUserIdFromToken(token);
 
         assertNotNull(extractedUserId);
         assertEquals(TEST_USER_ID, extractedUserId);
@@ -268,8 +269,8 @@ class JwtUtilTests {
     void testGetUserIdFromDifferentTokens() {
         logger.debug("Test: Extracting different user IDs");
 
-        Long userId1 = 123L;
-        Long userId2 = 456L;
+        UUID userId1 = UUID.fromString("00000000-0000-0000-0000-000000000123");
+        UUID userId2 = UUID.fromString("00000000-0000-0000-0000-000000000456");
 
         String token1 = jwtUtil.generateToken(userId1, "user1@example.com");
         String token2 = jwtUtil.generateToken(userId2, "user2@example.com");
@@ -357,7 +358,7 @@ class JwtUtilTests {
     void testGenerateTokenWithLargeUserId() {
         logger.debug("Test: Generating token with large user ID");
 
-        Long largeUserId = Long.MAX_VALUE;
+        UUID largeUserId = new UUID(-1L, -1L);
         String token = jwtUtil.generateToken(largeUserId, TEST_EMAIL);
 
         assertNotNull(token);

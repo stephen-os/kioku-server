@@ -10,13 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.UUID;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Integration tests for UserRepository.
@@ -110,7 +112,7 @@ class UserRepositoryTests {
     void testFindByIdNotFound() {
         logger.debug("Test: Finding non-existent user by ID");
 
-        Optional<User> found = userRepository.findById(999L);
+        Optional<User> found = userRepository.findById(UUID.randomUUID());
 
         assertFalse(found.isPresent());
 
@@ -127,7 +129,7 @@ class UserRepositoryTests {
 
         User user = new User(TEST_EMAIL, PASSWORD_HASH);
         User savedUser = userRepository.save(user);
-        Long userId = savedUser.getId();
+        UUID userId = savedUser.getId();
 
         userRepository.delete(savedUser);
 
@@ -367,17 +369,17 @@ class UserRepositoryTests {
         logger.debug("Test: Finding locked accounts");
 
         User lockedUser = new User(TEST_EMAIL, PASSWORD_HASH);
-        lockedUser.setLockedUntil(LocalDateTime.now().plusHours(1));
+        lockedUser.setLockedUntil(Instant.now().plus(1, ChronoUnit.HOURS));
         userRepository.save(lockedUser);
 
         User unlockedUser = new User(OTHER_EMAIL, PASSWORD_HASH);
         userRepository.save(unlockedUser);
 
         User expiredLockUser = new User(THIRD_EMAIL, PASSWORD_HASH);
-        expiredLockUser.setLockedUntil(LocalDateTime.now().minusHours(1));
+        expiredLockUser.setLockedUntil(Instant.now().minus(1, ChronoUnit.HOURS));
         userRepository.save(expiredLockUser);
 
-        List<User> lockedAccounts = userRepository.findLockedAccounts(LocalDateTime.now());
+        List<User> lockedAccounts = userRepository.findLockedAccounts(Instant.now());
 
         assertEquals(1, lockedAccounts.size());
         assertEquals(TEST_EMAIL, lockedAccounts.get(0).getEmail());
@@ -426,10 +428,10 @@ class UserRepositoryTests {
 
         User lockedUser = new User(THIRD_EMAIL, PASSWORD_HASH);
         lockedUser.setStatus(User.UserStatus.ACTIVE);
-        lockedUser.setLockedUntil(LocalDateTime.now().plusHours(1));
+        lockedUser.setLockedUntil(Instant.now().plus(1, ChronoUnit.HOURS));
         userRepository.save(lockedUser);
 
-        List<User> activeAccounts = userRepository.findActiveAccounts(LocalDateTime.now());
+        List<User> activeAccounts = userRepository.findActiveAccounts(Instant.now());
 
         assertEquals(1, activeAccounts.size());
         assertEquals(TEST_EMAIL, activeAccounts.get(0).getEmail());
@@ -453,7 +455,7 @@ class UserRepositoryTests {
         User user2 = new User(OTHER_EMAIL, PASSWORD_HASH);
         userRepository.save(user2);
 
-        LocalDateTime cutoffDate = LocalDateTime.now().minusHours(1);
+        Instant cutoffDate = Instant.now().minus(1, ChronoUnit.HOURS);
         long count = userRepository.countUsersCreatedAfter(cutoffDate);
 
         assertEquals(2, count);
@@ -472,7 +474,7 @@ class UserRepositoryTests {
         User user = new User(TEST_EMAIL, PASSWORD_HASH);
         userRepository.save(user);
 
-        LocalDateTime futureCutoff = LocalDateTime.now().plusHours(1);
+        Instant futureCutoff = Instant.now().plus(1, ChronoUnit.HOURS);
         long count = userRepository.countUsersCreatedAfter(futureCutoff);
 
         assertEquals(0, count);
@@ -512,8 +514,8 @@ class UserRepositoryTests {
         User user = new User(TEST_EMAIL, PASSWORD_HASH);
         User savedUser = userRepository.save(user);
         userRepository.flush();
-        Long userId = savedUser.getId();
-        LocalDateTime originalUpdatedAt = savedUser.getUpdatedAt();
+        UUID userId = savedUser.getId();
+        Instant originalUpdatedAt = savedUser.getUpdatedAt();
 
         await().pollDelay(100, MILLISECONDS).until(() -> true);
 

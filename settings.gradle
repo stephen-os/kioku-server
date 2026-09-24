@@ -1,1 +1,8 @@
-rootProject.name = 'kioku-api'
+// Lets Gradle download a JDK matching the toolchain in build.gradle (Java 25)
+// when the machine does not have one. Keeps local builds and CI working
+// without a manual JDK install.
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'kioku-server'
