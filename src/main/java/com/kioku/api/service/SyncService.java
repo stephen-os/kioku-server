@@ -137,21 +137,27 @@ public class SyncService {
                 .orElseGet(() -> syncStateRepository.save(new UserSyncState(userId)));
         long seq = state.nextSeq();
 
-        SyncPayload rejected = new SyncPayload(
-                apply(deckRepository, incoming.decks(), userId, seq, ceiling,
-                        DeckDto::id, DeckDto::updatedAt, Deck::new, SyncService::write, SyncService::toDto),
-                apply(tagRepository, incoming.tags(), userId, seq, ceiling,
-                        TagDto::id, TagDto::updatedAt, Tag::new, SyncService::write, SyncService::toDto),
-                apply(cardRepository, incoming.cards(), userId, seq, ceiling,
-                        CardDto::id, CardDto::updatedAt, Card::new, SyncService::write, SyncService::toDto),
-                apply(quizRepository, incoming.quizzes(), userId, seq, ceiling,
-                        QuizDto::id, QuizDto::updatedAt, Quiz::new, SyncService::write, SyncService::toDto),
-                apply(questionRepository, incoming.questions(), userId, seq, ceiling,
-                        QuestionDto::id, QuestionDto::updatedAt, Question::new, SyncService::write, SyncService::toDto),
-                apply(studySessionRepository, incoming.studySessions(), userId, seq, ceiling,
-                        StudySessionDto::id, StudySessionDto::updatedAt, StudySession::new, SyncService::write, SyncService::toDto),
-                apply(quizAttemptRepository, incoming.quizAttempts(), userId, seq, ceiling,
-                        QuizAttemptDto::id, QuizAttemptDto::updatedAt, QuizAttempt::new, SyncService::write, SyncService::toDto));
+        // Dependency order, not payload order. Tags reference a deck or a quiz,
+        // and cards and questions reference tags, so a batch creating a quiz
+        // and its tags together would violate a foreign key if written in the
+        // order the record happens to declare.
+        List<DeckDto> rejectedDecks = apply(deckRepository, incoming.decks(), userId, seq, ceiling,
+                DeckDto::id, DeckDto::updatedAt, Deck::new, SyncService::write, SyncService::toDto);
+        List<QuizDto> rejectedQuizzes = apply(quizRepository, incoming.quizzes(), userId, seq, ceiling,
+                QuizDto::id, QuizDto::updatedAt, Quiz::new, SyncService::write, SyncService::toDto);
+        List<TagDto> rejectedTags = apply(tagRepository, incoming.tags(), userId, seq, ceiling,
+                TagDto::id, TagDto::updatedAt, Tag::new, SyncService::write, SyncService::toDto);
+        List<CardDto> rejectedCards = apply(cardRepository, incoming.cards(), userId, seq, ceiling,
+                CardDto::id, CardDto::updatedAt, Card::new, SyncService::write, SyncService::toDto);
+        List<QuestionDto> rejectedQuestions = apply(questionRepository, incoming.questions(), userId, seq, ceiling,
+                QuestionDto::id, QuestionDto::updatedAt, Question::new, SyncService::write, SyncService::toDto);
+        List<StudySessionDto> rejectedSessions = apply(studySessionRepository, incoming.studySessions(), userId, seq, ceiling,
+                StudySessionDto::id, StudySessionDto::updatedAt, StudySession::new, SyncService::write, SyncService::toDto);
+        List<QuizAttemptDto> rejectedAttempts = apply(quizAttemptRepository, incoming.quizAttempts(), userId, seq, ceiling,
+                QuizAttemptDto::id, QuizAttemptDto::updatedAt, QuizAttempt::new, SyncService::write, SyncService::toDto);
+
+        SyncPayload rejected = new SyncPayload(rejectedDecks, rejectedTags, rejectedCards,
+                rejectedQuizzes, rejectedQuestions, rejectedSessions, rejectedAttempts);
 
         syncStateRepository.save(state);
 
@@ -248,6 +254,7 @@ public class SyncService {
 
     private static void write(Tag e, TagDto d) {
         e.setDeckId(d.deckId());
+        e.setQuizId(d.quizId());
         e.setName(d.name());
         e.setPosition(d.position());
         e.setDeletedAt(d.deletedAt());
@@ -319,7 +326,7 @@ public class SyncService {
     }
 
     static TagDto toDto(Tag t) {
-        return new TagDto(t.getId(), t.getDeckId(), t.getName(), t.getPosition(),
+        return new TagDto(t.getId(), t.getDeckId(), t.getQuizId(), t.getName(), t.getPosition(),
                 t.getCreatedAt(), t.getUpdatedAt(), t.getDeletedAt(), t.getServerSeq());
     }
 

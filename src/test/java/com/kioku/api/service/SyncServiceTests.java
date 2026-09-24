@@ -284,8 +284,8 @@ class SyncServiceTests {
 
             syncService.push(userId, of(p -> {
                 p.decks = List.of(deck(deckId, "Tagged", now, null));
-                p.tags = List.of(new TagDto(tagA, deckId, "alpha", 0, now, now, null, 0L),
-                                 new TagDto(tagB, deckId, "beta", 1, now, now, null, 0L));
+                p.tags = List.of(new TagDto(tagA, deckId, null, "alpha", 0, now, now, null, 0L),
+                                 new TagDto(tagB, deckId, null, "beta", 1, now, now, null, 0L));
                 p.cards = List.of(card(UUID.randomUUID(), deckId, "Q", now, new UUID[]{tagA, tagB}));
             }));
 
@@ -344,6 +344,30 @@ class SyncServiceTests {
                     of(p -> p.questions = List.of(question(questionId, quizId, stale, List.of()))));
 
             assertThat(response.rejected().questions()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("a question carries tags scoped to its quiz, not to a deck")
+        void questionTagsAreQuizScoped() {
+            UUID quizId = UUID.randomUUID();
+            UUID tagId = UUID.randomUUID();
+            Instant now = Instant.now();
+
+            syncService.push(userId, of(p -> {
+                p.quizzes = List.of(quiz(quizId, "Scoped", now));
+                p.tags = List.of(new TagDto(tagId, null, quizId, "tricky", 0, now, now, null, 0L));
+                p.questions = List.of(new QuestionDto(UUID.randomUUID(), quizId,
+                        QuestionType.FILL_IN_BLANK, "Blank?", ContentType.TEXT, null,
+                        "answer", false, null, 0, List.of(), new UUID[]{tagId},
+                        now, now, null, 0L));
+            }));
+
+            SyncPayload changes = syncService.pull(userId, 0).changes();
+
+            assertThat(changes.tags()).hasSize(1);
+            assertThat(changes.tags().getFirst().quizId()).isEqualTo(quizId);
+            assertThat(changes.tags().getFirst().deckId()).isNull();
+            assertThat(changes.questions().getFirst().tagIds()).containsExactly(tagId);
         }
 
         @Test

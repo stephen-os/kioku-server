@@ -80,30 +80,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_decks_user_name
     ON decks (user_id, name) WHERE deleted_at IS NULL;
 
 -- ============================================================
--- Tags
--- ============================================================
--- Scoped to a deck, as on the desktop. Card membership lives on the card as
--- an array rather than in a join table; see below.
-
-CREATE TABLE IF NOT EXISTS tags (
-    id         uuid         PRIMARY KEY,
-    user_id    uuid         NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    deck_id    uuid         NOT NULL REFERENCES decks (id) ON DELETE CASCADE,
-    name       varchar(100) NOT NULL,
-    position   integer      NOT NULL DEFAULT 0,
-    created_at timestamptz  NOT NULL,
-    updated_at timestamptz  NOT NULL,
-    deleted_at timestamptz,
-    server_seq bigint       NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS ix_tags_sync ON tags (user_id, server_seq);
-CREATE INDEX IF NOT EXISTS ix_tags_deck ON tags (deck_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS ux_tags_deck_name
-    ON tags (deck_id, name) WHERE deleted_at IS NULL;
-
--- ============================================================
 -- Cards
 -- ============================================================
 
@@ -160,6 +136,41 @@ CREATE INDEX IF NOT EXISTS ix_quizzes_sync ON quizzes (user_id, server_seq);
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_quizzes_user_name
     ON quizzes (user_id, name) WHERE deleted_at IS NULL;
+
+-- ============================================================
+-- Tags
+-- ============================================================
+-- One tag entity, two scopes. Cards draw from their deck's tags and questions
+-- from their quiz's, exactly as the desktop always meant: it kept separate
+-- `tags` and `quiz_tags` tables for the same idea.
+--
+-- Defined after quizzes because it references both containers.
+
+CREATE TABLE IF NOT EXISTS tags (
+    id         uuid         PRIMARY KEY,
+    user_id    uuid         NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    deck_id    uuid         REFERENCES decks (id) ON DELETE CASCADE,
+    quiz_id    uuid         REFERENCES quizzes (id) ON DELETE CASCADE,
+    name       varchar(100) NOT NULL,
+    position   integer      NOT NULL DEFAULT 0,
+    created_at timestamptz  NOT NULL,
+    updated_at timestamptz  NOT NULL,
+    deleted_at timestamptz,
+    server_seq bigint       NOT NULL,
+    -- Exactly one scope. A tag belonging to both, or to neither, has no
+    -- meaning and would leave cards and questions drawing from the same pool.
+    CONSTRAINT tags_one_scope CHECK ((deck_id IS NULL) != (quiz_id IS NULL))
+);
+
+CREATE INDEX IF NOT EXISTS ix_tags_sync ON tags (user_id, server_seq);
+CREATE INDEX IF NOT EXISTS ix_tags_deck ON tags (deck_id) WHERE deck_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS ix_tags_quiz ON tags (quiz_id) WHERE quiz_id IS NOT NULL;
+
+-- Names are unique within a container, per scope.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tags_deck_name
+    ON tags (deck_id, name) WHERE deleted_at IS NULL AND deck_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tags_quiz_name
+    ON tags (quiz_id, name) WHERE deleted_at IS NULL AND quiz_id IS NOT NULL;
 
 -- Questions carry their choices inline as jsonb rather than in a child table.
 -- A choice is never independently meaningful and is always edited alongside

@@ -34,9 +34,14 @@ makes question edits atomic.
 
 **Tag membership is an array on the entity, not a join table.** The desktop has
 `card_tags`, `quiz_tags` and `question_tags`. Syncing join rows means syncing
-relationships, which conflict in ways entities do not. Instead a Card carries
-`tag_ids: uuid[]`, and retagging is an ordinary card edit under LWW. `Tag`
-remains an entity because it has a name worth editing.
+relationships, which conflict in ways entities do not. Instead a Card or
+Question carries `tag_ids: uuid[]`, and retagging is an ordinary edit under
+LWW. `Tag` remains an entity because it has a name worth editing.
+
+A tag is scoped to exactly one container, a deck or a quiz, enforced by a check
+constraint. Cards draw from their deck's tags and questions from their quiz's,
+which is what the desktop's separate `tags` and `quiz_tags` tables meant. One
+entity with two scopes rather than two entities keeps the sync surface smaller.
 
 **Favorites are a boolean column.** The desktop used join tables because a
 local install had several local profiles sharing one deck table. Server-side,
@@ -124,6 +129,11 @@ On receiving an entity, the server compares against its stored copy:
 3. `incoming.updated_at < stored.updated_at` → reject, return the stored copy.
 4. Equal timestamps → tie-break on `id` lexicographically, so every node
    reaches the same answer without coordination.
+
+Writes within a push follow dependency order (decks and quizzes, then tags,
+then cards and questions), not the order the payload declares them. A batch
+that creates a quiz and its tags together would otherwise violate a foreign
+key.
 
 Deletes are ordinary updates that set `deleted_at`. So the edit-beats-delete
 rule needs no special case: an edit with a later `updated_at` than the delete

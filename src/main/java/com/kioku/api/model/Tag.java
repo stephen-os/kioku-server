@@ -9,18 +9,27 @@ import java.util.UUID;
 
 
 /**
- * A tag, scoped to a deck.
+ * A tag, scoped to exactly one container: a deck or a quiz.
  *
- * <p>Card membership is not stored here. A card carries the tag ids it uses in
- * {@link Card#getTagIds()}, so retagging is an ordinary card edit resolved by
- * the same last-write-wins rule as any other field.
+ * <p>Cards draw from their deck's tags and questions from their quiz's. The
+ * desktop kept two tables for this; here it is one entity with two scopes, so
+ * only one type has to sync.
+ *
+ * <p>Membership is not stored here. A card or question carries the tag ids it
+ * uses, so retagging is an ordinary field edit resolved by the same
+ * last-write-wins rule.
  */
 @Entity
 @Table(name = "tags")
 public class Tag extends SyncableEntity {
 
-    @Column(name = "deck_id", nullable = false)
+    /** Set when this tag belongs to a deck. Mutually exclusive with quizId. */
+    @Column(name = "deck_id")
     private UUID deckId;
+
+    /** Set when this tag belongs to a quiz. Mutually exclusive with deckId. */
+    @Column(name = "quiz_id")
+    private UUID quizId;
 
     @NotBlank(message = "Tag name is required")
     @Size(max = 100, message = "Tag name must not exceed 100 characters")
@@ -36,6 +45,9 @@ public class Tag extends SyncableEntity {
 
     public UUID getDeckId() { return deckId; }
     public void setDeckId(UUID deckId) { this.deckId = deckId; }
+
+    public UUID getQuizId() { return quizId; }
+    public void setQuizId(UUID quizId) { this.quizId = quizId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
