@@ -3,6 +3,7 @@ package com.kioku.api.config;
 import com.kioku.api.security.JwtAuthenticationFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -117,9 +118,10 @@ public class SecurityConfig {
      * @throws Exception if configuration fails
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -154,15 +156,18 @@ public class SecurityConfig {
      * </ul>
      *
      * @return the CORS configuration source
-     * @throws IllegalStateException if FRONTEND_URL environment variable is not set
+     * @throws IllegalStateException if frontend.url is not set
      */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${frontend.url:}") String frontendUrl) {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        String frontendUrl = System.getenv("FRONTEND_URL");
+        // Bound as a property rather than read from System.getenv directly, so
+        // it can be set per environment and in tests. Spring still maps the
+        // FRONTEND_URL environment variable onto frontend.url in production.
         if (frontendUrl == null || frontendUrl.isEmpty()) {
-            throw new IllegalStateException("FRONTEND_URL environment variable must be set");
+            throw new IllegalStateException("frontend.url (FRONTEND_URL) must be set");
         }
 
         logger.info("CORS configured for frontend: {}", frontendUrl);

@@ -33,7 +33,8 @@ public class Deck extends SyncableEntity {
     @Column(name = "is_favorite", nullable = false)
     private boolean favorite = false;
 
-    protected Deck() {
+    /** JPA, and sync when it materialises an entity it has not seen before. */
+    public Deck() {
     }
 
     public String getName() { return name; }

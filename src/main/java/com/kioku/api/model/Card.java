@@ -69,7 +69,8 @@ public class Card extends SyncableEntity {
     @Column(name = "tag_ids", nullable = false, columnDefinition = "uuid[]")
     private UUID[] tagIds = new UUID[0];
 
-    protected Card() {
+    /** JPA, and sync when it materialises an entity it has not seen before. */
+    public Card() {
     }
 
     public UUID getDeckId() { return deckId; }

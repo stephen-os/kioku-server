@@ -30,7 +30,8 @@ public class Tag extends SyncableEntity {
     @Column(nullable = false)
     private int position = 0;
 
-    protected Tag() {
+    /** JPA, and sync when it materialises an entity it has not seen before. */
+    public Tag() {
     }
 
     public UUID getDeckId() { return deckId; }

@@ -37,6 +37,10 @@ logging:
     com.kioku.api: INFO
     org.hibernate.SQL: WARN
 
+# CORS origin. Production supplies this as the FRONTEND_URL env var.
+frontend:
+  url: http://localhost:3000
+
 # JWT Configuration
 jwt:
   secret: test-secret-key-that-is-long-enough-for-jwt-signing-algorithm-256-bits
