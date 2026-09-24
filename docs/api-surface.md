@@ -61,7 +61,7 @@ Two endpoints carry all content, for every client.
 #### Pull
 
 ```
-GET /sync?since=4783
+GET /api/sync?since=4783
 ```
 
 Returns every entity owned by the caller whose `server_seq` is greater than
@@ -79,11 +79,11 @@ means a full sync.
   "studySessions": [ … ],
   "quizAttempts":  [ … ]
 }
+```
 
 A client may omit any type it has no changes for; missing lists are treated as
 empty. Questions carry their choices inline, and attempts carry their
 per-question results inline, so neither needs its own collection.
-```
 
 A `since` older than the tombstone horizon (90 days) is answered with
 `409 Conflict` and a full-resync instruction, because deletions the client
@@ -92,7 +92,7 @@ never saw may already have been purged.
 #### Push
 
 ```
-POST /sync
+POST /api/sync
 ```
 
 ```json
