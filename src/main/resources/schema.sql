@@ -138,3 +138,99 @@ CREATE INDEX IF NOT EXISTS ix_cards_deck ON cards (deck_id, position);
 
 -- Lets "which cards carry this tag" stay a single indexed lookup.
 CREATE INDEX IF NOT EXISTS ix_cards_tag_ids ON cards USING gin (tag_ids);
+
+-- ============================================
+-- Quizzes
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS quizzes (
+    id                uuid          PRIMARY KEY,
+    user_id           uuid          NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    name              varchar(255)  NOT NULL,
+    description       varchar(1000) NOT NULL DEFAULT '',
+    shuffle_questions boolean       NOT NULL DEFAULT false,
+    is_favorite       boolean       NOT NULL DEFAULT false,
+    created_at        timestamptz   NOT NULL,
+    updated_at        timestamptz   NOT NULL,
+    deleted_at        timestamptz,
+    server_seq        bigint        NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_quizzes_sync ON quizzes (user_id, server_seq);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_quizzes_user_name
+    ON quizzes (user_id, name) WHERE deleted_at IS NULL;
+
+-- Questions carry their choices inline as jsonb rather than in a child table.
+-- A choice is never independently meaningful and is always edited alongside
+-- its question, so inlining makes a question edit atomic and removes an entity
+-- from the sync surface.
+CREATE TABLE IF NOT EXISTS questions (
+    id               uuid          PRIMARY KEY,
+    user_id          uuid          NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    quiz_id          uuid          NOT NULL REFERENCES quizzes (id) ON DELETE CASCADE,
+    question_type    varchar(20)   NOT NULL,
+    content          text          NOT NULL,
+    content_type     varchar(10)   NOT NULL DEFAULT 'TEXT',
+    content_language varchar(20),
+    correct_answer   text,
+    multiple_answers boolean       NOT NULL DEFAULT false,
+    explanation      text,
+    position         integer       NOT NULL DEFAULT 0,
+    choices          jsonb         NOT NULL DEFAULT '[]',
+    tag_ids          uuid[]        NOT NULL DEFAULT '{}',
+    created_at       timestamptz   NOT NULL,
+    updated_at       timestamptz   NOT NULL,
+    deleted_at       timestamptz,
+    server_seq       bigint        NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_questions_sync ON questions (user_id, server_seq);
+CREATE INDEX IF NOT EXISTS ix_questions_quiz ON questions (quiz_id, position);
+CREATE INDEX IF NOT EXISTS ix_questions_tag_ids ON questions USING gin (tag_ids);
+
+-- ============================================
+-- Progress
+-- ============================================
+-- Records of things that happened. They carry the same sync columns as
+-- content, but in practice two devices never produce conflicting versions of
+-- the same event, so the last-write-wins rule almost never fires here.
+
+CREATE TABLE IF NOT EXISTS study_sessions (
+    id               uuid        PRIMARY KEY,
+    user_id          uuid        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    deck_id          uuid        NOT NULL REFERENCES decks (id) ON DELETE CASCADE,
+    started_at       timestamptz NOT NULL,
+    ended_at         timestamptz,
+    duration_seconds integer,
+    cards_studied    integer     NOT NULL DEFAULT 0,
+    created_at       timestamptz NOT NULL,
+    updated_at       timestamptz NOT NULL,
+    deleted_at       timestamptz,
+    server_seq       bigint      NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_study_sessions_sync ON study_sessions (user_id, server_seq);
+CREATE INDEX IF NOT EXISTS ix_study_sessions_deck ON study_sessions (deck_id, started_at);
+
+-- Per-question results are inline for the same reason as choices: they are
+-- only meaningful as part of the attempt that produced them.
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+    id               uuid        PRIMARY KEY,
+    user_id          uuid        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    quiz_id          uuid        NOT NULL REFERENCES quizzes (id) ON DELETE CASCADE,
+    started_at       timestamptz NOT NULL,
+    completed_at     timestamptz,
+    duration_seconds integer,
+    total_questions  integer     NOT NULL DEFAULT 0,
+    correct_answers  integer     NOT NULL DEFAULT 0,
+    score_percentage real        NOT NULL DEFAULT 0,
+    question_results jsonb       NOT NULL DEFAULT '[]',
+    created_at       timestamptz NOT NULL,
+    updated_at       timestamptz NOT NULL,
+    deleted_at       timestamptz,
+    server_seq       bigint      NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_quiz_attempts_sync ON quiz_attempts (user_id, server_seq);
+CREATE INDEX IF NOT EXISTS ix_quiz_attempts_quiz ON quiz_attempts (quiz_id, completed_at);

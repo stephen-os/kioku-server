@@ -2,17 +2,30 @@ package com.kioku.api.service;
 
 import com.kioku.api.dto.sync.CardDto;
 import com.kioku.api.dto.sync.DeckDto;
+import com.kioku.api.dto.sync.QuestionDto;
+import com.kioku.api.dto.sync.QuizAttemptDto;
+import com.kioku.api.dto.sync.QuizDto;
+import com.kioku.api.dto.sync.StudySessionDto;
 import com.kioku.api.dto.sync.SyncPayload;
 import com.kioku.api.dto.sync.SyncPullResponse;
 import com.kioku.api.dto.sync.SyncPushResponse;
 import com.kioku.api.dto.sync.TagDto;
 import com.kioku.api.model.Card;
 import com.kioku.api.model.Deck;
+import com.kioku.api.model.Question;
+import com.kioku.api.model.Quiz;
+import com.kioku.api.model.QuizAttempt;
+import com.kioku.api.model.StudySession;
 import com.kioku.api.model.SyncableEntity;
 import com.kioku.api.model.Tag;
 import com.kioku.api.model.UserSyncState;
 import com.kioku.api.repository.CardRepository;
 import com.kioku.api.repository.DeckRepository;
+import com.kioku.api.repository.QuestionRepository;
+import com.kioku.api.repository.QuizAttemptRepository;
+import com.kioku.api.repository.QuizRepository;
+import com.kioku.api.repository.StudySessionRepository;
+import com.kioku.api.repository.SyncRepository;
 import com.kioku.api.repository.TagRepository;
 import com.kioku.api.repository.UserSyncStateRepository;
 import org.slf4j.Logger;
@@ -26,6 +39,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Reconciles a client's local replica with the server.
@@ -50,15 +66,27 @@ public class SyncService {
     private final DeckRepository deckRepository;
     private final TagRepository tagRepository;
     private final CardRepository cardRepository;
+    private final QuizRepository quizRepository;
+    private final QuestionRepository questionRepository;
+    private final StudySessionRepository studySessionRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
     private final UserSyncStateRepository syncStateRepository;
 
     public SyncService(DeckRepository deckRepository,
                        TagRepository tagRepository,
                        CardRepository cardRepository,
+                       QuizRepository quizRepository,
+                       QuestionRepository questionRepository,
+                       StudySessionRepository studySessionRepository,
+                       QuizAttemptRepository quizAttemptRepository,
                        UserSyncStateRepository syncStateRepository) {
         this.deckRepository = deckRepository;
         this.tagRepository = tagRepository;
         this.cardRepository = cardRepository;
+        this.quizRepository = quizRepository;
+        this.questionRepository = questionRepository;
+        this.studySessionRepository = studySessionRepository;
+        this.quizAttemptRepository = quizAttemptRepository;
         this.syncStateRepository = syncStateRepository;
     }
 
@@ -73,24 +101,21 @@ public class SyncService {
      */
     @Transactional(readOnly = true)
     public SyncPullResponse pull(UUID userId, long since) {
-        List<DeckDto> decks = deckRepository
-                .findByUserIdAndServerSeqGreaterThanOrderByServerSeqAsc(userId, since)
-                .stream().map(SyncService::toDto).toList();
-        List<TagDto> tags = tagRepository
-                .findByUserIdAndServerSeqGreaterThanOrderByServerSeqAsc(userId, since)
-                .stream().map(SyncService::toDto).toList();
-        List<CardDto> cards = cardRepository
-                .findByUserIdAndServerSeqGreaterThanOrderByServerSeqAsc(userId, since)
-                .stream().map(SyncService::toDto).toList();
+        SyncPayload changes = new SyncPayload(
+                changed(deckRepository, userId, since, SyncService::toDto),
+                changed(tagRepository, userId, since, SyncService::toDto),
+                changed(cardRepository, userId, since, SyncService::toDto),
+                changed(quizRepository, userId, since, SyncService::toDto),
+                changed(questionRepository, userId, since, SyncService::toDto),
+                changed(studySessionRepository, userId, since, SyncService::toDto),
+                changed(quizAttemptRepository, userId, since, SyncService::toDto));
 
         long mark = syncStateRepository.findById(userId)
                 .map(UserSyncState::getCurrentSeq)
                 .orElse(0L);
 
-        logger.debug("Pull user={} since={} -> {} decks, {} tags, {} cards, mark={}",
-                userId, since, decks.size(), tags.size(), cards.size(), mark);
-
-        return new SyncPullResponse(mark, new SyncPayload(decks, tags, cards));
+        logger.debug("Pull user={} since={} mark={}", userId, since, mark);
+        return new SyncPullResponse(mark, changes);
     }
 
     /**
@@ -112,42 +137,76 @@ public class SyncService {
                 .orElseGet(() -> syncStateRepository.save(new UserSyncState(userId)));
         long seq = state.nextSeq();
 
-        List<DeckDto> rejectedDecks = new ArrayList<>();
-        for (DeckDto dto : incoming.decks()) {
-            Optional<Deck> stored = deckRepository.findByIdAndUserId(dto.id(), userId);
-            if (accepts(stored.orElse(null), dto.id(), dto.updatedAt(), ceiling)) {
-                deckRepository.save(apply(stored.orElseGet(Deck::new), dto, userId, seq));
-            } else {
-                stored.map(SyncService::toDto).ifPresent(rejectedDecks::add);
-            }
-        }
-
-        List<TagDto> rejectedTags = new ArrayList<>();
-        for (TagDto dto : incoming.tags()) {
-            Optional<Tag> stored = tagRepository.findByIdAndUserId(dto.id(), userId);
-            if (accepts(stored.orElse(null), dto.id(), dto.updatedAt(), ceiling)) {
-                tagRepository.save(apply(stored.orElseGet(Tag::new), dto, userId, seq));
-            } else {
-                stored.map(SyncService::toDto).ifPresent(rejectedTags::add);
-            }
-        }
-
-        List<CardDto> rejectedCards = new ArrayList<>();
-        for (CardDto dto : incoming.cards()) {
-            Optional<Card> stored = cardRepository.findByIdAndUserId(dto.id(), userId);
-            if (accepts(stored.orElse(null), dto.id(), dto.updatedAt(), ceiling)) {
-                cardRepository.save(apply(stored.orElseGet(Card::new), dto, userId, seq));
-            } else {
-                stored.map(SyncService::toDto).ifPresent(rejectedCards::add);
-            }
-        }
+        SyncPayload rejected = new SyncPayload(
+                apply(deckRepository, incoming.decks(), userId, seq, ceiling,
+                        DeckDto::id, DeckDto::updatedAt, Deck::new, SyncService::write, SyncService::toDto),
+                apply(tagRepository, incoming.tags(), userId, seq, ceiling,
+                        TagDto::id, TagDto::updatedAt, Tag::new, SyncService::write, SyncService::toDto),
+                apply(cardRepository, incoming.cards(), userId, seq, ceiling,
+                        CardDto::id, CardDto::updatedAt, Card::new, SyncService::write, SyncService::toDto),
+                apply(quizRepository, incoming.quizzes(), userId, seq, ceiling,
+                        QuizDto::id, QuizDto::updatedAt, Quiz::new, SyncService::write, SyncService::toDto),
+                apply(questionRepository, incoming.questions(), userId, seq, ceiling,
+                        QuestionDto::id, QuestionDto::updatedAt, Question::new, SyncService::write, SyncService::toDto),
+                apply(studySessionRepository, incoming.studySessions(), userId, seq, ceiling,
+                        StudySessionDto::id, StudySessionDto::updatedAt, StudySession::new, SyncService::write, SyncService::toDto),
+                apply(quizAttemptRepository, incoming.quizAttempts(), userId, seq, ceiling,
+                        QuizAttemptDto::id, QuizAttemptDto::updatedAt, QuizAttempt::new, SyncService::write, SyncService::toDto));
 
         syncStateRepository.save(state);
 
-        logger.debug("Push user={} seq={} rejected {} decks, {} tags, {} cards",
-                userId, seq, rejectedDecks.size(), rejectedTags.size(), rejectedCards.size());
+        logger.debug("Push user={} seq={} rejected={}", userId, seq, !rejected.isEmpty());
+        return new SyncPushResponse(seq, rejected);
+    }
 
-        return new SyncPushResponse(seq, new SyncPayload(rejectedDecks, rejectedTags, rejectedCards));
+    private static <E extends SyncableEntity, D> List<D> changed(
+            SyncRepository<E> repo, UUID userId, long since, Function<E, D> toDto) {
+        return repo.findByUserIdAndServerSeqGreaterThanOrderByServerSeqAsc(userId, since)
+                .stream().map(toDto).toList();
+    }
+
+    /**
+     * Applies one type's incoming entities, returning the server's copy of any
+     * that lost.
+     *
+     * <p>All seven types resolve identically, so they share this path rather
+     * than repeating the comparison per entity.
+     */
+    private static <E extends SyncableEntity, D> List<D> apply(
+            SyncRepository<E> repo,
+            List<D> incoming,
+            UUID userId,
+            long seq,
+            Instant ceiling,
+            Function<D, UUID> idOf,
+            Function<D, Instant> updatedAtOf,
+            Supplier<E> factory,
+            BiConsumer<E, D> write,
+            Function<E, D> toDto) {
+
+        List<D> rejected = new ArrayList<>();
+        for (D dto : incoming) {
+            UUID id = idOf.apply(dto);
+            Instant updatedAt = updatedAtOf.apply(dto);
+            Optional<E> stored = id == null ? Optional.empty() : repo.findByIdAndUserId(id, userId);
+
+            if (!accepts(stored.orElse(null), id, updatedAt, ceiling)) {
+                stored.map(toDto).ifPresent(rejected::add);
+                continue;
+            }
+
+            E entity = stored.orElseGet(factory);
+            write.accept(entity, dto);
+            entity.setId(id);
+            entity.setUserId(userId);
+            if (entity.getCreatedAt() == null) {
+                entity.setCreatedAt(updatedAt);
+            }
+            entity.setUpdatedAt(updatedAt);
+            entity.setServerSeq(seq);
+            repo.save(entity);
+        }
+        return rejected;
     }
 
     /**
@@ -177,46 +236,82 @@ public class SyncService {
         return incomingId.compareTo(stored.getId()) > 0;
     }
 
-    private static <E extends SyncableEntity> E stamp(E entity, UUID id, UUID userId,
-                                                      Instant createdAt, Instant updatedAt,
-                                                      Instant deletedAt, long seq) {
-        entity.setId(id);
-        entity.setUserId(userId);
-        entity.setCreatedAt(createdAt == null ? updatedAt : createdAt);
-        entity.setUpdatedAt(updatedAt);
-        entity.setDeletedAt(deletedAt);
-        entity.setServerSeq(seq);
-        return entity;
+    // --- dto -> entity -------------------------------------------------
+
+    private static void write(Deck e, DeckDto d) {
+        e.setName(d.name());
+        e.setDescription(d.description());
+        e.setShuffleCards(d.shuffleCards());
+        e.setFavorite(d.favorite());
+        e.setDeletedAt(d.deletedAt());
     }
 
-    private static Deck apply(Deck deck, DeckDto dto, UUID userId, long seq) {
-        deck.setName(dto.name());
-        deck.setDescription(dto.description());
-        deck.setShuffleCards(dto.shuffleCards());
-        deck.setFavorite(dto.favorite());
-        return stamp(deck, dto.id(), userId, dto.createdAt(), dto.updatedAt(), dto.deletedAt(), seq);
+    private static void write(Tag e, TagDto d) {
+        e.setDeckId(d.deckId());
+        e.setName(d.name());
+        e.setPosition(d.position());
+        e.setDeletedAt(d.deletedAt());
     }
 
-    private static Tag apply(Tag tag, TagDto dto, UUID userId, long seq) {
-        tag.setDeckId(dto.deckId());
-        tag.setName(dto.name());
-        tag.setPosition(dto.position());
-        return stamp(tag, dto.id(), userId, dto.createdAt(), dto.updatedAt(), dto.deletedAt(), seq);
+    private static void write(Card e, CardDto d) {
+        e.setDeckId(d.deckId());
+        e.setFront(d.front());
+        e.setFrontType(d.frontType());
+        e.setFrontLanguage(d.frontLanguage());
+        e.setBack(d.back());
+        e.setBackType(d.backType());
+        e.setBackLanguage(d.backLanguage());
+        e.setNotes(d.notes());
+        e.setPosition(d.position());
+        e.setTagIds(d.tagIds());
+        e.setDeletedAt(d.deletedAt());
     }
 
-    private static Card apply(Card card, CardDto dto, UUID userId, long seq) {
-        card.setDeckId(dto.deckId());
-        card.setFront(dto.front());
-        card.setFrontType(dto.frontType());
-        card.setFrontLanguage(dto.frontLanguage());
-        card.setBack(dto.back());
-        card.setBackType(dto.backType());
-        card.setBackLanguage(dto.backLanguage());
-        card.setNotes(dto.notes());
-        card.setPosition(dto.position());
-        card.setTagIds(dto.tagIds());
-        return stamp(card, dto.id(), userId, dto.createdAt(), dto.updatedAt(), dto.deletedAt(), seq);
+    private static void write(Quiz e, QuizDto d) {
+        e.setName(d.name());
+        e.setDescription(d.description());
+        e.setShuffleQuestions(d.shuffleQuestions());
+        e.setFavorite(d.favorite());
+        e.setDeletedAt(d.deletedAt());
     }
+
+    private static void write(Question e, QuestionDto d) {
+        e.setQuizId(d.quizId());
+        e.setQuestionType(d.questionType());
+        e.setContent(d.content());
+        e.setContentType(d.contentType());
+        e.setContentLanguage(d.contentLanguage());
+        e.setCorrectAnswer(d.correctAnswer());
+        e.setMultipleAnswers(d.multipleAnswers());
+        e.setExplanation(d.explanation());
+        e.setPosition(d.position());
+        e.setChoices(d.choices());
+        e.setTagIds(d.tagIds());
+        e.setDeletedAt(d.deletedAt());
+    }
+
+    private static void write(StudySession e, StudySessionDto d) {
+        e.setDeckId(d.deckId());
+        e.setStartedAt(d.startedAt());
+        e.setEndedAt(d.endedAt());
+        e.setDurationSeconds(d.durationSeconds());
+        e.setCardsStudied(d.cardsStudied());
+        e.setDeletedAt(d.deletedAt());
+    }
+
+    private static void write(QuizAttempt e, QuizAttemptDto d) {
+        e.setQuizId(d.quizId());
+        e.setStartedAt(d.startedAt());
+        e.setCompletedAt(d.completedAt());
+        e.setDurationSeconds(d.durationSeconds());
+        e.setTotalQuestions(d.totalQuestions());
+        e.setCorrectAnswers(d.correctAnswers());
+        e.setScorePercentage(d.scorePercentage());
+        e.setQuestionResults(d.questionResults());
+        e.setDeletedAt(d.deletedAt());
+    }
+
+    // --- entity -> dto -------------------------------------------------
 
     static DeckDto toDto(Deck d) {
         return new DeckDto(d.getId(), d.getName(), d.getDescription(), d.isShuffleCards(),
@@ -233,5 +328,30 @@ public class SyncService {
                 c.getFrontLanguage(), c.getBack(), c.getBackType(), c.getBackLanguage(),
                 c.getNotes(), c.getPosition(), c.getTagIds(),
                 c.getCreatedAt(), c.getUpdatedAt(), c.getDeletedAt(), c.getServerSeq());
+    }
+
+    static QuizDto toDto(Quiz q) {
+        return new QuizDto(q.getId(), q.getName(), q.getDescription(), q.isShuffleQuestions(),
+                q.isFavorite(), q.getCreatedAt(), q.getUpdatedAt(), q.getDeletedAt(), q.getServerSeq());
+    }
+
+    static QuestionDto toDto(Question q) {
+        return new QuestionDto(q.getId(), q.getQuizId(), q.getQuestionType(), q.getContent(),
+                q.getContentType(), q.getContentLanguage(), q.getCorrectAnswer(),
+                q.isMultipleAnswers(), q.getExplanation(), q.getPosition(), q.getChoices(),
+                q.getTagIds(), q.getCreatedAt(), q.getUpdatedAt(), q.getDeletedAt(), q.getServerSeq());
+    }
+
+    static StudySessionDto toDto(StudySession s) {
+        return new StudySessionDto(s.getId(), s.getDeckId(), s.getStartedAt(), s.getEndedAt(),
+                s.getDurationSeconds(), s.getCardsStudied(),
+                s.getCreatedAt(), s.getUpdatedAt(), s.getDeletedAt(), s.getServerSeq());
+    }
+
+    static QuizAttemptDto toDto(QuizAttempt a) {
+        return new QuizAttemptDto(a.getId(), a.getQuizId(), a.getStartedAt(), a.getCompletedAt(),
+                a.getDurationSeconds(), a.getTotalQuestions(), a.getCorrectAnswers(),
+                a.getScorePercentage(), a.getQuestionResults(),
+                a.getCreatedAt(), a.getUpdatedAt(), a.getDeletedAt(), a.getServerSeq());
     }
 }

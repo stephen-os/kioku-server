@@ -48,11 +48,16 @@ Five entities, bidirectional, LWW:
 
 `Deck` · `Card` · `Tag` · `Quiz` · `Question`
 
-### Append-only events
-
-Never conflict. Merge by union, deduplicated on client-generated `id`:
+### Progress
 
 `StudySession` · `QuizAttempt` (with question results inline)
+
+These are records of things that happened, and two devices essentially never
+produce conflicting versions of the same one. They still carry the ordinary
+sync columns and resolve by the same last-write-wins rule rather than a
+separate union merge, for two reasons: it keeps one code path instead of two,
+and a session legitimately changes once, when it goes from started to
+completed. Treating that as an append-only insert would drop the completion.
 
 ### Not synced
 

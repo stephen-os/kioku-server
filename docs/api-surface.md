@@ -55,8 +55,8 @@ Two endpoints carry all content, for every client.
 
 | Method | Path | Status |
 | --- | --- | --- |
-| GET | `/sync?since={seq}` | **to build** |
-| POST | `/sync` | **to build** |
+| GET | `/api/sync?since={seq}` | built |
+| POST | `/api/sync` | built |
 
 #### Pull
 
@@ -71,10 +71,18 @@ means a full sync.
 ```json
 {
   "seq": 4812,
-  "decks":     [ { "id": "…", "name": "…", "updatedAt": "…", "deletedAt": null, "serverSeq": 4790 } ],
-  "tags":      [ … ],
-  "cards":     [ … ]
+  "decks":         [ { "id": "…", "name": "…", "updatedAt": "…", "deletedAt": null, "serverSeq": 4790 } ],
+  "tags":          [ … ],
+  "cards":         [ … ],
+  "quizzes":       [ … ],
+  "questions":     [ … ],
+  "studySessions": [ … ],
+  "quizAttempts":  [ … ]
 }
+
+A client may omit any type it has no changes for; missing lists are treated as
+empty. Questions carry their choices inline, and attempts carry their
+per-question results inline, so neither needs its own collection.
 ```
 
 A `since` older than the tombstone horizon (90 days) is answered with
@@ -89,9 +97,9 @@ POST /sync
 
 ```json
 {
-  "decks": [ … ],
-  "tags":  [ … ],
-  "cards": [ … ]
+  "decks": [ … ], "tags": [ … ], "cards": [ … ],
+  "quizzes": [ … ], "questions": [ … ],
+  "studySessions": [ … ], "quizAttempts": [ … ]
 }
 ```
 
