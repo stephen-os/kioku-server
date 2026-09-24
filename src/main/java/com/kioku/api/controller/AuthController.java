@@ -127,8 +127,10 @@ public class AuthController {
 
         User user = userService.registerUser(request.getEmail(), request.getPassword());
         String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        String refreshToken = refreshTokenService.issue(user.getId());
 
-        AuthResponse response = new AuthResponse(token, user.getId(), user.getEmail());
+        AuthResponse response = new AuthResponse(token, user.getId(), user.getEmail(),
+                refreshToken, user.getDisplayName(), user.getAvatar());
 
         logger.info("User registered successfully: userId={}, email={}", user.getId(), user.getEmail());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -182,8 +184,10 @@ public class AuthController {
 
         User user = userOptional.get();
         String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        String refreshToken = refreshTokenService.issue(user.getId());
 
-        AuthResponse response = new AuthResponse(token, user.getId(), user.getEmail());
+        AuthResponse response = new AuthResponse(token, user.getId(), user.getEmail(),
+                refreshToken, user.getDisplayName(), user.getAvatar());
 
         logger.info("User logged in successfully: userId={}, email={}", user.getId(), user.getEmail());
         return ResponseEntity.ok(response);
@@ -219,7 +223,8 @@ public class AuthController {
         String replacement = refreshTokenService.issue(user.getId());
 
         logger.info("Refreshed session for userId={}", user.getId());
-        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getEmail(), replacement));
+        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getEmail(), replacement,
+                user.getDisplayName(), user.getAvatar()));
     }
 
     /**

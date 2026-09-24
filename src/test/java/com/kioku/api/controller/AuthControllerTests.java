@@ -439,4 +439,52 @@ class AuthControllerTests {
 
         logger.debug("Test passed: Malformed JSON rejected");
     }
+
+    @Test
+    @DisplayName("Login issues a refresh token, not just an access token")
+    void loginIssuesRefreshToken() {
+        logger.debug("Test: Login issues a refresh token");
+
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(TEST_USER_ID);
+        when(user.getEmail()).thenReturn(TEST_EMAIL);
+        when(userService.authenticateUser(TEST_EMAIL, TEST_PASSWORD)).thenReturn(Optional.of(user));
+        when(jwtUtil.generateToken(TEST_USER_ID, TEST_EMAIL)).thenReturn(TEST_TOKEN);
+        when(refreshTokenService.issue(TEST_USER_ID)).thenReturn("refresh-abc");
+
+        client.post().uri("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new LoginRequest(TEST_EMAIL, TEST_PASSWORD))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.refreshToken").isEqualTo("refresh-abc");
+
+        // An access token alone leaves the client unable to renew: /auth/refresh
+        // and the whole rotation scheme are unreachable without this.
+        verify(refreshTokenService).issue(TEST_USER_ID);
+    }
+
+    @Test
+    @DisplayName("Registration issues a refresh token too")
+    void registrationIssuesRefreshToken() {
+        logger.debug("Test: Registration issues a refresh token");
+
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(TEST_USER_ID);
+        when(user.getEmail()).thenReturn(TEST_EMAIL);
+        when(userService.registerUser(TEST_EMAIL, TEST_PASSWORD)).thenReturn(user);
+        when(jwtUtil.generateToken(TEST_USER_ID, TEST_EMAIL)).thenReturn(TEST_TOKEN);
+        when(refreshTokenService.issue(TEST_USER_ID)).thenReturn("refresh-xyz");
+
+        client.post().uri("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new RegisterRequest(TEST_EMAIL, TEST_PASSWORD))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody()
+                .jsonPath("$.refreshToken").isEqualTo("refresh-xyz");
+
+        verify(refreshTokenService).issue(TEST_USER_ID);
+    }
 }

@@ -57,6 +57,12 @@ public class AuthResponse {
      */
     private String email;
 
+    /** Null when the account has never set one; clients fall back to the email. */
+    private String displayName;
+
+    /** Identifier of a built-in avatar, resolved to an image by the client. */
+    private String avatar;
+
     /**
      * Long-lived credential for obtaining a new access token.
      *
@@ -90,6 +96,35 @@ public class AuthResponse {
     public AuthResponse(String token, UUID userId, String email, String refreshToken) {
         this(token, userId, email);
         this.refreshToken = refreshToken;
+    }
+
+    /**
+     * Full session response including the account's profile.
+     *
+     * <p>Carried here so a client has a name and avatar to show immediately,
+     * rather than signing in and then fetching the account separately.
+     */
+    public AuthResponse(String token, UUID userId, String email, String refreshToken,
+                        String displayName, String avatar) {
+        this(token, userId, email, refreshToken);
+        this.displayName = displayName;
+        this.avatar = avatar;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public String getRefreshToken() {
