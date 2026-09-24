@@ -234,3 +234,25 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
 
 CREATE INDEX IF NOT EXISTS ix_quiz_attempts_sync ON quiz_attempts (user_id, server_seq);
 CREATE INDEX IF NOT EXISTS ix_quiz_attempts_quiz ON quiz_attempts (quiz_id, completed_at);
+
+-- ============================================
+-- Refresh tokens
+-- ============================================
+-- Only a SHA-256 hash of each token is stored. A database leak then exposes
+-- no usable session, because the hash cannot be presented to the API.
+--
+-- Rotation: using a refresh token revokes it and issues a new one, so a stolen
+-- token is good for at most one use, and the theft shows up as the legitimate
+-- client's next refresh failing.
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id         uuid        PRIMARY KEY,
+    user_id    uuid        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token_hash varchar(64) NOT NULL,
+    expires_at timestamptz NOT NULL,
+    revoked_at timestamptz,
+    created_at timestamptz NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_refresh_tokens_hash ON refresh_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user ON refresh_tokens (user_id);

@@ -18,6 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
+import com.kioku.api.dto.request.RefreshRequest;
+import com.kioku.api.dto.request.PasswordResetRequest;
+import com.kioku.api.dto.request.PasswordResetConfirmRequest;
+import com.kioku.api.service.RefreshTokenService;
+import java.util.UUID;
 
 /**
  * REST controller for user authentication operations.
@@ -66,6 +71,7 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * Constructs an AuthController with required dependencies.
@@ -73,9 +79,11 @@ public class AuthController {
      * @param userService the user service for user operations
      * @param jwtUtil the JWT utility for token generation
      */
-    public AuthController(UserService userService, JwtUtil jwtUtil) {
+    public AuthController(UserService userService, JwtUtil jwtUtil,
+                          RefreshTokenService refreshTokenService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
+        this.refreshTokenService = refreshTokenService;
     }
 
     /**
@@ -179,5 +187,81 @@ public class AuthController {
 
         logger.info("User logged in successfully: userId={}, email={}", user.getId(), user.getEmail());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Exchanges a refresh token for a new access token.
+     *
+     * <p>Rotates: the presented token is revoked and a new one returned, so a
+     * stolen token works at most once and the theft shows up as the real
+     * client's next refresh failing.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest request) {
+        logger.debug("Refresh attempt");
+
+        Optional<UUID> userId = refreshTokenService.rotate(request.getRefreshToken());
+        if (userId.isEmpty()) {
+            logger.warn("Refresh failed: token unknown, expired or already used");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Invalid or expired refresh token"));
+        }
+
+        Optional<User> userOptional = userService.findById(userId.get());
+        if (userOptional.isEmpty() || userOptional.get().isDeleted()) {
+            logger.warn("Refresh failed: user no longer active");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Invalid or expired refresh token"));
+        }
+
+        User user = userOptional.get();
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        String replacement = refreshTokenService.issue(user.getId());
+
+        logger.info("Refreshed session for userId={}", user.getId());
+        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getEmail(), replacement));
+    }
+
+    /**
+     * Starts a password reset.
+     *
+     * <p>Always answers 202, whether or not the address is registered.
+     * Reporting which emails exist would turn this into an account lookup.
+     */
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        logger.debug("Password reset requested");
+
+        userService.initiatePasswordReset(request.getEmail());
+
+        return ResponseEntity.accepted().build();
+    }
+
+    /**
+     * Completes a password reset.
+     *
+     * <p>Revokes every refresh token for the account: a credential change
+     * should end the sessions established with the old one, which is the whole
+     * point if the reset was prompted by a compromise.
+     */
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<?> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        logger.debug("Password reset confirmation");
+
+        // Capture the account first: a successful reset clears the token, so
+        // afterwards there is no way back to the user it belonged to.
+        Optional<UUID> accountId = userService.findByPasswordResetToken(request.getToken())
+                .map(User::getId);
+
+        if (!userService.resetPassword(request.getToken(), request.getNewPassword())) {
+            logger.warn("Password reset failed: token invalid or expired");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Invalid or expired reset token"));
+        }
+
+        accountId.ifPresent(refreshTokenService::revokeAllFor);
+
+        logger.info("Password reset completed");
+        return ResponseEntity.noContent().build();
     }
 }

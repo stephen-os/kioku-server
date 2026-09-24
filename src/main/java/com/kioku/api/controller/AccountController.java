@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
+import com.kioku.api.service.RefreshTokenService;
 
 /**
  * REST controller for user account management operations.
@@ -58,14 +59,17 @@ public class AccountController {
     private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
 
     private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * Constructs an AccountController with required dependencies.
      *
      * @param userService the user service for account operations
      */
-    public AccountController(UserService userService) {
+    public AccountController(UserService userService,
+                             RefreshTokenService refreshTokenService) {
         this.userService = userService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     /**
@@ -211,6 +215,11 @@ public class AccountController {
         );
 
         if (success) {
+            // A credential change should end sessions established with the old
+            // one, otherwise changing a password after a compromise leaves the
+            // attacker's session working.
+            refreshTokenService.revokeAllFor(userId);
+
             logger.info("Password updated for user id={}", userId);
             return ResponseEntity.ok(Map.of("message", "Password updated successfully"));
         } else {

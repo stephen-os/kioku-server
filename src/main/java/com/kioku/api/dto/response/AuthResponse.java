@@ -58,6 +58,14 @@ public class AuthResponse {
     private String email;
 
     /**
+     * Long-lived credential for obtaining a new access token.
+     *
+     * <p>Null on responses that do not establish a session, such as a refresh
+     * that only rotates the access token.
+     */
+    private String refreshToken;
+
+    /**
      * Default constructor for JSON serialization.
      */
     public AuthResponse() {}
@@ -74,6 +82,22 @@ public class AuthResponse {
         this.token = token;
         this.userId = userId;
         this.email = email;
+    }
+
+    /**
+     * Full session response, including the refresh token issued alongside.
+     */
+    public AuthResponse(String token, UUID userId, String email, String refreshToken) {
+        this(token, userId, email);
+        this.refreshToken = refreshToken;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     /**

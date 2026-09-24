@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import java.util.UUID;
+import com.kioku.api.service.RefreshTokenService;
 
 /**
  * Integration tests for AuthController using RestTestClient (Spring Boot 4.0).
@@ -61,6 +62,9 @@ class AuthControllerTests {
 
     @MockitoBean
     private JwtUtil jwtUtil;
+
+    @MockitoBean
+    private RefreshTokenService refreshTokenService;
 
     RestTestClient client;
     private User testUser;

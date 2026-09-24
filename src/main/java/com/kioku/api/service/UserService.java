@@ -340,6 +340,21 @@ public class UserService {
      * @param newPassword the new plain text password (will be hashed)
      * @return {@code true} if reset successful, {@code false} otherwise
      */
+    /**
+     * Finds the account a reset token belongs to.
+     *
+     * <p>Callers that need the account after a reset must look it up first:
+     * {@link #resetPassword} clears the token, so afterwards there is nothing
+     * left to search by.
+     *
+     * @param token the reset token
+     * @return the account, or empty if no account holds that token
+     */
+    @Transactional(readOnly = true)
+    public Optional<User> findByPasswordResetToken(String token) {
+        return userRepository.findByPasswordResetToken(token);
+    }
+
     public boolean resetPassword(String token, String newPassword) {
         logger.debug("Resetting password with token");
 

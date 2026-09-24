@@ -33,9 +33,25 @@ disappear when content moves in bulk.
 | --- | --- | --- |
 | POST | `/auth/register` | exists |
 | POST | `/auth/login` | exists |
-| POST | `/auth/refresh` | **to build** |
-| POST | `/auth/password-reset/request` | **to build** (columns exist) |
-| POST | `/auth/password-reset/confirm` | **to build** (columns exist) |
+| POST | `/auth/refresh` | built |
+| POST | `/auth/password-reset/request` | built |
+| POST | `/auth/password-reset/confirm` | built |
+
+Login and register return an access token plus a refresh token. Access tokens
+are short-lived (15 minutes); the refresh token carries the session and is
+rotated on every use, so a stolen one works at most once and the theft surfaces
+as the real client's next refresh failing.
+
+A password change or reset revokes every refresh token for the account.
+Otherwise changing a password after a compromise would leave the attacker's
+session working.
+
+`/auth/password-reset/request` always answers `202`, whether or not the address
+is registered, so it cannot be used to discover which emails have accounts.
+
+All `/api/auth/**` endpoints are rate limited by source address, on top of the
+per-account lockout that already existed. The limiter holds its counters in
+memory, so it is correct for a single instance only.
 
 ### Account
 

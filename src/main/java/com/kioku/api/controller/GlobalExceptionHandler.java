@@ -46,10 +46,9 @@ import java.util.NoSuchElementException;
  * <p><strong>Example:</strong>
  * <pre>
  * // Controller code - no try-catch needed
- * {@code @PostMapping("/api/decks")}
- * public ResponseEntity{@code <DeckResponse>} createDeck(...) {
- *     Deck deck = deckService.createDeck(...); // May throw IllegalArgumentException
- *     return ResponseEntity.status(HttpStatus.CREATED).body(new DeckResponse(deck));
+ * {@code @PostMapping("/api/sync")}
+ * public ResponseEntity{@code <SyncPushResponse>} push(...) {
+ *     return ResponseEntity.ok(syncService.push(...)); // May throw IllegalArgumentException
  * }
  * </pre>
  *

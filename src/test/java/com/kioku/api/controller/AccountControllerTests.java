@@ -45,6 +45,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import com.kioku.api.service.RefreshTokenService;
 
 /**
  * Integration tests for AccountController using RestTestClient (Spring Boot 4.0).
@@ -89,6 +90,9 @@ class AccountControllerTests {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private RefreshTokenService refreshTokenService;
 
     RestTestClient client;
     private User testUser;

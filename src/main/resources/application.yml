@@ -35,7 +35,10 @@ logging:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 86400000
+  # Access token: short, because a refresh token can mint a new one.
+  expiration: 900000
+  # Refresh token: 30 days, rotated on every use.
+  refresh-expiration: 2592000000
 
 # Server
 server:
